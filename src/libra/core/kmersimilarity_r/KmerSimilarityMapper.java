@@ -22,6 +22,7 @@ import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
@@ -29,7 +30,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  *
  * @author iychoi
  */
-public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, CompressedIntArrayWritable, CompressedSequenceWritable, CompressedIntArrayWritable> {
+public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, IntWritable, CompressedSequenceWritable, CompressedIntArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityMapper.class);
     
@@ -48,10 +49,10 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Com
     }
     
     @Override
-    protected void map(CompressedSequenceWritable key, CompressedIntArrayWritable value, Context context) throws IOException, InterruptedException {
+    protected void map(CompressedSequenceWritable key, IntWritable value, Context context) throws IOException, InterruptedException {
         int[] arr = new int[2];
         arr[0] = this.file_id;
-        arr[1] = value.getPositiveEntriesCount() + value.getNegativeEntriesCount();
+        arr[1] = value.get();
         
         context.write(key, new CompressedIntArrayWritable(arr));
     }

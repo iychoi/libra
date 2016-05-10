@@ -25,7 +25,6 @@ import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.common.kmermatch.KmerMatchInputFormat;
 import libra.common.kmermatch.KmerMatchInputFormatConfig;
 import libra.core.CoreCmdArgs;
-import libra.core.commom.ICoreStage;
 import libra.core.commom.CoreConfig;
 import libra.core.commom.CoreConfigException;
 import libra.core.common.helpers.KmerSimilarityHelper;
@@ -53,7 +52,7 @@ import org.apache.hadoop.util.ToolRunner;
  *
  * @author iychoi
  */
-public class KmerSimilarityMap extends Configured implements Tool, ICoreStage {
+public class KmerSimilarityMap extends Configured implements Tool {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityMap.class);
     
@@ -62,6 +61,10 @@ public class KmerSimilarityMap extends Configured implements Tool, ICoreStage {
     public static void main(String[] args) throws Exception {
         int res = ToolRunner.run(new Configuration(), new KmerSimilarityMap(), args);
         System.exit(res);
+    }
+    
+    public static int main2(String[] args) throws Exception {
+        return ToolRunner.run(new Configuration(), new KmerSimilarityMap(), args);
     }
     
     public KmerSimilarityMap() {
@@ -81,13 +84,6 @@ public class KmerSimilarityMap extends Configured implements Tool, ICoreStage {
         
         return runJob(cConfig);
     }
-    
-    @Override
-    public int run(CoreConfig lConfig) throws Exception {
-        setConf(new Configuration());
-        return runJob(lConfig);
-    }
-    
     
     private void validateLibraConfig(CoreConfig cConfig) throws CoreConfigException {
         if(cConfig.getKmerIndexPath() == null) {
@@ -275,6 +271,9 @@ public class KmerSimilarityMap extends Configured implements Tool, ICoreStage {
             
             String k = x + "-" + y;
             String v = Double.toString(accumulatedScore[i]);
+            if(x == y) {
+                v = Double.toString(1.0);
+            }
             String out = k + "\t" + v + "\n";
             os.write(out.getBytes());
         }

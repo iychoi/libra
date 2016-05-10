@@ -22,7 +22,6 @@ import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
 import libra.common.cmdargs.CommandArgumentsParser;
 import libra.preprocess.PreprocessorCmdArgs;
-import libra.preprocess.common.IPreprocessorStage;
 import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.PreprocessorConfigException;
 import libra.preprocess.common.helpers.KmerIndexHelper;
@@ -47,13 +46,17 @@ import org.apache.hadoop.util.ToolRunner;
  *
  * @author iychoi
  */
-public class KmerStatisticsBuilder extends Configured implements Tool, IPreprocessorStage {
+public class KmerStatisticsBuilder extends Configured implements Tool {
     
     private static final Log LOG = LogFactory.getLog(KmerStatisticsBuilder.class);
     
     public static void main(String[] args) throws Exception {
         int res = ToolRunner.run(new Configuration(), new KmerStatisticsBuilder(), args);
         System.exit(res);
+    }
+    
+    public static int main2(String[] args) throws Exception {
+        return ToolRunner.run(new Configuration(), new KmerStatisticsBuilder(), args);
     }
     
     public KmerStatisticsBuilder() {
@@ -71,12 +74,6 @@ public class KmerStatisticsBuilder extends Configured implements Tool, IPreproce
         
         PreprocessorConfig ppConfig = cmdParams.getPreprocessorConfig();
         
-        return runJob(ppConfig);
-    }
-    
-    @Override
-    public int run(PreprocessorConfig ppConfig) throws Exception {
-        setConf(new Configuration());
         return runJob(ppConfig);
     }
     

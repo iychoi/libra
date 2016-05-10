@@ -1,3 +1,5 @@
+package libra;
+
 /*
  * Copyright 2016 iychoi.
  *
@@ -13,12 +15,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core;
-
 import java.util.ArrayList;
 import java.util.List;
-import libra.core.kmersimilarity_m.KmerSimilarityMap;
-import libra.core.kmersimilarity_r.KmerSimilarityReduce;
+import libra.core.Core;
+import libra.preprocess.Preprocessor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -26,11 +26,12 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author iychoi
  */
-public class Core {
-    private static final Log LOG = LogFactory.getLog(Core.class);
+public class Libra {
+
+    private static final Log LOG = LogFactory.getLog(Libra.class);
     
-    private static int RUN_MODE_MAP = 0x00;
-    private static int RUN_MODE_REDUCE = 0x01;
+    private static int RUN_MODE_PREPROCESS = 0x00;
+    private static int RUN_MODE_CORE = 0x01;
     
     private static boolean isHelpParam(String[] args) {
         if(args.length < 1 || 
@@ -44,10 +45,10 @@ public class Core {
     private static int checkRunMode(String[] args) {
         int runMode = 0;
         for(String arg : args) {
-            if(arg.equalsIgnoreCase("map")) {
-                runMode = RUN_MODE_MAP;
-            } else if(arg.equalsIgnoreCase("reduce")) {
-                runMode = RUN_MODE_REDUCE;
+            if(arg.equalsIgnoreCase("preprocess")) {
+                runMode = RUN_MODE_PREPROCESS;
+            } else if(arg.equalsIgnoreCase("core")) {
+                runMode = RUN_MODE_CORE;
             }
         }
         
@@ -57,7 +58,7 @@ public class Core {
     private static String[] removeRunMode(String[] args) {
         List<String> param = new ArrayList<String>();
         for(String arg : args) {
-            if(!arg.equalsIgnoreCase("map") && !arg.equalsIgnoreCase("reduce")) {
+            if(!arg.equalsIgnoreCase("preprocess") && !arg.equalsIgnoreCase("core")) {
                 param.add(arg);
             }
         }
@@ -69,35 +70,27 @@ public class Core {
         if(isHelpParam(args)) {
             printHelp();
             return;
-        }
+        } 
         
         int runMode = checkRunMode(args);
         String[] params = removeRunMode(args);
         
-        int res = 0;
-        try {
-            if(runMode == RUN_MODE_MAP) {
-                res = KmerSimilarityMap.main2(params);
-            } else if(runMode == RUN_MODE_REDUCE) {
-                res = KmerSimilarityReduce.main2(params);
-            }
-        } catch (Exception e) {
-            LOG.error(e);
+        if(runMode == RUN_MODE_PREPROCESS) {
+            Preprocessor.main(params);
+        } else if(runMode == RUN_MODE_CORE) {
+            Core.main(params);
         }
     }
 
     private static void printHelp() {
         System.out.println("============================================================");
         System.out.println("Libra : Massive Comparative Analytic Tools for Metagenomics");
-        System.out.println("Similarity Computer");
         System.out.println("============================================================");
         System.out.println("Usage :");
-        System.out.println("> core [map|reduce] <arguments ...>");
+        System.out.println("> libra <command> <arguments ...>");
         System.out.println();
-        System.out.println("Mode :");
-        System.out.println("> map");
-        System.out.println("> \tCompute similarity using mappers");
-        System.out.println("> reduce");
-        System.out.println("> \tCompute similarity using reducers");
+        System.out.println("Commands :");
+        System.out.println("> preprocess");
+        System.out.println("> core");
     }
 }

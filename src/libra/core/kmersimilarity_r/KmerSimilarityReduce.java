@@ -27,7 +27,6 @@ import libra.common.helpers.MapReduceClusterHelper;
 import libra.common.helpers.MapReduceHelper;
 import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.core.CoreCmdArgs;
-import libra.core.commom.ICoreStage;
 import libra.core.commom.CoreConfig;
 import libra.core.commom.CoreConfigException;
 import libra.core.common.helpers.KmerSimilarityHelper;
@@ -56,13 +55,17 @@ import org.apache.hadoop.util.ToolRunner;
  *
  * @author iychoi
  */
-public class KmerSimilarityReduce extends Configured implements Tool, ICoreStage {
+public class KmerSimilarityReduce extends Configured implements Tool {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityReduce.class);
     
     public static void main(String[] args) throws Exception {
         int res = ToolRunner.run(new Configuration(), new KmerSimilarityReduce(), args);
         System.exit(res);
+    }
+    
+    public static int main2(String[] args) throws Exception {
+        return ToolRunner.run(new Configuration(), new KmerSimilarityReduce(), args);
     }
     
     public KmerSimilarityReduce() {
@@ -82,13 +85,6 @@ public class KmerSimilarityReduce extends Configured implements Tool, ICoreStage
         
         return runJob(cConfig);
     }
-    
-    @Override
-    public int run(CoreConfig cConfig) throws Exception {
-        setConf(new Configuration());
-        return runJob(cConfig);
-    }
-    
     
     private void validateCoreConfig(CoreConfig cConfig) throws CoreConfigException {
         if(cConfig.getKmerIndexPath() == null) {

@@ -17,23 +17,17 @@ package libra.preprocess;
 
 import java.util.ArrayList;
 import java.util.List;
-import libra.common.cmdargs.CommandArgumentsParser;
-import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.indexing.stage1.KmerHistogramBuilder;
 import libra.preprocess.indexing.stage2.KmerIndexBuilder;
 import libra.preprocess.indexing.stage3.KmerStatisticsBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 /**
  *
  * @author iychoi
  */
-public class Preprocessor extends Configured implements Tool {
+public class Preprocessor {
     private static final Log LOG = LogFactory.getLog(Preprocessor.class);
     
     private static int RUN_STAGE_1 = 0x01;
@@ -82,50 +76,31 @@ public class Preprocessor extends Configured implements Tool {
         return param.toArray(new String[0]);
     }
     
-    @Override
-    public int run(String[] args) throws Exception {
+    public static void main(String[] args) throws Exception {
         if(isHelpParam(args)) {
             printHelp();
-            return 1;
+            return;
         }
         
         int runStages = checkRunStages(args);
         String[] params = removeRunStages(args);
         
-        CommandArgumentsParser<PreprocessorCmdArgs> parser = new CommandArgumentsParser<PreprocessorCmdArgs>();
-        PreprocessorCmdArgs cmdParams = new PreprocessorCmdArgs();
-        if(!parser.parse(params, cmdParams)) {
-            printHelp();
-            return 1;
-        }
+        int res = 0;
+        try {       
+            if((runStages & RUN_STAGE_1) == RUN_STAGE_1 && res == 0) {
+                res = KmerHistogramBuilder.main2(params);
+            }
 
-        PreprocessorConfig ppConfig = cmdParams.getPreprocessorConfig();
-        
-        int res = 1;
-        if((runStages & RUN_STAGE_1) == RUN_STAGE_1 &&
-                res == 0) {
-            KmerHistogramBuilder stage1 = new KmerHistogramBuilder();
-            res = stage1.run(ppConfig);
-        }
-        
-        if((runStages & RUN_STAGE_2) == RUN_STAGE_2 &&
-                res == 0) {
-            KmerIndexBuilder stage2 = new KmerIndexBuilder();
-            res = stage2.run(ppConfig);
-        }
+            if((runStages & RUN_STAGE_2) == RUN_STAGE_2 && res == 0) {
+                res = KmerIndexBuilder.main2(params);
+            }
 
-        if((runStages & RUN_STAGE_3) == RUN_STAGE_3 &&
-                res == 0) {
-            KmerStatisticsBuilder stage3 = new KmerStatisticsBuilder();
-            res = stage3.run(ppConfig);
+            if((runStages & RUN_STAGE_3) == RUN_STAGE_3 && res == 0) {
+                res = KmerStatisticsBuilder.main2(params);
+            }
+        } catch (Exception e) {
+            LOG.error(e);
         }
-        
-        return res;
-    }
-    
-    public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new Configuration(), new Preprocessor(), args);
-        System.exit(res);
     }
 
     private static void printHelp() {

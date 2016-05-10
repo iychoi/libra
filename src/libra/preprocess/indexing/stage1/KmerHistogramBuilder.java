@@ -16,7 +16,6 @@
 package libra.preprocess.indexing.stage1;
 
 import libra.preprocess.common.helpers.KmerHistogramHelper;
-import libra.preprocess.common.IPreprocessorStage;
 import java.io.IOException;
 import libra.common.hadoop.io.format.fasta.FastaReadInputFormat;
 import libra.common.helpers.FileSystemHelper;
@@ -44,13 +43,17 @@ import org.apache.hadoop.util.ToolRunner;
  *
  * @author iychoi
  */
-public class KmerHistogramBuilder extends Configured implements Tool, IPreprocessorStage {
+public class KmerHistogramBuilder extends Configured implements Tool {
     
     private static final Log LOG = LogFactory.getLog(KmerHistogramBuilder.class);
     
     public static void main(String[] args) throws Exception {
         int res = ToolRunner.run(new Configuration(), new KmerHistogramBuilder(), args);
         System.exit(res);
+    }
+    
+    public static int main2(String[] args) throws Exception {
+        return ToolRunner.run(new Configuration(), new KmerHistogramBuilder(), args);
     }
     
     public KmerHistogramBuilder() {
@@ -68,12 +71,6 @@ public class KmerHistogramBuilder extends Configured implements Tool, IPreproces
         
         PreprocessorConfig ppConfig = cmdParams.getPreprocessorConfig();
         
-        return runJob(ppConfig);
-    }
-    
-    @Override
-    public int run(PreprocessorConfig ppConfig) throws Exception {
-        setConf(new Configuration());
         return runJob(ppConfig);
     }
     
