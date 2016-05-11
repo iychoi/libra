@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.indexing.stage2;
+package libra.preprocess.stage2;
 
 
 import java.io.IOException;

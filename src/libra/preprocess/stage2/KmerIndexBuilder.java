@@ -13,11 +13,12 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.indexing.stage2;
+package libra.preprocess.stage2;
 
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Iterator;
 import java.util.List;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.hadoop.io.format.fasta.FastaReadInputFormat;
@@ -30,7 +31,9 @@ import libra.preprocess.PreprocessorCmdArgs;
 import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.PreprocessorConfigException;
 import libra.preprocess.common.helpers.KmerHistogramHelper;
+import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import libra.preprocess.common.kmerindex.KmerIndexIndex;
+import libra.preprocess.common.kmerstatistics.KmerStatistics;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -40,6 +43,9 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
+import org.apache.hadoop.mapreduce.Counter;
+import org.apache.hadoop.mapreduce.CounterGroup;
+import org.apache.hadoop.mapreduce.Counters;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -119,7 +125,7 @@ public class KmerIndexBuilder extends Configured implements Tool {
             Path roundInputFile = inputFiles[round];
             String roundOutputPath = ppConfig.getKmerIndexPath() + "_round" + round;
             
-            Job job = new Job(conf, "Libra Preprocessor - Building Kmer Indices (" + round + " of " + inputFiles.length + ")");
+            Job job = new Job(conf, "Libra Preprocessor - Building Kmer Indexes (" + round + " of " + inputFiles.length + ")");
             job.setJarByClass(KmerIndexBuilder.class);
 
             // Mapper
@@ -175,6 +181,9 @@ public class KmerIndexBuilder extends Configured implements Tool {
                 
                 // create index of index
                 createIndexOfIndex(new Path(ppConfig.getKmerIndexPath()), roundInputFile, job.getConfiguration(), ppConfig.getKmerSize());
+
+                // create statistics of index
+                createStatisticsOfIndex(new Path(ppConfig.getKmerStatisticsPath()), roundInputFile, job.getConfiguration(), job.getCounters(), ppConfig.getKmerSize());
             }
             
             if(!result) {
@@ -243,5 +252,33 @@ public class KmerIndexBuilder extends Configured implements Tool {
 
         LOG.info("Creating an index file : " + kmerIndexIndexFilePath.toString());
         indexIndex.saveTo(kmerIndexIndexFilePath.getFileSystem(conf), kmerIndexIndexFilePath);
+    }
+
+    private void createStatisticsOfIndex(Path statisticsPath, Path inputPath, Configuration conf, Counters counters, int kmerSize) throws IOException {
+        CounterGroup logTFSquareGroup = counters.getGroup(KmerStatisticsHelper.getCounterGroupNameLogTFSquare());
+
+        Iterator<Counter> logTFSquareGroupIterator = logTFSquareGroup.iterator();
+        while(logTFSquareGroupIterator.hasNext()) {
+            Counter logTFSquareCounter = logTFSquareGroupIterator.next();
+            if(logTFSquareCounter.getName().equals(inputPath.getName())) {
+                double logTFSquare = 0;
+                double tf_cosnorm_base = 0;
+
+                logTFSquare = logTFSquareCounter.getValue() / 1000.0;
+
+                tf_cosnorm_base = Math.sqrt(logTFSquare);
+                LOG.info("tf-cos-norm-base " + logTFSquareCounter.getName() + " : " + tf_cosnorm_base);
+
+                Path outputHadoopPath = new Path(statisticsPath, KmerStatisticsHelper.makeKmerStatisticsFileName(logTFSquareCounter.getName()));
+                FileSystem fs = outputHadoopPath.getFileSystem(conf);
+
+                KmerStatistics statistics = new KmerStatistics();
+                statistics.setSampleName(logTFSquareCounter.getName());
+                statistics.setKmerSize(kmerSize);
+                statistics.setTFCosineNormBase(tf_cosnorm_base);
+
+                statistics.saveTo(fs, outputHadoopPath);
+            }
+        }
     }
 }

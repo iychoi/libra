@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.indexing.stage1;
+package libra.preprocess.stage1;
 
 import libra.preprocess.common.helpers.KmerHistogramHelper;
 import java.io.IOException;

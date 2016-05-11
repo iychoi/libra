@@ -17,9 +17,8 @@ package libra.preprocess;
 
 import java.util.ArrayList;
 import java.util.List;
-import libra.preprocess.indexing.stage1.KmerHistogramBuilder;
-import libra.preprocess.indexing.stage2.KmerIndexBuilder;
-import libra.preprocess.indexing.stage3.KmerStatisticsBuilder;
+import libra.preprocess.stage1.KmerHistogramBuilder;
+import libra.preprocess.stage2.KmerIndexBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 
@@ -32,7 +31,6 @@ public class Preprocessor {
     
     private static int RUN_STAGE_1 = 0x01;
     private static int RUN_STAGE_2 = 0x02;
-    private static int RUN_STAGE_3 = 0x04;
     
     private static boolean isHelpParam(String[] args) {
         if(args.length < 1 || 
@@ -50,15 +48,12 @@ public class Preprocessor {
                 runStages |= RUN_STAGE_1;
             } else if(arg.equalsIgnoreCase("stage2")) {
                 runStages |= RUN_STAGE_2;
-            } else if(arg.equalsIgnoreCase("stage3")) {
-                runStages |= RUN_STAGE_3;
             }
         }
         
         if(runStages == 0) {
             runStages |= RUN_STAGE_1;
             runStages |= RUN_STAGE_2;
-            runStages |= RUN_STAGE_3;
         }
         return runStages;
     }
@@ -67,8 +62,7 @@ public class Preprocessor {
         List<String> param = new ArrayList<String>();
         for(String arg : args) {
             if(!arg.equalsIgnoreCase("stage1") &&
-                    !arg.equalsIgnoreCase("stage2") &&
-                    !arg.equalsIgnoreCase("stage3")) {
+                    !arg.equalsIgnoreCase("stage2")) {
                 param.add(arg);
             }
         }
@@ -94,10 +88,6 @@ public class Preprocessor {
             if((runStages & RUN_STAGE_2) == RUN_STAGE_2 && res == 0) {
                 res = KmerIndexBuilder.main2(params);
             }
-
-            if((runStages & RUN_STAGE_3) == RUN_STAGE_3 && res == 0) {
-                res = KmerStatisticsBuilder.main2(params);
-            }
         } catch (Exception e) {
             LOG.error(e);
         }
@@ -116,7 +106,5 @@ public class Preprocessor {
         System.out.println("> \tBuild Kmer Histogram");
         System.out.println("> stage2");
         System.out.println("> \tBuild Kmer Indexes");
-        System.out.println("> stage3");
-        System.out.println("> \tBuild Kmer Statistics");
     }
 }

@@ -13,60 +13,52 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.indexing.stage1;
+package libra.preprocess.stage2;
 
-import libra.preprocess.common.helpers.KmerHistogramHelper;
 import java.io.IOException;
+import libra.common.algorithms.KmerKeySelection.KmerRecord;
 import libra.common.fasta.FastaRead;
+import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.preprocess.common.PreprocessorConfig;
-import libra.preprocess.common.kmerhistogram.KmerHistogram;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.mapreduce.Mapper;
-import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 /**
  *
  * @author iychoi
  */
-public class KmerHistogramBuilderMapper extends Mapper<LongWritable, FastaRead, NullWritable, NullWritable> {
+public class KmerIndexBuilderMapper extends Mapper<LongWritable, FastaRead, CompressedSequenceWritable, IntWritable> {
     
-    private static final Log LOG = LogFactory.getLog(KmerHistogramBuilderMapper.class);
+    private static final Log LOG = LogFactory.getLog(KmerIndexBuilderMapper.class);
     
     private PreprocessorConfig ppConfig;
-    
-    private KmerHistogram histogram;
     
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
         
         this.ppConfig = PreprocessorConfig.createInstance(conf);
-        
-        FileSplit inputSplit = (FileSplit)context.getInputSplit();
-        
-        this.histogram = new KmerHistogram(inputSplit.getPath().getName(), this.ppConfig.getKmerSize());
     }
     
     @Override
     protected void map(LongWritable key, FastaRead value, Context context) throws IOException, InterruptedException {
-        this.histogram.takeSample(value.getSequence());
+        String sequence = value.getSequence();
+        
+        for (int i = 0; i < (sequence.length() - this.ppConfig.getKmerSize() + 1); i++) {
+            String kmer = sequence.substring(i, i + this.ppConfig.getKmerSize());
+            
+            KmerRecord kmerRecord = new KmerRecord(kmer);
+            KmerRecord keyRecord = kmerRecord.getSelectedKey();
+            
+            context.write(new CompressedSequenceWritable(keyRecord.getSequence()), new IntWritable(1));
+        }
     }
     
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-        String sampleName = this.histogram.getSampleName();
-        String histogramFileName = KmerHistogramHelper.makeKmerHistogramFileName(sampleName);
-
-        LOG.info("create a k-mer histogram file : " + histogramFileName);
-        Path histogramOutputFile = new Path(this.ppConfig.getKmerHistogramPath(), histogramFileName);
-        FileSystem outputFileSystem = histogramOutputFile.getFileSystem(context.getConfiguration());
-
-        this.histogram.saveTo(outputFileSystem, histogramOutputFile);
     }
 }
