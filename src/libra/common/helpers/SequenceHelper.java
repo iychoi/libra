@@ -240,4 +240,22 @@ public class SequenceHelper {
         }
         return 0;
     }
+    
+    public static boolean isValidSequence(String sequence) {
+        for(int i=0;i<sequence.length();i++) {
+            char ch = sequence.charAt(i);
+            if(ch == 'A') {
+                continue;
+            } else if(ch == 'C') {
+                continue;
+            } else if(ch == 'G') {
+                continue;
+            } else if(ch == 'T') {
+                continue;
+            } else {
+                return false;
+            }
+        }
+        return true;
+    }
 }

@@ -19,6 +19,7 @@ import java.io.IOException;
 import libra.common.algorithms.KmerKeySelection.KmerRecord;
 import libra.common.fasta.FastaRead;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
+import libra.common.helpers.SequenceHelper;
 import libra.preprocess.common.PreprocessorConfig;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -50,6 +51,10 @@ public class KmerIndexBuilderMapper extends Mapper<LongWritable, FastaRead, Comp
         
         for (int i = 0; i < (sequence.length() - this.ppConfig.getKmerSize() + 1); i++) {
             String kmer = sequence.substring(i, i + this.ppConfig.getKmerSize());
+            if(!SequenceHelper.isValidSequence(kmer)) {
+                LOG.info("discard invalid kmer sequence : " + kmer);
+                continue;
+            }
             
             KmerRecord kmerRecord = new KmerRecord(kmer);
             KmerRecord keyRecord = kmerRecord.getSelectedKey();

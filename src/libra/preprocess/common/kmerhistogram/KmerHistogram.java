@@ -23,6 +23,7 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 import libra.common.algorithms.KmerKeySelection;
+import libra.common.helpers.SequenceHelper;
 import libra.common.json.JsonSerializer;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -106,6 +107,10 @@ public class KmerHistogram {
         for (int i = 0; i < (sequence.length() - this.kmerSize + 1); i++) {
             // generate kmer
             String kmer = sequence.substring(i, i + this.kmerSize);
+            if(!SequenceHelper.isValidSequence(kmer)) {
+                LOG.info("discard invalid kmer sequence : " + kmer);
+                continue;
+            }
             
             String selectedKey = this.keySelectionAlg.selectKey(kmer);
             
