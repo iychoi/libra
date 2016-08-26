@@ -65,10 +65,10 @@ public class Core {
         return param.toArray(new String[0]);
     }
     
-    public static void main(String[] args) throws Exception {
+    public static int main2(String[] args) throws Exception {
         if(isHelpParam(args)) {
             printHelp();
-            return;
+            return 1;
         }
         
         int runMode = checkRunMode(args);
@@ -83,7 +83,15 @@ public class Core {
             }
         } catch (Exception e) {
             LOG.error(e);
+            res = 1;
         }
+        
+        return res;
+    }
+    
+    public static void main(String[] args) throws Exception {
+        int res = main2(args);
+        System.exit(res);
     }
 
     private static void printHelp() {
