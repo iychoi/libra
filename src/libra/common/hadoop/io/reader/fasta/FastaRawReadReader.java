@@ -206,7 +206,7 @@ public class FastaRawReadReader extends RecordReader<LongWritable, FastaRawRead>
                     this.prevLine = newLine;
                     this.prevSize = newSize;
                     
-                    if(this.pos + newSize < this.end) {
+                    if(this.pos < this.end) {
                         foundNextRead = true;
                     } else {
                         foundNextRead = false;
