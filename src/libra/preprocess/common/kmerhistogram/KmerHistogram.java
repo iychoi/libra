@@ -104,12 +104,26 @@ public class KmerHistogram {
     
     @JsonIgnore
     public void takeSample(String sequence) {
+        boolean pvalid = false;
         for (int i = 0; i < (sequence.length() - this.kmerSize + 1); i++) {
             // generate kmer
             String kmer = sequence.substring(i, i + this.kmerSize);
-            if(!SequenceHelper.isValidSequence(kmer)) {
-                LOG.info("discard invalid kmer sequence : " + kmer);
-                continue;
+            if(pvalid) {
+                if(!SequenceHelper.isValidSequence(kmer.charAt(this.kmerSize - 1))) {
+                    //LOG.info("discard invalid kmer sequence : " + kmer);
+                    pvalid = false;
+                    continue;
+                } else {
+                    pvalid = true;
+                }
+            } else {
+                if(!SequenceHelper.isValidSequence(kmer)) {
+                    //LOG.info("discard invalid kmer sequence : " + kmer);
+                    pvalid = false;
+                    continue;
+                } else {
+                    pvalid = true;
+                }
             }
             
             String selectedKey = this.keySelectionAlg.selectKey(kmer);

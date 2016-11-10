@@ -17,6 +17,7 @@ package libra.preprocess.stage2;
 
 import java.io.IOException;
 import libra.common.algorithms.KmerKeySelection.KmerRecord;
+import libra.common.fasta.KmerLines;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
 import libra.preprocess.common.PreprocessorConfig;
@@ -25,14 +26,13 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 /**
  *
  * @author iychoi
  */
-public class KmerIndexBuilderMapper extends Mapper<LongWritable, Text, CompressedSequenceWritable, IntWritable> {
+public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, CompressedSequenceWritable, IntWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilderMapper.class);
     
@@ -46,20 +46,38 @@ public class KmerIndexBuilderMapper extends Mapper<LongWritable, Text, Compresse
     }
     
     @Override
-    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-        String sequence = value.toString();
-        
-        for (int i = 0; i < (sequence.length() - this.ppConfig.getKmerSize() + 1); i++) {
-            String kmer = sequence.substring(i, i + this.ppConfig.getKmerSize());
-            if(!SequenceHelper.isValidSequence(kmer)) {
-                LOG.info("discard invalid kmer sequence : " + kmer);
-                continue;
+    protected void map(LongWritable key, KmerLines value, Context context) throws IOException, InterruptedException {
+        for(String line : value.get()) {
+            if(line != null) {
+                String sequence = line;
+
+                boolean pvalid = false;
+                for (int i = 0; i < (sequence.length() - this.ppConfig.getKmerSize() + 1); i++) {
+                    String kmer = sequence.substring(i, i + this.ppConfig.getKmerSize());
+                    if(pvalid) {
+                        if(!SequenceHelper.isValidSequence(kmer.charAt(this.ppConfig.getKmerSize() - 1))) {
+                            //LOG.info("discard invalid kmer sequence : " + kmer);
+                            pvalid = false;
+                            continue;
+                        } else {
+                            pvalid = true;
+                        }
+                    } else {
+                        if(!SequenceHelper.isValidSequence(kmer)) {
+                            //LOG.info("discard invalid kmer sequence : " + kmer);
+                            pvalid = false;
+                            continue;
+                        } else {
+                            pvalid = true;
+                        }
+                    }
+                    
+                    KmerRecord kmerRecord = new KmerRecord(kmer);
+                    KmerRecord keyRecord = kmerRecord.getSelectedKey();
+
+                    context.write(new CompressedSequenceWritable(keyRecord.getSequence()), new IntWritable(1));
+                }
             }
-            
-            KmerRecord kmerRecord = new KmerRecord(kmer);
-            KmerRecord keyRecord = kmerRecord.getSelectedKey();
-            
-            context.write(new CompressedSequenceWritable(keyRecord.getSequence()), new IntWritable(1));
         }
     }
     

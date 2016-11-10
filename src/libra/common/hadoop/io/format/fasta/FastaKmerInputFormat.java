@@ -16,13 +16,13 @@
 package libra.common.hadoop.io.format.fasta;
 
 import java.io.IOException;
-import libra.common.hadoop.io.reader.fasta.FastaKmerReader;
+import libra.common.fasta.KmerLines;
+import libra.common.hadoop.io.reader.fasta.FastaKmerGroupReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
@@ -36,7 +36,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  *
  * @author iychoi
  */
-public class FastaKmerInputFormat extends FileInputFormat<LongWritable, Text> {
+public class FastaKmerInputFormat extends FileInputFormat<LongWritable, KmerLines> {
 
     private static final Log LOG = LogFactory.getLog(FastaKmerInputFormat.class);
     
@@ -44,10 +44,10 @@ public class FastaKmerInputFormat extends FileInputFormat<LongWritable, Text> {
     private final static String CONF_KMER_SIZE = "libra.comm.hadoop.io.format.fasta.kmersize";
     
     @Override
-    public RecordReader<LongWritable, Text> createRecordReader(InputSplit split,
+    public RecordReader<LongWritable, KmerLines> createRecordReader(InputSplit split,
             TaskAttemptContext context) throws IOException,
             InterruptedException {
-        return new FastaKmerReader();
+        return new FastaKmerGroupReader();
     }
     
     @Override

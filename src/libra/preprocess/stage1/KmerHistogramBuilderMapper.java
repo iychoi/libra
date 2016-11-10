@@ -17,6 +17,7 @@ package libra.preprocess.stage1;
 
 import libra.preprocess.common.helpers.KmerHistogramHelper;
 import java.io.IOException;
+import libra.common.fasta.KmerLines;
 import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.kmerhistogram.KmerHistogram;
 import org.apache.commons.logging.Log;
@@ -26,7 +27,6 @@ import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
@@ -34,7 +34,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  *
  * @author iychoi
  */
-public class KmerHistogramBuilderMapper extends Mapper<LongWritable, Text, NullWritable, NullWritable> {
+public class KmerHistogramBuilderMapper extends Mapper<LongWritable, KmerLines, NullWritable, NullWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerHistogramBuilderMapper.class);
     
@@ -54,8 +54,12 @@ public class KmerHistogramBuilderMapper extends Mapper<LongWritable, Text, NullW
     }
     
     @Override
-    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
-        this.histogram.takeSample(value.toString());
+    protected void map(LongWritable key, KmerLines value, Context context) throws IOException, InterruptedException {
+        for(String line : value.get()) {
+            if(line != null) {
+                this.histogram.takeSample(line);
+            }
+        }
     }
     
     @Override

@@ -29,6 +29,9 @@ public class SequenceHelper {
     private static char[] convBitToCharLUT = {'A', 'C', 'G', 'T'};
     private static byte[] convCharToBitLUT = {0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
     0x00, 0x00, 0x00, 0x03, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    private static boolean[] charAcceptLUT = {true, false, true, false, false, false, true, false, false, false, false, false, false, false, false, false,
+    false, false, false, true, false, false, false, false, false, false};
+    
     
     public static char getComplement(char ch) {
         return ComplementCharLUT[((byte)ch) - 'A'];
@@ -241,16 +244,18 @@ public class SequenceHelper {
         return 0;
     }
     
+    public static boolean isValidSequence(char ch) {
+        if(ch >= 'A' && ch <= 'Z') {
+            return charAcceptLUT[ch-'A'];
+        } else {
+            return false;
+        }
+    }
+    
     public static boolean isValidSequence(String sequence) {
         for(int i=0;i<sequence.length();i++) {
             char ch = sequence.charAt(i);
-            if(ch == 'A') {
-                continue;
-            } else if(ch == 'C') {
-                continue;
-            } else if(ch == 'G') {
-                continue;
-            } else if(ch == 'T') {
+            if(isValidSequence(ch)) {
                 continue;
             } else {
                 return false;

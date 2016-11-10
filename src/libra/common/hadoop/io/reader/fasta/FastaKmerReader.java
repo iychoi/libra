@@ -16,10 +16,6 @@
 package libra.common.hadoop.io.reader.fasta;
 
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
-import libra.common.fasta.FastaRawRead;
-import libra.common.fasta.FastaRawReadLine;
 import libra.common.hadoop.io.format.fasta.FastaKmerInputFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -148,7 +144,7 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             long curpos = this.start - 1000;
             while(curpos < this.start) {
                 curpos += in2.readLine(tempLine, this.maxLineLength, (int) (this.start - curpos));
-                LOG.info("Check prev-line - " + curpos + " / " + tempLine.toString());
+                //LOG.info("Check prev-line - " + curpos + " / " + tempLine.toString());
             }
             
             if(tempLine.charAt(0) == READ_DELIMITER) {
@@ -229,7 +225,7 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             String bufferString = this.buffer.toString();
             String readString = this.tempLine.toString().trim();
             String newString = bufferString + readString;
-            LOG.info("Pass sequence to mapper - " + newString);
+            //LOG.info("Pass sequence to mapper - " + newString);
             this.value.set(newString);
             if(newString.length() > this.kmersize) {
                 this.buffer.set(newString.substring(newString.length() - this.kmersize + 1));
