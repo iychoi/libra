@@ -32,6 +32,7 @@ import org.apache.hadoop.io.WritableComparator;
 /**
  * Provide access to an existing map.
  */
+@SuppressWarnings({"rawtypes","deprecation"})
 public class IndexCloseableMapFileReader implements java.io.Closeable {
 
     private static final Log LOG = LogFactory.getLog(IndexCloseableMapFileReader.class);
@@ -127,6 +128,7 @@ public class IndexCloseableMapFileReader implements java.io.Closeable {
      * Override this method to specialize the type of
      * {@link SequenceFile.Reader} returned.
      */
+    
     protected SequenceFile.Reader createDataFileReader(FileSystem fs, Path dataFile, Configuration conf) throws IOException {
         return new SequenceFile.Reader(fs, dataFile, conf);
     }

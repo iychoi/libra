@@ -38,6 +38,7 @@ import org.apache.hadoop.io.MapFile;
  *
  * @author iychoi
  */
+@SuppressWarnings("deprecation")
 public class KmerIndexHelper {
     private final static String KMER_INDEX_INDEX_PATH_EXP = ".+\\." + PreprocessorConstants.KMER_INDEX_INDEX_FILENAME_EXTENSION + "$";
     private final static Pattern KMER_INDEX_INDEX_PATH_PATTERN = Pattern.compile(KMER_INDEX_INDEX_PATH_EXP);

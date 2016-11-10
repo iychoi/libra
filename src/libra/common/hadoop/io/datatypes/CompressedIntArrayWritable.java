@@ -30,6 +30,7 @@ import static org.apache.hadoop.io.WritableComparator.compareBytes;
  *
  * @author iychoi
  */
+@SuppressWarnings("cast")
 public class CompressedIntArrayWritable extends BinaryComparable implements WritableComparable<BinaryComparable> {
 
     private static final Log LOG = LogFactory.getLog(CompressedIntArrayWritable.class);

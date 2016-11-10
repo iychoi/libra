@@ -33,6 +33,7 @@ import org.apache.hadoop.fs.Path;
  *
  * @author iychoi
  */
+@SuppressWarnings("deprecation")
 public class KmerHistogramHelper {
     private final static String KMER_HISTOGRAM_PATH_EXP = ".+\\." + PreprocessorConstants.KMER_HISTOGRAM_FILENAME_EXTENSION + "$";
     private final static Pattern KMER_HISTOGRAM_PATH_PATTERN = Pattern.compile(KMER_HISTOGRAM_PATH_EXP);

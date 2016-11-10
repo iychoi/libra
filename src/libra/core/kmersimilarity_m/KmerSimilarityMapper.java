@@ -40,6 +40,7 @@ import org.apache.hadoop.mapreduce.Mapper;
  *
  * @author iychoi
  */
+@SuppressWarnings({"deprecation","cast"})
 public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, KmerMatchResult, Text, Text> {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityMapper.class);

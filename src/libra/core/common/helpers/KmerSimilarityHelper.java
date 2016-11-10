@@ -32,6 +32,7 @@ import org.apache.hadoop.fs.Path;
  *
  * @author iychoi
  */
+@SuppressWarnings("deprecation")
 public class KmerSimilarityHelper {
     private final static String KMER_SIMILARITY_RESULT_PATH_EXP = ".+\\." + CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION + "\\.\\d+$";
     private final static Pattern KMER_SIMILARITY_RESULT_PATH_PATTERN = Pattern.compile(KMER_SIMILARITY_RESULT_PATH_EXP);

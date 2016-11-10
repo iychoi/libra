@@ -35,6 +35,7 @@ import org.apache.hadoop.mapreduce.Reducer;
  *
  * @author iychoi
  */
+@SuppressWarnings("cast")
 public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, CompressedIntArrayWritable, Text, Text> {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityReducer.class);

@@ -57,6 +57,7 @@ import org.apache.hadoop.util.ToolRunner;
  *
  * @author iychoi
  */
+@SuppressWarnings("deprecation")
 public class KmerIndexBuilder extends Configured implements Tool {
     
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilder.class);
