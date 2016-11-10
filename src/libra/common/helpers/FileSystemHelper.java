@@ -29,6 +29,7 @@ import org.apache.hadoop.fs.Path;
  *
  * @author iychoi
  */
+@SuppressWarnings("deprecation")
 public class FileSystemHelper {
     public static String makeCommaSeparated(Path[] strs) {
         if(strs == null) {

@@ -52,6 +52,7 @@ import org.apache.hadoop.util.ToolRunner;
  *
  * @author iychoi
  */
+@SuppressWarnings("deprecation")
 public class KmerSimilarityMap extends Configured implements Tool {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityMap.class);
