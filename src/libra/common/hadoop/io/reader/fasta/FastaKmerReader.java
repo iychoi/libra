@@ -147,7 +147,8 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             Text tempLine = new Text();
             long curpos = this.start - 1000;
             while(curpos < this.start) {
-                curpos += in2.readLine(tempLine, 0, (int) (this.start - curpos));
+                curpos += in2.readLine(tempLine, this.maxLineLength, (int) (this.start - curpos));
+                LOG.info("Check prev-line - " + curpos + " / " + tempLine.toString());
             }
             
             if(tempLine.charAt(0) == READ_DELIMITER) {
@@ -156,8 +157,19 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             } else {
                 // leave k-1 seq in the buffer
                 String seq = tempLine.toString().trim();
-                String left = seq.substring(seq.length() - this.kmersize + 1);
-                this.buffer.set(left);
+                if(seq.length() >= this.kmersize - 1) {
+                    String left = seq.substring(seq.length() - this.kmersize + 1);
+                    this.buffer.set(left);
+                } else {
+                    String bufferString = this.buffer.toString();
+                    String newString = bufferString + seq;
+                    if(newString.length() >= this.kmersize - 1) {
+                        String left = newString.substring(newString.length() - this.kmersize + 1);
+                        this.buffer.set(left);
+                    } else {
+                        this.buffer.set(newString);
+                    }
+                }
             }
             
             in2.close();
@@ -187,6 +199,7 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
         this.tempLine.clear();
         while(this.pos < this.end) {
             newSize = this.in.readLine(this.tempLine, this.maxLineLength, (int) Math.max(Math.min(Integer.MAX_VALUE, this.end - this.pos), this.maxLineLength));
+            //LOG.info("We read - " + this.tempLine.toString());
             if(newSize == 0) {
                 // EOF
                 break;
@@ -196,6 +209,7 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             
             if(this.tempLine.charAt(0) == READ_DELIMITER) {
                 this.buffer.clear();
+                this.tempLine.clear();
                 // skip if it's header
             } else {
                 if(newSize < this.maxLineLength) {
@@ -215,6 +229,7 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             String bufferString = this.buffer.toString();
             String readString = this.tempLine.toString().trim();
             String newString = bufferString + readString;
+            LOG.info("Pass sequence to mapper - " + newString);
             this.value.set(newString);
             if(newString.length() > this.kmersize) {
                 this.buffer.set(newString.substring(newString.length() - this.kmersize + 1));
