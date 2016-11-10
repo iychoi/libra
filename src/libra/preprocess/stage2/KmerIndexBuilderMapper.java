@@ -17,7 +17,6 @@ package libra.preprocess.stage2;
 
 import java.io.IOException;
 import libra.common.algorithms.KmerKeySelection.KmerRecord;
-import libra.common.fasta.FastaRead;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
 import libra.preprocess.common.PreprocessorConfig;
@@ -26,13 +25,14 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 /**
  *
  * @author iychoi
  */
-public class KmerIndexBuilderMapper extends Mapper<LongWritable, FastaRead, CompressedSequenceWritable, IntWritable> {
+public class KmerIndexBuilderMapper extends Mapper<LongWritable, Text, CompressedSequenceWritable, IntWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilderMapper.class);
     
@@ -46,8 +46,8 @@ public class KmerIndexBuilderMapper extends Mapper<LongWritable, FastaRead, Comp
     }
     
     @Override
-    protected void map(LongWritable key, FastaRead value, Context context) throws IOException, InterruptedException {
-        String sequence = value.getSequence();
+    protected void map(LongWritable key, Text value, Context context) throws IOException, InterruptedException {
+        String sequence = value.toString();
         
         for (int i = 0; i < (sequence.length() - this.ppConfig.getKmerSize() + 1); i++) {
             String kmer = sequence.substring(i, i + this.ppConfig.getKmerSize());

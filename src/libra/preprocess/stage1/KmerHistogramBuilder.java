@@ -17,7 +17,7 @@ package libra.preprocess.stage1;
 
 import libra.preprocess.common.helpers.KmerHistogramHelper;
 import java.io.IOException;
-import libra.common.hadoop.io.format.fasta.FastaReadInputFormat;
+import libra.common.hadoop.io.format.fasta.FastaKmerInputFormat;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
 import libra.common.cmdargs.CommandArgumentsParser;
@@ -105,8 +105,9 @@ public class KmerHistogramBuilder extends Configured implements Tool {
 
         // Mapper
         job.setMapperClass(KmerHistogramBuilderMapper.class);
-        FastaReadInputFormat.setSplitable(conf, false);
-        job.setInputFormatClass(FastaReadInputFormat.class);
+        FastaKmerInputFormat.setSplitable(conf, false);
+        FastaKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
+        job.setInputFormatClass(FastaKmerInputFormat.class);
         job.setMapOutputKeyClass(NullWritable.class);
         job.setMapOutputValueClass(NullWritable.class);
         

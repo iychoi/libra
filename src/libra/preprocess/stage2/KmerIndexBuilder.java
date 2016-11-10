@@ -21,10 +21,10 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
-import libra.common.hadoop.io.format.fasta.FastaReadInputFormat;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
 import libra.common.cmdargs.CommandArgumentsParser;
+import libra.common.hadoop.io.format.fasta.FastaKmerInputFormat;
 import libra.common.helpers.MapReduceClusterHelper;
 import libra.common.helpers.MapReduceHelper;
 import libra.preprocess.PreprocessorCmdArgs;
@@ -130,7 +130,8 @@ public class KmerIndexBuilder extends Configured implements Tool {
 
             // Mapper
             job.setMapperClass(KmerIndexBuilderMapper.class);
-            job.setInputFormatClass(FastaReadInputFormat.class);
+            FastaKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
+            job.setInputFormatClass(FastaKmerInputFormat.class);
             job.setMapOutputKeyClass(CompressedSequenceWritable.class);
             job.setMapOutputValueClass(IntWritable.class);
             
