@@ -180,18 +180,11 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             this.value = new Text();
         }
         
-        if(this.buffer.getLength() >= this.kmersize) {
-            // yes we have k-mer seq in the buffer
-            String bufferString = this.buffer.toString();
-            this.value.set(bufferString.substring(0, this.kmersize));
-            this.buffer.set(bufferString.substring(1));
-            return true;
-        } 
-        
         int newSize = 0;
         if(this.tempLine == null) {
             this.tempLine = new Text();
         }
+        this.tempLine.clear();
         while(this.pos < this.end) {
             newSize = this.in.readLine(this.tempLine, this.maxLineLength, (int) Math.max(Math.min(Integer.MAX_VALUE, this.end - this.pos), this.maxLineLength));
             if(newSize == 0) {
@@ -200,12 +193,17 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             }
             
             this.pos += newSize;
-            if(newSize < this.maxLineLength) {
-                break;
-            }
             
-            // line too long
-            LOG.info("Skipped line of size " + newSize + " at pos " + (this.pos - newSize));
+            if(this.tempLine.charAt(0) == READ_DELIMITER) {
+                this.buffer.clear();
+                // skip if it's header
+            } else {
+                if(newSize < this.maxLineLength) {
+                    break;
+                }
+                // line too long
+                LOG.info("Skipped line of size " + newSize + " at pos " + (this.pos - newSize));
+            }
         }
         
         if(newSize == 0) {
@@ -217,8 +215,12 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             String bufferString = this.buffer.toString();
             String readString = this.tempLine.toString().trim();
             String newString = bufferString + readString;
-            this.value.set(newString.substring(0, this.kmersize));
-            this.buffer.set(newString.substring(1));
+            this.value.set(newString);
+            if(newString.length() > this.kmersize) {
+                this.buffer.set(newString.substring(newString.length() - this.kmersize + 1));
+            } else {
+                this.buffer.clear();
+            }
             return true;
         }
     }
