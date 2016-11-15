@@ -44,7 +44,7 @@ public class PreprocessorConfig {
     private String reportFilePath;
     
     private int kmerSize = DEFAULT_KMERSIZE;
-    private ArrayList<String> fastaPaths = new ArrayList<String>();
+    private ArrayList<String> sequencePaths = new ArrayList<String>();
     private String kmerHistogramPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_HISTOGRAM_PATH;
     private String kmerIndexPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_INDEX_PATH;
     private String kmerStatisticsPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_STATISITCS_PATH;
@@ -83,19 +83,19 @@ public class PreprocessorConfig {
         this.kmerSize = kmerSize;
     }
 
-    @JsonProperty("fasta_path")
-    public Collection<String> getFastaPath() {
-        return this.fastaPaths;
+    @JsonProperty("sequence_path")
+    public Collection<String> getSequencePath() {
+        return this.sequencePaths;
     }
     
-    @JsonProperty("fasta_path")
-    public void addFastaPath(Collection<String> fastaPaths) {
-        this.fastaPaths.addAll(fastaPaths);
+    @JsonProperty("sequence_path")
+    public void addSequencePath(Collection<String> sequencePaths) {
+        this.sequencePaths.addAll(sequencePaths);
     }
     
     @JsonIgnore
-    public void addFastaPath(String fastaPath) {
-        this.fastaPaths.add(fastaPath);
+    public void addSequencePath(String sequencePath) {
+        this.sequencePaths.add(sequencePath);
     }
 
     @JsonIgnore

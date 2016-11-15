@@ -24,7 +24,7 @@ import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
 import libra.common.cmdargs.CommandArgumentsParser;
-import libra.common.hadoop.io.format.fasta.FastaKmerInputFormat;
+import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
 import libra.common.helpers.MapReduceClusterHelper;
 import libra.common.helpers.MapReduceHelper;
 import libra.preprocess.PreprocessorCmdArgs;
@@ -90,7 +90,7 @@ public class KmerIndexBuilder extends Configured implements Tool {
     }
     
     private void validatePreprocessorConfig(PreprocessorConfig ppConfig) throws PreprocessorConfigException {
-        if(ppConfig.getFastaPath().size() <= 0) {
+        if(ppConfig.getSequencePath().size() <= 0) {
             throw new PreprocessorConfigException("cannot find input sample path");
         }
         
@@ -117,7 +117,7 @@ public class KmerIndexBuilder extends Configured implements Tool {
         // set user configuration
         ppConfig.saveTo(conf);
         
-        Path[] inputFiles = FileSystemHelper.getAllFastaFilePath(conf, ppConfig.getFastaPath());
+        Path[] inputFiles = FileSystemHelper.getAllSequenceFilePath(conf, ppConfig.getSequencePath());
         
         boolean job_result = true;
         List<Job> jobs = new ArrayList<Job>();
@@ -131,8 +131,8 @@ public class KmerIndexBuilder extends Configured implements Tool {
 
             // Mapper
             job.setMapperClass(KmerIndexBuilderMapper.class);
-            FastaKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
-            job.setInputFormatClass(FastaKmerInputFormat.class);
+            SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
+            job.setInputFormatClass(SequenceKmerInputFormat.class);
             job.setMapOutputKeyClass(CompressedSequenceWritable.class);
             job.setMapOutputValueClass(IntWritable.class);
             

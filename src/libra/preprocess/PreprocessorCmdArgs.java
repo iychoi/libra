@@ -105,7 +105,7 @@ public class PreprocessorCmdArgs extends CommandArgumentsBase {
         
         config.setReportPath(this.reportfile);
         config.setKmerSize(this.kmerSize);
-        config.addFastaPath(this.inputPaths);
+        config.addSequencePath(this.inputPaths);
         config.setOutputRootPath(this.outputPath);
         return config;
     }

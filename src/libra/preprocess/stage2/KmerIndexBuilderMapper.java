@@ -17,7 +17,7 @@ package libra.preprocess.stage2;
 
 import java.io.IOException;
 import libra.common.algorithms.KmerKeySelection.KmerRecord;
-import libra.common.fasta.KmerLines;
+import libra.common.sequence.KmerLines;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
 import libra.preprocess.common.PreprocessorConfig;

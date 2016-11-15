@@ -13,30 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.fasta;
+package libra.common.sequence;
 
 /**
  *
  * @author iychoi
  */
-public class KmerLines {
-    private int len;
-    private String[] lines;
-    
-    public KmerLines(int len) {
-        this.len = len;
-        this.lines = new String[len];
+public class FastaRawReadLine {
+    private long lineOffset;
+    private String line;
+
+    public FastaRawReadLine(long lineOffset, String line) {
+        this.lineOffset = lineOffset;
+        this.line = line;
     }
-    
-    public void set(int idx, String line) {
-        this.lines[idx] = line;
+
+    public long getLineOffset() {
+        return this.lineOffset;
     }
-    
-    public String[] get() {
-        return this.lines;
-    }
-    
-    public String get(int idx) {
-        return this.lines[idx];
+
+    public String getLine() {
+        return this.line;
     }
 }

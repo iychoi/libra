@@ -13,26 +13,35 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.hadoop.io.reader.fasta;
+package libra.common.hadoop.io.reader.sequence;
 
 import java.io.IOException;
-import libra.common.fasta.KmerLines;
+import libra.common.sequence.FastaPathFilter;
+import libra.common.sequence.FastqPathFilter;
+import libra.common.sequence.KmerLines;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 /**
  *
  * @author iychoi
  */
-public class FastaKmerGroupReader extends RecordReader<LongWritable, KmerLines> {
+public class SequenceKmerGroupReader extends RecordReader<LongWritable, KmerLines> {
 
+    private static final Log LOG = LogFactory.getLog(SequenceKmerGroupReader.class);
+    
     private final static int GROUP_SIZE = 50;
     
-    private FastaKmerReader rawKmerReader = new FastaKmerReader();
+    private RecordReader<LongWritable, Text> rawKmerReader;
     
     private LongWritable key;
     private KmerLines value;
@@ -44,13 +53,29 @@ public class FastaKmerGroupReader extends RecordReader<LongWritable, KmerLines> 
 
     @Override
     public KmerLines getCurrentValue() throws IOException, InterruptedException {
+        //LOG.info("Value: " + this.value.toString());
         return this.value;
     }
 
     @Override
     public void initialize(InputSplit genericSplit, TaskAttemptContext context)
             throws IOException, InterruptedException {
-
+        FileSplit split = (FileSplit) genericSplit;
+        Configuration conf = context.getConfiguration();
+        Path file = split.getPath();
+        
+        FastaPathFilter fastaFilter = new FastaPathFilter();
+        FastqPathFilter fastqFilter = new FastqPathFilter();
+        if(fastaFilter.accept(file)) {
+            // fasta
+            this.rawKmerReader = new FastaKmerReader();
+        } else if(fastqFilter.accept(file)) {
+            // fastq
+            this.rawKmerReader = new FastqKmerReader();
+        } else {
+            throw new IOException("Unknown file format - " + file.getName());
+        }
+        
         this.rawKmerReader.initialize(genericSplit, context);
         
         this.key = null;
@@ -93,7 +118,7 @@ public class FastaKmerGroupReader extends RecordReader<LongWritable, KmerLines> 
     }
 
     @Override
-    public float getProgress() throws IOException {
+    public float getProgress() throws IOException, InterruptedException {
         return this.rawKmerReader.getProgress();
     }
 

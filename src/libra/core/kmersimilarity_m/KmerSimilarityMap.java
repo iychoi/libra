@@ -153,8 +153,8 @@ public class KmerSimilarityMap extends Configured implements Tool {
         
         KmerMatchFileMapping fileMapping = new KmerMatchFileMapping();
         for(Path kmerIndexFile : kmerIndexFiles) {
-            String fastaFilename = KmerIndexHelper.getFastaFileName(kmerIndexFile.getName());
-            fileMapping.addFastaFile(fastaFilename);
+            String sequenceFilename = KmerIndexHelper.getSequenceFileName(kmerIndexFile.getName());
+            fileMapping.addSequenceFile(sequenceFilename);
         }
         fileMapping.saveTo(conf);
         

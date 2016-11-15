@@ -17,7 +17,7 @@ package libra.preprocess.stage1;
 
 import libra.preprocess.common.helpers.KmerHistogramHelper;
 import java.io.IOException;
-import libra.common.hadoop.io.format.fasta.FastaKmerInputFormat;
+import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
 import libra.common.cmdargs.CommandArgumentsParser;
@@ -76,7 +76,7 @@ public class KmerHistogramBuilder extends Configured implements Tool {
     }
     
     private void validatePreprocessorConfig(PreprocessorConfig ppConfig) throws PreprocessorConfigException {
-        if(ppConfig.getFastaPath().size() <= 0) {
+        if(ppConfig.getSequencePath().size() <= 0) {
             throw new PreprocessorConfigException("cannot find input sample path");
         }
         
@@ -106,9 +106,9 @@ public class KmerHistogramBuilder extends Configured implements Tool {
 
         // Mapper
         job.setMapperClass(KmerHistogramBuilderMapper.class);
-        FastaKmerInputFormat.setSplitable(conf, false);
-        FastaKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
-        job.setInputFormatClass(FastaKmerInputFormat.class);
+        SequenceKmerInputFormat.setSplitable(conf, false);
+        SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
+        job.setInputFormatClass(SequenceKmerInputFormat.class);
         job.setMapOutputKeyClass(NullWritable.class);
         job.setMapOutputValueClass(NullWritable.class);
         
@@ -117,7 +117,7 @@ public class KmerHistogramBuilder extends Configured implements Tool {
         job.setOutputValueClass(NullWritable.class);
         
         // Inputs
-        Path[] inputFiles = FileSystemHelper.getAllFastaFilePath(conf, ppConfig.getFastaPath());
+        Path[] inputFiles = FileSystemHelper.getAllSequenceFilePath(conf, ppConfig.getSequencePath());
         FileInputFormat.addInputPaths(job, FileSystemHelper.makeCommaSeparated(inputFiles));
         
         LOG.info("Input sample files : " + inputFiles.length);

@@ -134,7 +134,7 @@ public class CompressedSequenceWritable extends BinaryComparable implements Writ
         return this.compressedSequence;
     }
     
-    /** A Comparator optimized for CompressedFastaSequenceWritable. */ 
+    /** A Comparator optimized for CompressedSequenceWritable. */ 
     public static class Comparator extends WritableComparator {
 
         public Comparator() {

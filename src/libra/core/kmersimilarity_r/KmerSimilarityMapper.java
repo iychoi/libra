@@ -43,9 +43,9 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Int
         
         FileSplit inputSplit = (FileSplit)context.getInputSplit();
         
-        String fastaFilename = KmerIndexHelper.getFastaFileName(inputSplit.getPath().getParent().getName());
+        String sequenceFilename = KmerIndexHelper.getSequenceFileName(inputSplit.getPath().getParent().getName());
         
-        this.file_id = this.fileMapping.getIDFromFastaFile(fastaFilename);
+        this.file_id = this.fileMapping.getIDFromSequenceFile(sequenceFilename);
     }
     
     @Override

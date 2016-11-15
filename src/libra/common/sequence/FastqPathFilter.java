@@ -13,26 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.fasta;
+package libra.common.sequence;
+
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 
 /**
  *
  * @author iychoi
  */
-public class FastaRawReadLine {
-    private long lineOffset;
-    private String line;
+public class FastqPathFilter implements PathFilter {
 
-    public FastaRawReadLine(long lineOffset, String line) {
-        this.lineOffset = lineOffset;
-        this.line = line;
-    }
-
-    public long getLineOffset() {
-        return this.lineOffset;
-    }
-
-    public String getLine() {
-        return this.line;
+    @Override
+    public boolean accept(Path path) {
+        if(path.getName().toLowerCase().endsWith(".fastq.gz")) {
+            return true;
+        } else if(path.getName().toLowerCase().endsWith(".fastq")) {
+            return true;
+        } else if(path.getName().toLowerCase().endsWith(".fq.gz")) {
+            return true;
+        } else if(path.getName().toLowerCase().endsWith(".fq")) {
+            return true;
+        } 
+        return false;
     }
 }

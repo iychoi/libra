@@ -63,8 +63,8 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, C
         this.tfConsineNormBase = new double[this.valuesLen];
         for(int i=0;i<this.tfConsineNormBase.length;i++) {
             // fill tfConsineNormBase
-            String fastaFilename = this.fileMapping.getFastaFileFromID(i);
-            String statisticsFilename = KmerStatisticsHelper.makeKmerStatisticsFileName(fastaFilename);
+            String sequenceFilename = this.fileMapping.getSequenceFileFromID(i);
+            String statisticsFilename = KmerStatisticsHelper.makeKmerStatisticsFileName(sequenceFilename);
             Path statisticsPath = new Path(this.libraConfig.getKmerStatisticsPath(), statisticsFilename);
             FileSystem fs = statisticsPath.getFileSystem(context.getConfiguration());
             

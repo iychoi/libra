@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.hadoop.io.format.fasta;
+package libra.common.hadoop.io.format.sequence;
 
 import java.io.IOException;
-import libra.common.fasta.KmerLines;
-import libra.common.hadoop.io.reader.fasta.FastaKmerGroupReader;
+import libra.common.sequence.KmerLines;
+import libra.common.hadoop.io.reader.sequence.SequenceKmerGroupReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -36,23 +36,23 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  *
  * @author iychoi
  */
-public class FastaKmerInputFormat extends FileInputFormat<LongWritable, KmerLines> {
+public class SequenceKmerInputFormat extends FileInputFormat<LongWritable, KmerLines> {
 
-    private static final Log LOG = LogFactory.getLog(FastaKmerInputFormat.class);
+    private static final Log LOG = LogFactory.getLog(SequenceKmerInputFormat.class);
     
-    private final static String CONF_SPLITABLE = "libra.comm.hadoop.io.format.fasta.splitable";
-    private final static String CONF_KMER_SIZE = "libra.comm.hadoop.io.format.fasta.kmersize";
+    private final static String CONF_SPLITABLE = "libra.comm.hadoop.io.format.sequence.splitable";
+    private final static String CONF_KMER_SIZE = "libra.comm.hadoop.io.format.sequence.kmersize";
     
     @Override
     public RecordReader<LongWritable, KmerLines> createRecordReader(InputSplit split,
             TaskAttemptContext context) throws IOException,
             InterruptedException {
-        return new FastaKmerGroupReader();
+        return new SequenceKmerGroupReader();
     }
     
     @Override
     protected boolean isSplitable(JobContext context, Path filename) {
-        boolean splitable = FastaKmerInputFormat.isSplitable(context.getConfiguration());
+        boolean splitable = SequenceKmerInputFormat.isSplitable(context.getConfiguration());
         LOG.info("splitable = " + splitable);
         if(!splitable) {
             return false;

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.hadoop.io.reader.fasta;
+package libra.common.hadoop.io.reader.sequence;
 
 import java.io.IOException;
-import libra.common.hadoop.io.format.fasta.FastaKmerInputFormat;
+import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -39,11 +39,12 @@ import org.apache.hadoop.util.LineReader;
  *
  * @author iychoi
  */
-public class FastaKmerReader extends RecordReader<LongWritable, Text> {
+public class FastqKmerReader extends RecordReader<LongWritable, Text> {
 
-    private static final Log LOG = LogFactory.getLog(FastaKmerReader.class);
+    private static final Log LOG = LogFactory.getLog(FastqKmerReader.class);
     
-    public static final char READ_DELIMITER = '>';
+    public static final char READ_DELIMITER = '@';
+    public static final char READ_DELIMITER_P = '+';
     
     private int kmersize = 0;
     private CompressionCodecFactory compressionCodecs = null;
@@ -54,8 +55,7 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
     private int maxLineLength;
     private LongWritable key;
     private Text value;
-    private Text buffer;
-    private Text tempLine;
+    private Text lastLine;
     private boolean isCompressed;
     private long uncompressedSize;
     
@@ -74,7 +74,7 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             throws IOException, InterruptedException {
         FileSplit split = (FileSplit) genericSplit;
         Configuration conf = context.getConfiguration();
-        this.kmersize = FastaKmerInputFormat.getKmerSize(conf);
+        this.kmersize = SequenceKmerInputFormat.getKmerSize(conf);
         this.maxLineLength = conf.getInt("mapred.linerecordreader.maxlength", Integer.MAX_VALUE);
         this.start = split.getStart();
         this.end = this.start + split.getLength();
@@ -129,49 +129,36 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             this.in = new LineReader(fileIn, conf);
         }
         
-        this.buffer = new Text();
-        
         if(inTheMiddle) {
             // find new start line
             this.start += this.in.readLine(new Text(), 0, (int)Math.min((long)Integer.MAX_VALUE, this.end - this.start));
-            
-            // back off
-            FSDataInputStream fileIn2 = fs.open(file);
-            fileIn2.seek(this.start - 1000);
-            
-            LineReader in2 = new LineReader(fileIn2, conf);
-            Text tempLine = new Text();
-            long curpos = this.start - 1000;
-            while(curpos < this.start) {
-                curpos += in2.readLine(tempLine, this.maxLineLength, (int) (this.start - curpos));
-                //LOG.info("Check prev-line - " + curpos + " / " + tempLine.toString());
-            }
-            
-            if(tempLine.charAt(0) == READ_DELIMITER) {
-                // clean start
-                this.buffer.clear();
-            } else {
-                // leave k-1 seq in the buffer
-                String seq = tempLine.toString().trim();
-                if(seq.length() >= this.kmersize - 1) {
-                    String left = seq.substring(seq.length() - this.kmersize + 1);
-                    this.buffer.set(left);
-                } else {
-                    String bufferString = this.buffer.toString();
-                    String newString = bufferString + seq;
-                    if(newString.length() >= this.kmersize - 1) {
-                        String left = newString.substring(newString.length() - this.kmersize + 1);
-                        this.buffer.set(left);
-                    } else {
-                        this.buffer.set(newString);
-                    }
-                }
-            }
-            
-            in2.close();
         }
         
+        this.lastLine = new Text();
+        
         this.pos = this.start;
+        
+        int newSize = 0;
+        boolean found = false;
+        while(this.pos < this.end) {
+            newSize = this.in.readLine(this.lastLine, this.maxLineLength, (int) Math.max(Math.min(Integer.MAX_VALUE, this.end - this.pos), this.maxLineLength));        
+            if(newSize == 0) {
+                // EOF
+                break;
+            }
+            
+            this.pos += newSize;
+            
+            if(this.lastLine.charAt(0) == READ_DELIMITER) {
+                // we found!
+                found = true;
+                break;
+            }
+        }
+        
+        if(!found) {
+            this.lastLine = null;
+        }
         
         this.key = null;
         this.value = null;
@@ -188,51 +175,44 @@ public class FastaKmerReader extends RecordReader<LongWritable, Text> {
             this.value = new Text();
         }
         
-        int newSize = 0;
-        if(this.tempLine == null) {
-            this.tempLine = new Text();
+        if(this.lastLine == null) {
+            // no data
+            return false;
         }
-        this.tempLine.clear();
-        while(this.pos < this.end) {
-            newSize = this.in.readLine(this.tempLine, this.maxLineLength, (int) Math.max(Math.min(Integer.MAX_VALUE, this.end - this.pos), this.maxLineLength));
-            //LOG.info("We read - " + this.tempLine.toString());
+        
+        if(this.lastLine.charAt(0) != READ_DELIMITER) {
+            return false;
+        }
+        
+        boolean found = false;
+        for(int i=0;i<4;i++) {
+            if(i == 3 && this.pos >= this.end) {
+                // outside of a block
+                this.lastLine = null;
+                break;
+            }
+            
+            int newSize = this.in.readLine(this.lastLine, this.maxLineLength, (int) Math.max(Math.min(Integer.MAX_VALUE, this.end - this.pos), this.maxLineLength));
             if(newSize == 0) {
                 // EOF
                 break;
             }
+
+            if(i == 0) {
+                this.value.set(this.lastLine);
+                found = true;
+            }
             
             this.pos += newSize;
-            
-            if(this.tempLine.charAt(0) == READ_DELIMITER) {
-                this.buffer.clear();
-                this.tempLine.clear();
-                // skip if it's header
-            } else {
-                if(newSize < this.maxLineLength) {
-                    break;
-                }
-                // line too long
-                LOG.info("Skipped line of size " + newSize + " at pos " + (this.pos - newSize));
-            }
         }
         
-        if(newSize == 0) {
+        if(found) {
+            return true;
+        } else {
             this.key = null;
             this.value = null;
-            this.buffer = null;
+            this.lastLine = null;
             return false;
-        } else {
-            String bufferString = this.buffer.toString();
-            String readString = this.tempLine.toString().trim();
-            String newString = bufferString + readString;
-            //LOG.info("Pass sequence to mapper - " + newString);
-            this.value.set(newString);
-            if(newString.length() > this.kmersize) {
-                this.buffer.set(newString.substring(newString.length() - this.kmersize + 1));
-            } else {
-                this.buffer.clear();
-            }
-            return true;
         }
     }
 

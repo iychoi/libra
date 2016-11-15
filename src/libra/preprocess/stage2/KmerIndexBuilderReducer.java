@@ -43,10 +43,10 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
             throw new IOException("Unexpected input paths");
         }
 
-        Path inputFastaFilePath = inputPaths[0];
-        String fastaFileName = inputFastaFilePath.getName();
+        Path inputSequenceFilePath = inputPaths[0];
+        String sequenceFileName = inputSequenceFilePath.getName();
 
-        this.logTFSquareCounter = context.getCounter(KmerStatisticsHelper.getCounterGroupNameLogTFSquare(), fastaFileName);
+        this.logTFSquareCounter = context.getCounter(KmerStatisticsHelper.getCounterGroupNameLogTFSquare(), sequenceFileName);
     }
     
     @Override

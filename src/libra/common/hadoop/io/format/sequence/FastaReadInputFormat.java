@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.hadoop.io.format.fasta;
+package libra.common.hadoop.io.format.sequence;
 
 import java.io.IOException;
-import libra.common.fasta.FastaRead;
-import libra.common.hadoop.io.reader.fasta.FastaReadReader;
+import libra.common.sequence.FastaRead;
+import libra.common.hadoop.io.reader.sequence.FastaReadReader;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -40,7 +40,7 @@ public class FastaReadInputFormat extends FileInputFormat<LongWritable, FastaRea
 
     private static final Log LOG = LogFactory.getLog(FastaReadInputFormat.class);
     
-    private final static String CONF_SPLITABLE = "libra.comm.hadoop.io.format.fasta.splitable";
+    private final static String CONF_SPLITABLE = "libra.comm.hadoop.io.format.sequence.splitable";
     
     @Override
     public RecordReader<LongWritable, FastaRead> createRecordReader(InputSplit split,

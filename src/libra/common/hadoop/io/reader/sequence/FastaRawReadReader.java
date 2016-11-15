@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.hadoop.io.reader.fasta;
+package libra.common.hadoop.io.reader.sequence;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import libra.common.fasta.FastaRawRead;
-import libra.common.fasta.FastaRawReadLine;
+import libra.common.sequence.FastaRawRead;
+import libra.common.sequence.FastaRawReadLine;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;

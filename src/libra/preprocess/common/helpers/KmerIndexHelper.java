@@ -85,23 +85,23 @@ public class KmerIndexHelper {
         return false;
     }
     
-    public static String getFastaFileName(Path indexFilePath) {
-        return getFastaFileName(indexFilePath.getName());
+    public static String getSequenceFileName(Path indexFilePath) {
+        return getSequenceFileName(indexFilePath.getName());
     }
     
-    public static String getFastaFileName(String indexFileName) {
+    public static String getSequenceFileName(String indexFileName) {
         if(isKmerIndexIndexFile(indexFileName)) {
             int idx = indexFileName.lastIndexOf("." + PreprocessorConstants.KMER_INDEX_INDEX_FILENAME_EXTENSION);
             if (idx >= 0) {
                 String part = indexFileName.substring(0, idx);
                 int idx2 = part.lastIndexOf(".");
                 if (idx2 >= 0) {
-                    String fastaFilePath = part.substring(0, idx2);
-                    int idx3 = fastaFilePath.lastIndexOf("/");
+                    String sequenceFilePath = part.substring(0, idx2);
+                    int idx3 = sequenceFilePath.lastIndexOf("/");
                     if (idx3 >= 0) {
-                        return fastaFilePath.substring(idx3 + 1);
+                        return sequenceFilePath.substring(idx3 + 1);
                     } else {
-                        return fastaFilePath;
+                        return sequenceFilePath;
                     }
                 }
             }
@@ -111,12 +111,12 @@ public class KmerIndexHelper {
                 String part = indexFileName.substring(0, idx);
                 int idx2 = part.lastIndexOf(".");
                 if (idx2 >= 0) {
-                    String fastaFilePath = part.substring(0, idx2);
-                    int idx3 = fastaFilePath.lastIndexOf("/");
+                    String sequenceFilePath = part.substring(0, idx2);
+                    int idx3 = sequenceFilePath.lastIndexOf("/");
                     if (idx3 >= 0) {
-                        return fastaFilePath.substring(idx3 + 1);
+                        return sequenceFilePath.substring(idx3 + 1);
                     } else {
-                        return fastaFilePath;
+                        return sequenceFilePath;
                     }
                 }
             }
@@ -129,10 +129,10 @@ public class KmerIndexHelper {
     }
     
     public static boolean isSameKmerIndex(String index1, String index2) {
-        String fastaFileName1 = getFastaFileName(index1);
-        String fastaFileName2 = getFastaFileName(index2);
+        String sequenceFileName1 = getSequenceFileName(index1);
+        String sequenceFileName2 = getSequenceFileName(index2);
         
-        return fastaFileName1.equals(fastaFileName2);
+        return sequenceFileName1.equals(sequenceFileName2);
     }
     
     public static int getKmerSize(Path indexFilePath) {

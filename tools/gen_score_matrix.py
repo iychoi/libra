@@ -50,7 +50,7 @@ def getScore(path):
 
     return matrix
 
-def writeMatrix(out_matrix, file_table, score):
+def writeMatrix(out_matrix, file_table, score, dissimilarity=False):
     with open(out_matrix, "w") as f:
         for i in range(0, len(score)):
             if i != 0:
@@ -63,19 +63,26 @@ def writeMatrix(out_matrix, file_table, score):
             f.write(file_table[i])
             for j in range(0, len(row)):
                 f.write("\t")
-                f.write(str(row[j]))
+                if dissimilarity:
+                    f.write(str(1 - row[j]))
+                else:
+                    f.write(str(row[j]))
             f.write("\n")
 
 def main(argv):
-    if len(argv) < 2:
-        print "command : ./gen_score_matrix.py result_score table_json out_matrix"
+    if len(argv) < 3:
+        print "command : ./gen_score_matrix.py result_score table_json out_matrix [distance|similiarity]"
     else:
         result_score = argv[0]
         table_json = argv[1]
         out_matrix = argv[2]
+        dissimilarity = False
+        if len(argv) == 4:
+            if argv[3] in ["distance", "dissimilarity"]:
+                dissimilarity = True
         farr = getFileTable(table_json)
         score = getScore(result_score)
-        writeMatrix(out_matrix, farr, score)
+        writeMatrix(out_matrix, farr, score, dissimilarity)
 
 if __name__ == "__main__":
     main(sys.argv[1:])

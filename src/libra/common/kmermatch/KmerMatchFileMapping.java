@@ -69,26 +69,26 @@ public class KmerMatchFileMapping {
         this.objList = new ArrayList<String>();
     }
     
-    @JsonProperty("fasta_files")
-    public Collection<String> getFastaFiles() {
+    @JsonProperty("sequence_files")
+    public Collection<String> getSequenceFiles() {
         return Collections.unmodifiableCollection(this.objList);
     }
     
-    @JsonProperty("fasta_files")
-    public void addFastaFile(Collection<Path> fastaFiles) {
-        for(Path fastaFile : fastaFiles) {
-            addFastaFile(fastaFile.getName());
+    @JsonProperty("sequence_files")
+    public void addSequenceFile(Collection<Path> sequenceFiles) {
+        for(Path sequenceFile : sequenceFiles) {
+            KmerMatchFileMapping.this.addSequenceFile(sequenceFile.getName());
         }
     }
     
     @JsonIgnore
-    public void addFastaFile(String input) {
+    public void addSequenceFile(String input) {
         this.idTable.put(input, this.objList.size());
         this.objList.add(input);
     }
     
     @JsonIgnore
-    public int getIDFromFastaFile(String input) throws IOException {
+    public int getIDFromSequenceFile(String input) throws IOException {
         if(this.idTable.get(input) == null) {
             throw new IOException("could not find id from " + input);
         } else {
@@ -97,7 +97,7 @@ public class KmerMatchFileMapping {
     }
     
     @JsonIgnore
-    public String getFastaFileFromID(int id) throws IOException {
+    public String getSequenceFileFromID(int id) throws IOException {
         if(this.objList.size() <= id) {
             throw new IOException("could not find filename from " + id);
         } else {

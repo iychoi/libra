@@ -17,7 +17,7 @@ package libra.preprocess.stage1;
 
 import libra.preprocess.common.helpers.KmerHistogramHelper;
 import java.io.IOException;
-import libra.common.fasta.KmerLines;
+import libra.common.sequence.KmerLines;
 import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.kmerhistogram.KmerHistogram;
 import org.apache.commons.logging.Log;

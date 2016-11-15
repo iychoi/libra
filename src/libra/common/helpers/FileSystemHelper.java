@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import libra.common.fasta.FastaPathFilter;
+import libra.common.sequence.SequencePathFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -111,21 +111,21 @@ public class FileSystemHelper {
         return pathStrings;
     }
     
-    public static Path[] getAllFastaFilePath(Configuration conf, String inputPathsCommaSeparated) throws IOException {
-        return getAllFastaFilePath(conf, makePathFromString(conf, splitCommaSeparated(inputPathsCommaSeparated)));
+    public static Path[] getAllSequenceFilePath(Configuration conf, String inputPathsCommaSeparated) throws IOException {
+        return getAllSequenceFilePath(conf, makePathFromString(conf, splitCommaSeparated(inputPathsCommaSeparated)));
     }
     
-    public static Path[] getAllFastaFilePath(Configuration conf, String[] inputPaths) throws IOException {
-        return getAllFastaFilePath(conf, makePathFromString(conf, inputPaths));
+    public static Path[] getAllSequenceFilePath(Configuration conf, String[] inputPaths) throws IOException {
+        return getAllSequenceFilePath(conf, makePathFromString(conf, inputPaths));
     }
     
-    public static Path[] getAllFastaFilePath(Configuration conf, Collection<String> inputPaths) throws IOException {
-        return getAllFastaFilePath(conf, makePathFromString(conf, inputPaths));
+    public static Path[] getAllSequenceFilePath(Configuration conf, Collection<String> inputPaths) throws IOException {
+        return getAllSequenceFilePath(conf, makePathFromString(conf, inputPaths));
     }
     
-    public static Path[] getAllFastaFilePath(Configuration conf, Path[] inputPaths) throws IOException {
+    public static Path[] getAllSequenceFilePath(Configuration conf, Path[] inputPaths) throws IOException {
         List<Path> inputFiles = new ArrayList<Path>();
-        FastaPathFilter filter = new FastaPathFilter();
+        SequencePathFilter filter = new SequencePathFilter();
         
         for(Path path : inputPaths) {
             FileSystem fs = path.getFileSystem(conf);

@@ -74,8 +74,8 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         this.tfConsineNormBase = new double[this.valuesLen];
         for(int i=0;i<this.tfConsineNormBase.length;i++) {
             // fill tfConsineNormBase
-            String fastaFilename = this.fileMapping.getFastaFileFromID(i);
-            String statisticsFilename = KmerStatisticsHelper.makeKmerStatisticsFileName(fastaFilename);
+            String sequenceFilename = this.fileMapping.getSequenceFileFromID(i);
+            String statisticsFilename = KmerStatisticsHelper.makeKmerStatisticsFileName(sequenceFilename);
             Path statisticsPath = new Path(this.libraConfig.getKmerStatisticsPath(), statisticsFilename);
             FileSystem fs = statisticsPath.getFileSystem(context.getConfiguration());
             
@@ -116,8 +116,8 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
             String indexFilename = filteredKmerIndexPathArray.get(i).getName();
             Integer fileid = this.idCacheTable.get(indexFilename);
             if(fileid == null) {
-                String fastaFilename = KmerIndexHelper.getFastaFileName(indexFilename);
-                int id = this.fileMapping.getIDFromFastaFile(fastaFilename);
+                String sequenceFilename = KmerIndexHelper.getSequenceFileName(indexFilename);
+                int id = this.fileMapping.getIDFromSequenceFile(sequenceFilename);
                 this.idCacheTable.put(indexFilename, id);
                 fileidInt = id;
             } else {

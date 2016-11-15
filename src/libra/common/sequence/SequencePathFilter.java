@@ -13,8 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.fasta;
+package libra.common.sequence;
 
+import java.util.ArrayList;
+import java.util.List;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
@@ -22,18 +24,27 @@ import org.apache.hadoop.fs.PathFilter;
  *
  * @author iychoi
  */
-public class FastaPathFilter implements PathFilter {
+public class SequencePathFilter implements PathFilter {
 
+    private List<PathFilter> filters;
+    
+    public SequencePathFilter() {
+        this.filters = new ArrayList<PathFilter>();
+        
+        setFilters();
+    }
+    
+    protected void setFilters() {
+        this.filters.add(new FastaPathFilter());
+        this.filters.add(new FastqPathFilter());
+    }
+    
     @Override
     public boolean accept(Path path) {
-        if(path.getName().toLowerCase().endsWith(".fa.gz")) {
-            return true;
-        } else if(path.getName().toLowerCase().endsWith(".fa")) {
-            return true;
-        } else if(path.getName().toLowerCase().endsWith(".ffn.gz")) {
-            return true;
-        } else if(path.getName().toLowerCase().endsWith(".ffn")) {
-            return true;
+        for(PathFilter f : this.filters) {
+            if(f.accept(path)) {
+                return true;
+            }
         }
         return false;
     }

@@ -84,9 +84,9 @@ public class KmerMatchInputFormat extends SequenceFileInputFormat<CompressedSequ
         // histogram
         List<KmerHistogram> histograms = new ArrayList<KmerHistogram>();
         for(int i=0;i<kmerIndexFiles.size();i++) {
-            String fastaFileName = KmerIndexHelper.getFastaFileName(kmerIndexFilePath[i]);
+            String sequenceFileName = KmerIndexHelper.getSequenceFileName(kmerIndexFilePath[i]);
             
-            Path histogramPath = new Path(inputFormatConfig.getKmerHistogramPath(), KmerHistogramHelper.makeKmerHistogramFileName(fastaFileName));
+            Path histogramPath = new Path(inputFormatConfig.getKmerHistogramPath(), KmerHistogramHelper.makeKmerHistogramFileName(sequenceFileName));
             FileSystem fs = histogramPath.getFileSystem(job.getConfiguration());
             if (fs.exists(histogramPath)) {
                 KmerHistogram histogram = KmerHistogram.createInstance(fs, histogramPath);

@@ -13,11 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.hadoop.io.reader.fasta;
+package libra.common.hadoop.io.reader.sequence;
 
 import java.io.IOException;
-import libra.common.fasta.FastaRawRead;
-import libra.common.fasta.FastaRead;
+import libra.common.sequence.FastaRawRead;
+import libra.common.sequence.FastaRead;
 import org.apache.hadoop.io.LongWritable;
 
 import org.apache.hadoop.mapreduce.InputSplit;
