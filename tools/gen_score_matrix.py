@@ -10,7 +10,7 @@ def getFileTable(path):
     with open(path, 'r') as f:
         for line in f:
             j = json.loads(line)
-            tbl = j["fasta_files"]
+            tbl = j["sequence_files"]
 
     return tbl
 
@@ -20,9 +20,8 @@ def getScore(path):
     with open(path, 'r') as f:
         for line in f:
             vv = line.split()
-            ff = vv[0].strip().split("-")
-            f1 = int(ff[0]) + 1
-            f2 = int(ff[1]) + 1
+            f1 = int(vv[0]) + 1
+            f2 = int(vv[1]) + 1
 
             if max_f1 < f1:
                 max_f1 = f1
@@ -40,10 +39,9 @@ def getScore(path):
     with open(path, 'r') as f:
         for line in f:
             vv = line.split()
-            ff = vv[0].strip().split("-")
-            f1 = int(ff[0].strip())
-            f2 = int(ff[1].strip())
-            score = float(vv[1].strip())
+            f1 = int(vv[0].strip())
+            f2 = int(vv[1].strip())
+            score = float(vv[2].strip())
             if score > 1:
                 score = 1.0
             matrix[f1][f2] = score

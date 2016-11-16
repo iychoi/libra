@@ -284,7 +284,7 @@ public class KmerSimilarityReduce extends Configured implements Tool {
             int x = i/n;
             int y = i%n;
             
-            String k = x + "-" + y;
+            String k = x + "\t" + y;
             String v = Double.toString(accumulatedScore[i]);
             String out = k + "\t" + v + "\n";
             os.write(out.getBytes());

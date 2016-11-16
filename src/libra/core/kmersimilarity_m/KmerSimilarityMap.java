@@ -270,7 +270,7 @@ public class KmerSimilarityMap extends Configured implements Tool {
             int x = i/n;
             int y = i%n;
             
-            String k = x + "-" + y;
+            String k = x + "\t" + y;
             String v = Double.toString(accumulatedScore[i]);
             if(x == y) {
                 v = Double.toString(1.0);
