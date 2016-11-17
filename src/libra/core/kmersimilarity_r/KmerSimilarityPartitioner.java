@@ -32,6 +32,6 @@ public class KmerSimilarityPartitioner extends Partitioner<CompressedSequenceWri
     
     @Override
     public int getPartition(CompressedSequenceWritable key, CompressedIntArrayWritable value, int numReduceTasks) {
-        return Math.abs(key.getSequence().hashCode()) % numReduceTasks;
+        return (key.getSequence().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
     }
 }
