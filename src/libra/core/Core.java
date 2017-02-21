@@ -83,6 +83,7 @@ public class Core {
             }
         } catch (Exception e) {
             LOG.error(e);
+            e.printStackTrace();
             res = 1;
         }
         

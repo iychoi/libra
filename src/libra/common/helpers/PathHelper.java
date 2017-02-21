@@ -65,7 +65,7 @@ public class PathHelper {
         if(idx > 0) {
             String ext = myname.substring(idx + 1);
             for(String cext : COMPRESSED_EXT) {
-                if(ext.equalsIgnoreCase(cext)) {
+                if(cext.equalsIgnoreCase(ext)) {
                     // compressed
                     myname = myname.substring(0, idx);
                     break;

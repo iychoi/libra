@@ -90,6 +90,7 @@ public class Preprocessor {
             }
         } catch (Exception e) {
             LOG.error(e);
+            e.printStackTrace();
             res = 1;
         }
         

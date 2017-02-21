@@ -57,7 +57,7 @@ public class KmerHistogramBuilderMapper extends Mapper<LongWritable, KmerLines, 
     protected void map(LongWritable key, KmerLines value, Context context) throws IOException, InterruptedException {
         for(String line : value.get()) {
             if(line != null) {
-                this.histogram.takeSample(line);
+                this.histogram.takeSample(line.toUpperCase());
             }
         }
     }

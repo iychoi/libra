@@ -49,7 +49,7 @@ public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, Comp
     protected void map(LongWritable key, KmerLines value, Context context) throws IOException, InterruptedException {
         for(String line : value.get()) {
             if(line != null) {
-                String sequence = line;
+                String sequence = line.toUpperCase();
 
                 boolean pvalid = false;
                 for (int i = 0; i < (sequence.length() - this.ppConfig.getKmerSize() + 1); i++) {
