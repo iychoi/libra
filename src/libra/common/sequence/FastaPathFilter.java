@@ -15,6 +15,7 @@
  */
 package libra.common.sequence;
 
+import libra.common.helpers.PathHelper;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
@@ -24,17 +25,18 @@ import org.apache.hadoop.fs.PathFilter;
  */
 public class FastaPathFilter implements PathFilter {
 
+    private static final String[] FASTA_EXT = {"fa", "ffn", "fna", "faa", "fasta", "fas", "fsa", "seq"};
+    
     @Override
     public boolean accept(Path path) {
-        if(path.getName().toLowerCase().endsWith(".fa.gz")) {
-            return true;
-        } else if(path.getName().toLowerCase().endsWith(".fa")) {
-            return true;
-        } else if(path.getName().toLowerCase().endsWith(".ffn.gz")) {
-            return true;
-        } else if(path.getName().toLowerCase().endsWith(".ffn")) {
-            return true;
+        String ext = PathHelper.getExtensionWithoutCompressed(path.getName()).toLowerCase();
+        
+        for(String fext : FASTA_EXT) {
+            if(ext.equals(fext)) {
+                return true;
+            }
         }
+        
         return false;
     }
 }

@@ -20,6 +20,9 @@ package libra.common.helpers;
  * @author iychoi
  */
 public class PathHelper {
+    
+    private static final String[] COMPRESSED_EXT = {"gz"};
+    
     public static String getParent(String path) {
         // check root
         if(path.equals("/")) {
@@ -54,5 +57,28 @@ public class PathHelper {
         }
         
         return sb.toString();
+    }
+    
+    public static String getExtensionWithoutCompressed(String name) {
+        String myname = name;
+        int idx = myname.lastIndexOf(".");
+        if(idx > 0) {
+            String ext = myname.substring(idx + 1);
+            for(String cext : COMPRESSED_EXT) {
+                if(ext.equalsIgnoreCase(cext)) {
+                    // compressed
+                    myname = myname.substring(0, idx);
+                    break;
+                }
+            }
+        } else {
+            return null;
+        }
+        
+        idx = myname.lastIndexOf(".");
+        if(idx > 0) {
+            return myname.substring(idx + 1);
+        }
+        return null;
     }
 }

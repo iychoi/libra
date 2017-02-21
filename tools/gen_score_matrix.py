@@ -53,12 +53,12 @@ def writeMatrix(out_matrix, file_table, score, dissimilarity=False):
         for i in range(0, len(score)):
             if i != 0:
                 f.write("\t")
-            f.write(file_table[i])
+            f.write(os.path.basename(file_table[i]))
         f.write("\n")
 
         for i in range(0, len(score)):
             row = score[i]
-            f.write(file_table[i])
+            f.write(os.path.basename(file_table[i]))
             for j in range(0, len(row)):
                 f.write("\t")
                 if dissimilarity:

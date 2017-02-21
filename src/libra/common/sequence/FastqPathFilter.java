@@ -15,6 +15,7 @@
  */
 package libra.common.sequence;
 
+import libra.common.helpers.PathHelper;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
 
@@ -24,17 +25,18 @@ import org.apache.hadoop.fs.PathFilter;
  */
 public class FastqPathFilter implements PathFilter {
 
+    private static final String[] FASTAQ_EXT = {"fastq", "fq"};
+    
     @Override
     public boolean accept(Path path) {
-        if(path.getName().toLowerCase().endsWith(".fastq.gz")) {
-            return true;
-        } else if(path.getName().toLowerCase().endsWith(".fastq")) {
-            return true;
-        } else if(path.getName().toLowerCase().endsWith(".fq.gz")) {
-            return true;
-        } else if(path.getName().toLowerCase().endsWith(".fq")) {
-            return true;
-        } 
+        String ext = PathHelper.getExtensionWithoutCompressed(path.getName()).toLowerCase();
+        
+        for(String fext : FASTAQ_EXT) {
+            if(ext.equals(fext)) {
+                return true;
+            }
+        }
+        
         return false;
     }
 }
