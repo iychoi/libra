@@ -29,10 +29,13 @@ public class FastaPathFilter implements PathFilter {
     
     @Override
     public boolean accept(Path path) {
-        String ext = PathHelper.getExtensionWithoutCompressed(path.getName()).toLowerCase();
+        String ext = PathHelper.getExtensionWithoutCompressed(path.getName());
+        if(ext != null) {
+            ext = ext.toLowerCase();
+        }
         
         for(String fext : FASTA_EXT) {
-            if(ext.equals(fext)) {
+            if(fext.equals(ext)) {
                 return true;
             }
         }
