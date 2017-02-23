@@ -24,6 +24,8 @@ import org.apache.hadoop.fs.Path;
  */
 public class KmerStatisticsHelper {
     private final static String COUNTER_GROUP_NAME_LOGTFSQUARE = "KmerStatisticsLogTFSquare";
+    private final static String COUNTER_GROUP_NAME_NATURALTFSQUARE = "KmerStatisticsNaturalTFSquare";
+    private final static String COUNTER_GROUP_NAME_BOOLEANTFSQUARE = "KmerStatisticsBooleanTFSquare";
     
     public static String makeKmerStatisticsFileName(Path filePath) {
         return makeKmerStatisticsFileName(filePath.getName());
@@ -35,5 +37,13 @@ public class KmerStatisticsHelper {
     
     public static String getCounterGroupNameLogTFSquare() {
         return COUNTER_GROUP_NAME_LOGTFSQUARE;
+    }
+    
+    public static String getCounterGroupNameNaturalTFSquare() {
+        return COUNTER_GROUP_NAME_NATURALTFSQUARE;
+    }
+
+    public static String getCounterGroupNameBooleanTFSquare() {
+        return COUNTER_GROUP_NAME_BOOLEANTFSQUARE;
     }
 }

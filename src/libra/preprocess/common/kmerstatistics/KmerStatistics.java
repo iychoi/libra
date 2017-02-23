@@ -38,7 +38,9 @@ public class KmerStatistics {
     
     private String sampleName;
     private int kmerSize;
-    private double tfCosnormBase;
+    private double logTFCosnormBase;
+    private double naturalTFCosnormBase;
+    private double booleanTFCosnormBase;
     
     public static KmerStatistics createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -88,14 +90,34 @@ public class KmerStatistics {
         this.kmerSize = kmerSize;
     }
     
-    @JsonProperty("tf_cosnorm_base")
-    public void setTFCosineNormBase(double tfCosnormBase) {
-        this.tfCosnormBase = tfCosnormBase;
+    @JsonProperty("log_tf_cosnorm_base")
+    public void setLogTFCosineNormBase(double tfCosnormBase) {
+        this.logTFCosnormBase = tfCosnormBase;
     }
     
-    @JsonProperty("tf_cosnorm_base")
-    public double getTFCosineNormBase() {
-        return this.tfCosnormBase;
+    @JsonProperty("log_tf_cosnorm_base")
+    public double getLogTFCosineNormBase() {
+        return this.logTFCosnormBase;
+    }
+    
+    @JsonProperty("natural_tf_cosnorm_base")
+    public void setNaturalTFCosineNormBase(double tfCosnormBase) {
+        this.naturalTFCosnormBase = tfCosnormBase;
+    }
+    
+    @JsonProperty("natural_tf_cosnorm_base")
+    public double getNaturalTFCosineNormBase() {
+        return this.naturalTFCosnormBase;
+    }
+    
+    @JsonProperty("boolean_tf_cosnorm_base")
+    public void setBooleanTFCosineNormBase(double tfCosnormBase) {
+        this.booleanTFCosnormBase = tfCosnormBase;
+    }
+    
+    @JsonProperty("boolean_tf_cosnorm_base")
+    public double getBooleanTFCosineNormBase() {
+        return this.booleanTFCosnormBase;
     }
     
     @JsonIgnore

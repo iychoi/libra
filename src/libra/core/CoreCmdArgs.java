@@ -17,6 +17,7 @@ package libra.core;
 
 import libra.common.cmdargs.CommandArgumentsBase;
 import libra.core.commom.CoreConfig;
+import libra.preprocess.common.WeightAlgorithm;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
@@ -28,6 +29,13 @@ public class CoreCmdArgs extends CommandArgumentsBase {
     
     public CoreCmdArgs() {
         
+    }
+    
+    @Option(name = "-w", aliases = "--weight", usage = "specify weight algorithm")
+    protected String weightAlgorithm = CoreConfig.DEFAULT_WEIGHT_ALGORITHM.name();
+
+    public WeightAlgorithm getWeightAlgorithm() {
+        return WeightAlgorithm.fromString(this.weightAlgorithm);
     }
     
     @Option(name = "-o", usage = "specify output path")
@@ -66,6 +74,7 @@ public class CoreCmdArgs extends CommandArgumentsBase {
     public CoreConfig getCoreConfig() {
         CoreConfig config = new CoreConfig();
         
+        config.setWeightAlgorithm(getWeightAlgorithm());
         config.setReportPath(this.reportfile);
         config.setPreprocessOutputRootPath(this.preprocessOutputPath);
         config.setOutputPath(this.outputPath);

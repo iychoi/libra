@@ -258,29 +258,63 @@ public class KmerIndexBuilder extends Configured implements Tool {
 
     private void createStatisticsOfIndex(Path statisticsPath, Path inputPath, Configuration conf, Counters counters, int kmerSize) throws IOException {
         CounterGroup logTFSquareGroup = counters.getGroup(KmerStatisticsHelper.getCounterGroupNameLogTFSquare());
+        CounterGroup naturalTFSquareGroup = counters.getGroup(KmerStatisticsHelper.getCounterGroupNameNaturalTFSquare());
+        CounterGroup booleanTFSquareGroup = counters.getGroup(KmerStatisticsHelper.getCounterGroupNameBooleanTFSquare());
 
+        KmerStatistics statistics = new KmerStatistics();
+        statistics.setSampleName(inputPath.getName());
+        statistics.setKmerSize(kmerSize);
+        
         Iterator<Counter> logTFSquareGroupIterator = logTFSquareGroup.iterator();
         while(logTFSquareGroupIterator.hasNext()) {
             Counter logTFSquareCounter = logTFSquareGroupIterator.next();
             if(logTFSquareCounter.getName().equals(inputPath.getName())) {
                 double logTFSquare = 0;
-                double tf_cosnorm_base = 0;
+                double log_tf_cosnorm_base = 0;
 
                 logTFSquare = logTFSquareCounter.getValue() / 1000.0;
 
-                tf_cosnorm_base = Math.sqrt(logTFSquare);
-                LOG.info("tf-cos-norm-base " + logTFSquareCounter.getName() + " : " + tf_cosnorm_base);
-
-                Path outputHadoopPath = new Path(statisticsPath, KmerStatisticsHelper.makeKmerStatisticsFileName(logTFSquareCounter.getName()));
-                FileSystem fs = outputHadoopPath.getFileSystem(conf);
-
-                KmerStatistics statistics = new KmerStatistics();
-                statistics.setSampleName(logTFSquareCounter.getName());
-                statistics.setKmerSize(kmerSize);
-                statistics.setTFCosineNormBase(tf_cosnorm_base);
-
-                statistics.saveTo(fs, outputHadoopPath);
+                log_tf_cosnorm_base = Math.sqrt(logTFSquare);
+                LOG.info("log-tf-cos-norm-base " + logTFSquareCounter.getName() + " : " + log_tf_cosnorm_base);
+                statistics.setLogTFCosineNormBase(log_tf_cosnorm_base);
+                break;
             }
         }
+        
+        Iterator<Counter> naturalTFSquareGroupIterator = naturalTFSquareGroup.iterator();
+        while(naturalTFSquareGroupIterator.hasNext()) {
+            Counter naturalTFSquareCounter = naturalTFSquareGroupIterator.next();
+            if(naturalTFSquareCounter.getName().equals(inputPath.getName())) {
+                double naturalTFSquare = 0;
+                double natural_tf_cosnorm_base = 0;
+
+                naturalTFSquare = naturalTFSquareCounter.getValue();
+
+                natural_tf_cosnorm_base = Math.sqrt(naturalTFSquare);
+                LOG.info("natural-tf-cos-norm-base " + naturalTFSquareCounter.getName() + " : " + natural_tf_cosnorm_base);
+                statistics.setNaturalTFCosineNormBase(natural_tf_cosnorm_base);
+                break;
+            }
+        }
+        
+        Iterator<Counter> booleanTFSquareGroupIterator = booleanTFSquareGroup.iterator();
+        while(booleanTFSquareGroupIterator.hasNext()) {
+            Counter booleanTFSquareCounter = booleanTFSquareGroupIterator.next();
+            if(booleanTFSquareCounter.getName().equals(inputPath.getName())) {
+                double booleanTFSquare = 0;
+                double boolean_tf_cosnorm_base = 0;
+
+                booleanTFSquare = booleanTFSquareCounter.getValue();
+
+                boolean_tf_cosnorm_base = Math.sqrt(booleanTFSquare);
+                LOG.info("boolean-tf-cos-norm-base " + booleanTFSquareCounter.getName() + " : " + boolean_tf_cosnorm_base);
+                statistics.setBooleanTFCosineNormBase(boolean_tf_cosnorm_base);
+                break;
+            }
+        }
+        
+        Path outputHadoopPath = new Path(statisticsPath, KmerStatisticsHelper.makeKmerStatisticsFileName(inputPath.getName()));
+        FileSystem fs = outputHadoopPath.getFileSystem(conf);
+        statistics.saveTo(fs, outputHadoopPath);
     }
 }

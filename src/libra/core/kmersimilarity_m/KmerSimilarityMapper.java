@@ -24,6 +24,7 @@ import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.common.kmermatch.KmerMatchResult;
 import libra.core.commom.CoreConfig;
 import libra.core.common.kmersimilarity.KmerSimilarityOutputRecord;
+import libra.preprocess.common.WeightAlgorithm;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
@@ -53,6 +54,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
     
     private int valuesLen;
     private double[] scoreAccumulated;
+    private WeightAlgorithm weightAlgorithm;
     private double[] tfConsineNormBase;
     
     @Override
@@ -71,6 +73,11 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
             this.scoreAccumulated[i] = 0;
         }
         
+        this.weightAlgorithm = this.libraConfig.getWeightAlgorithm();
+        if(this.weightAlgorithm == null) {
+            this.weightAlgorithm = CoreConfig.DEFAULT_WEIGHT_ALGORITHM;
+        }
+        
         this.tfConsineNormBase = new double[this.valuesLen];
         for(int i=0;i<this.tfConsineNormBase.length;i++) {
             // fill tfConsineNormBase
@@ -81,7 +88,36 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
             
             KmerStatistics statistics = KmerStatistics.createInstance(fs, statisticsPath);
 
-            this.tfConsineNormBase[i] = statistics.getTFCosineNormBase();
+            switch(this.weightAlgorithm) {
+                case LOGALITHM:
+                    this.tfConsineNormBase[i] = statistics.getLogTFCosineNormBase();
+                    break;
+                case NATURAL:
+                    this.tfConsineNormBase[i] = statistics.getNaturalTFCosineNormBase();
+                    break;
+                case BOOLEAN:
+                    this.tfConsineNormBase[i] = statistics.getBooleanTFCosineNormBase();
+                    break;
+                default:
+                    LOG.info("Unknown algorithm specified : " + this.weightAlgorithm.toString());
+                    throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
+            }
+        }
+    }
+    
+    private double getTFWeight(int freq) throws IOException {
+        switch(this.weightAlgorithm) {
+            case LOGALITHM:
+                return (double)(1 + Math.log10(freq));
+            case NATURAL:
+                return freq;
+            case BOOLEAN:
+                if(freq > 0) {
+                    return 1;
+                }
+                return 0;
+            default:
+                throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
         }
     }
     
@@ -136,8 +172,8 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         for(int i=0;i<filteredValueArray.size();i++) {
             IntWritable arr = filteredValueArray.get(i);
             int freq = arr.get();
-            double tf = 1 + Math.log10(freq);
-            normal[fileid_arr[i]] = ((double)tf) / this.tfConsineNormBase[fileid_arr[i]];
+            double weight = getTFWeight(freq);
+            normal[fileid_arr[i]] = weight / this.tfConsineNormBase[fileid_arr[i]];
         }
         
         accumulateScore(normal);

@@ -22,6 +22,7 @@ import libra.common.json.JsonSerializer;
 import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.core.commom.CoreConfig;
 import libra.core.common.kmersimilarity.KmerSimilarityOutputRecord;
+import libra.preprocess.common.WeightAlgorithm;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
 import org.apache.commons.logging.Log;
@@ -45,6 +46,7 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, C
     private KmerMatchFileMapping fileMapping;
     private int valuesLen;
     private double[] scoreAccumulated;
+    private WeightAlgorithm weightAlgorithm;
     private double[] tfConsineNormBase;
     
     @Override
@@ -60,9 +62,14 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, C
             this.scoreAccumulated[i] = 0;
         }
         
+        this.weightAlgorithm = this.libraConfig.getWeightAlgorithm();
+        if(this.weightAlgorithm == null) {
+            this.weightAlgorithm = CoreConfig.DEFAULT_WEIGHT_ALGORITHM;
+        }
+        
         this.tfConsineNormBase = new double[this.valuesLen];
-        for(int i=0;i<this.tfConsineNormBase.length;i++) {
-            // fill tfConsineNormBase
+        for(int i=0;i<this.valuesLen;i++) {
+            // fill ConsineNormBase
             String sequenceFilename = this.fileMapping.getSequenceFileFromID(i);
             String statisticsFilename = KmerStatisticsHelper.makeKmerStatisticsFileName(sequenceFilename);
             Path statisticsPath = new Path(this.libraConfig.getKmerStatisticsPath(), statisticsFilename);
@@ -70,7 +77,36 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, C
             
             KmerStatistics statistics = KmerStatistics.createInstance(fs, statisticsPath);
 
-            this.tfConsineNormBase[i] = statistics.getTFCosineNormBase();
+            switch(this.weightAlgorithm) {
+                case LOGALITHM:
+                    this.tfConsineNormBase[i] = statistics.getLogTFCosineNormBase();
+                    break;
+                case NATURAL:
+                    this.tfConsineNormBase[i] = statistics.getNaturalTFCosineNormBase();
+                    break;
+                case BOOLEAN:
+                    this.tfConsineNormBase[i] = statistics.getBooleanTFCosineNormBase();
+                    break;
+                default:
+                    LOG.info("Unknown algorithm specified : " + this.weightAlgorithm.toString());
+                    throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
+            }
+        }
+    }
+    
+    private double getTFWeight(int freq) throws IOException {
+        switch(this.weightAlgorithm) {
+            case LOGALITHM:
+                return (double)(1 + Math.log10(freq));
+            case NATURAL:
+                return freq;
+            case BOOLEAN:
+                if(freq > 0) {
+                    return 1;
+                }
+                return 0;
+            default:
+                throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
         }
     }
     
@@ -86,8 +122,8 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, C
             int[] arr = value.get();
             int file_id = arr[0];
             int freq = arr[1];
-            double tf = 1 + Math.log10(freq);
-            normal[file_id] = ((double)tf) / this.tfConsineNormBase[file_id];
+            double weight = getTFWeight(freq);
+            normal[file_id] = weight / this.tfConsineNormBase[file_id];
         }
         
         accumulateScore(normal);

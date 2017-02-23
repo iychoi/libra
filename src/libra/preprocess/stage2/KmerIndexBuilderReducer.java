@@ -35,6 +35,8 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilderReducer.class);
 
     private Counter logTFSquareCounter;
+    private Counter naturalTFSquareCounter;
+    private Counter booleanTFSquareCounter;
 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
@@ -47,6 +49,8 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
         String sequenceFileName = inputSequenceFilePath.getName();
 
         this.logTFSquareCounter = context.getCounter(KmerStatisticsHelper.getCounterGroupNameLogTFSquare(), sequenceFileName);
+        this.naturalTFSquareCounter = context.getCounter(KmerStatisticsHelper.getCounterGroupNameNaturalTFSquare(), sequenceFileName);
+        this.booleanTFSquareCounter = context.getCounter(KmerStatisticsHelper.getCounterGroupNameBooleanTFSquare(), sequenceFileName);
     }
     
     @Override
@@ -60,6 +64,8 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
         // compute base
         if(frequency > 0) {
             this.logTFSquareCounter.increment((long) (Math.pow(1 + Math.log10(frequency), 2) * 1000));
+            this.naturalTFSquareCounter.increment((long) Math.pow(frequency, 2));
+            this.booleanTFSquareCounter.increment((long) 1);
         }
         context.write(key, new IntWritable(frequency));
     }

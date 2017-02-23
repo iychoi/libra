@@ -20,6 +20,7 @@ import java.io.IOException;
 import libra.common.helpers.PathHelper;
 import libra.common.json.JsonSerializer;
 import libra.preprocess.common.PreprocessorConfig;
+import libra.preprocess.common.WeightAlgorithm;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -35,6 +36,7 @@ import org.codehaus.jackson.annotate.JsonTypeInfo;
 public class CoreConfig {
     
     public static final String DEFAULT_OUTPUT_PATH = "./libra_output";
+    public static WeightAlgorithm DEFAULT_WEIGHT_ALGORITHM = WeightAlgorithm.LOGALITHM;
     
     private static final String HADOOP_CONFIG_KEY = "libra.core.common.coreconfig";
     
@@ -43,6 +45,7 @@ public class CoreConfig {
     private String kmerHistogramPath;
     private String kmerIndexPath;
     private String kmerStatisticsPath;
+    private WeightAlgorithm weightAlgorithm = WeightAlgorithm.LOGALITHM;
     private String outputPath = DEFAULT_OUTPUT_PATH;
     
     public static CoreConfig createInstance(File file) throws IOException {
@@ -104,6 +107,16 @@ public class CoreConfig {
     @JsonProperty("statistics_path")
     public void setKmerStatisticsPath(String kmerStatisticsPath) {
         this.kmerStatisticsPath = kmerStatisticsPath;
+    }
+    
+    @JsonProperty("weight_algorithm")
+    public WeightAlgorithm getWeightAlgorithm() {
+        return this.weightAlgorithm;
+    }
+    
+    @JsonProperty("weight_algorithm")
+    public void setWeightAlgorithm(WeightAlgorithm weightAlgorithm) {
+        this.weightAlgorithm = weightAlgorithm;
     }
     
     @JsonProperty("output_path")
