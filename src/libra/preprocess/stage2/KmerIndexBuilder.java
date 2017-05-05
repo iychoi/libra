@@ -248,8 +248,10 @@ public class KmerIndexBuilder extends Configured implements Tool {
             MapFile.Reader reader = new MapFile.Reader(indexFile.getFileSystem(conf), indexFile.toString(), conf);
             CompressedSequenceWritable finalKey = new CompressedSequenceWritable();
             reader.finalKey(finalKey);
-            indexIndex.addLastKey(finalKey.getSequence());
-            reader.close();
+            if(finalKey != null) {
+                indexIndex.addLastKey(finalKey.getSequence());
+                reader.close();
+            }
         }
 
         LOG.info("Creating an index file : " + kmerIndexIndexFilePath.toString());
