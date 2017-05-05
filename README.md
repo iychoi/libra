@@ -1,4 +1,7 @@
 # libra
+
+[![Build Status](https://travis-ci.org/iychoi/libra.svg?branch=master)](https://travis-ci.org/iychoi/libra)
+
 Compute Similarity between Large Metagenomic Samples
 
 BUILD
