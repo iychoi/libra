@@ -120,7 +120,7 @@ public class KmerIndexBuilder extends Configured implements Tool {
         Path[] inputFiles = FileSystemHelper.getAllSequenceFilePath(conf, ppConfig.getSequencePath());
         
         boolean job_result = true;
-        List<Job> jobs = new ArrayList<Job>();
+        Report report = new Report();
         
         for(int round=0;round<inputFiles.length;round++) {
             Path roundInputFile = inputFiles[round];
@@ -175,8 +175,6 @@ public class KmerIndexBuilder extends Configured implements Tool {
             // Execute job and return status
             boolean result = job.waitForCompletion(true);
             
-            jobs.add(job);
-
             // commit results
             if (result) {
                 commitRoundIndexOutputFiles(roundInputFile, new Path(roundOutputPath), new Path(ppConfig.getKmerIndexPath()), job.getConfiguration(), ppConfig.getKmerSize());
@@ -193,12 +191,12 @@ public class KmerIndexBuilder extends Configured implements Tool {
                 job_result = false;
                 break;
             }
+            
+            report.addJob(job);
         }
         
         // report
         if(ppConfig.getReportPath() != null && !ppConfig.getReportPath().isEmpty()) {
-            Report report = new Report();
-            report.addJob(jobs);
             report.writeTo(ppConfig.getReportPath());
         }
         
@@ -248,7 +246,7 @@ public class KmerIndexBuilder extends Configured implements Tool {
             MapFile.Reader reader = new MapFile.Reader(indexFile.getFileSystem(conf), indexFile.toString(), conf);
             CompressedSequenceWritable finalKey = new CompressedSequenceWritable();
             reader.finalKey(finalKey);
-            if(finalKey != null) {
+            if(finalKey != null && !finalKey.isEmpty()) {
                 indexIndex.addLastKey(finalKey.getSequence());
                 reader.close();
             }

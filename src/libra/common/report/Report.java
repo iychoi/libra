@@ -22,7 +22,6 @@ import java.io.Writer;
 import java.util.ArrayList;
 import java.util.List;
 import libra.common.helpers.TimeHelper;
-import org.apache.hadoop.mapreduce.Job;
 
 /**
  *
@@ -35,6 +34,10 @@ public class Report {
         this.jobs = new ArrayList<Job>();
     }
 
+    public void addJob(org.apache.hadoop.mapreduce.Job job) {
+        this.jobs.add(new Job(job));
+    }
+    
     public void addJob(Job job) {
         this.jobs.add(job);
     }
@@ -74,51 +77,13 @@ public class Report {
     }
     
     private String makeText(Job job) {
-        String jobName = job.getJobName();
-        String jobID = job.getJobID().toString();
-        String jobStatus;
-        try {
-            jobStatus = job.getJobState().name();
-        } catch (IOException ex) {
-            jobStatus = "Unknown";
-        } catch (InterruptedException ex) {
-            jobStatus = "Unknown";
-        }
-        
-        String startTimeStr;
-        try {
-            startTimeStr = TimeHelper.getTimeString(job.getStartTime());
-        } catch (Exception ex) {
-            startTimeStr = "Unknown";
-        }
-        
-        String finishTimeStr;
-        try {
-            finishTimeStr = TimeHelper.getTimeString(job.getFinishTime());
-        } catch (Exception ex) {
-            finishTimeStr = "Unknown";
-        }
-        
-        String timeTakenStr;
-        try {
-            timeTakenStr = TimeHelper.getDiffTimeString(job.getStartTime(), job.getFinishTime());
-        } catch (Exception ex) {
-            timeTakenStr = "Unknown";
-        }
-        
-        String countersStr;
-        try {
-            countersStr = job.getCounters().toString();
-        } catch (Exception ex) {
-            countersStr = "Unknown";
-        }
-        
-        return "Job : " + jobName + "\n" +
-                "JobID : " + jobID + "\n" + 
-                "Status : " + jobStatus + "\n" +
-                "StartTime : " + startTimeStr + "\n" +
-                "FinishTime : " + finishTimeStr + "\n" + 
-                "TimeTaken : " + timeTakenStr + "\n\n" +
-                countersStr;
+        return "Job : " + job.getName() + "\n" +
+                "JobID : " + job.getID() + "\n" + 
+                "Status : " + job.getStatus() + "\n" +
+                "StartTime : " + TimeHelper.getTimeString(job.getStartTime()) + "\n" +
+                "FinishTime : " + TimeHelper.getTimeString(job.getFinishTime()) + "\n" + 
+                "TimeTaken : " + TimeHelper.getDiffTimeString(job.getStartTime(), job.getFinishTime()) + "\n\n" +
+                job.getCountersStr();
     }
 }
+

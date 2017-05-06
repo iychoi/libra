@@ -102,6 +102,8 @@ public class KmerHistogramBuilder extends Configured implements Tool {
         // set user configuration
         ppConfig.saveTo(conf);
         
+        Report report = new Report();
+        
         job.setJarByClass(KmerHistogramBuilder.class);
 
         // Mapper
@@ -138,10 +140,10 @@ public class KmerHistogramBuilder extends Configured implements Tool {
             commit(new Path(ppConfig.getKmerHistogramPath()), conf);
         }
         
+        report.addJob(job);
+        
         // report
         if(ppConfig.getReportPath() != null && !ppConfig.getReportPath().isEmpty()) {
-            Report report = new Report();
-            report.addJob(job);
             report.writeTo(ppConfig.getReportPath());
         }
         

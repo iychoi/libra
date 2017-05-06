@@ -118,6 +118,8 @@ public class KmerSimilarityReduce extends Configured implements Tool {
         // set user configuration
         cConfig.saveTo(conf);
         
+        Report report = new Report();
+        
         job.setJarByClass(KmerSimilarityReduce.class);
         
         // Mapper
@@ -204,10 +206,10 @@ public class KmerSimilarityReduce extends Configured implements Tool {
             sumScores(new Path(cConfig.getOutputPath()), conf);
         }
         
+        report.addJob(job);
+        
         // report
         if(cConfig.getReportPath() != null && !cConfig.getReportPath().isEmpty()) {
-            Report report = new Report();
-            report.addJob(job);
             report.writeTo(cConfig.getReportPath());
         }
         
