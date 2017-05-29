@@ -15,78 +15,91 @@
  */
 package libra.preprocess;
 
-import java.util.ArrayList;
-import java.util.List;
+import libra.common.cmdargs.CommandArgumentsParser;
+import libra.common.helpers.FileSystemHelper;
+import libra.preprocess.common.PreprocessorConfig;
+import libra.preprocess.common.PreprocessorRoundConfig;
+import libra.preprocess.common.helpers.FileTableHelper;
+import libra.preprocess.common.filetable.FileTable;
+import libra.preprocess.common.filetable.SampleGrouper;
 import libra.preprocess.stage1.KmerHistogramBuilder;
 import libra.preprocess.stage2.KmerIndexBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
 
 /**
  *
  * @author iychoi
  */
-public class Preprocessor {
+public class Preprocessor extends Configured implements Tool {
     private static final Log LOG = LogFactory.getLog(Preprocessor.class);
     
-    private static int RUN_STAGE_1 = 0x01;
-    private static int RUN_STAGE_2 = 0x02;
-    
-    private static boolean isHelpParam(String[] args) {
-        if(args.length < 1 || 
-                args[0].equalsIgnoreCase("-h") ||
-                args[0].equalsIgnoreCase("--help")) {
-            return true;
-        }
-        return false;
+    public static void main(String[] args) throws Exception {
+        int res = ToolRunner.run(new Configuration(), new Preprocessor(), args);
+        System.exit(res);
     }
     
-    private static int checkRunStages(String[] args) {
-        int runStages = 0;
-        for(String arg : args) {
-            if(arg.equalsIgnoreCase("stage1")) {
-                runStages |= RUN_STAGE_1;
-            } else if(arg.equalsIgnoreCase("stage2")) {
-                runStages |= RUN_STAGE_2;
-            }
+    @Override
+    public int run(String[] args) throws Exception {
+        GenericOptionsParser p = new GenericOptionsParser(new Configuration(), args);
+        Configuration common_conf = p.getConfiguration();
+        String[] remaining_args = p.getRemainingArgs();
+        
+        CommandArgumentsParser<PreprocessorCmdArgs> parser = new CommandArgumentsParser<PreprocessorCmdArgs>();
+        PreprocessorCmdArgs cmdParams = new PreprocessorCmdArgs();
+        if(!parser.parse(remaining_args, cmdParams)) {
+            LOG.error("Failed to parse command line arguments!");
+            return 1;
         }
         
-        if(runStages == 0) {
-            runStages |= RUN_STAGE_1;
-            runStages |= RUN_STAGE_2;
-        }
-        return runStages;
-    }
-    
-    private static String[] removeRunStages(String[] args) {
-        List<String> param = new ArrayList<String>();
-        for(String arg : args) {
-            if(!arg.equalsIgnoreCase("stage1") &&
-                    !arg.equalsIgnoreCase("stage2")) {
-                param.add(arg);
-            }
-        }
-        
-        return param.toArray(new String[0]);
-    }
-    
-    public static int main2(String[] args) throws Exception {
-        if(isHelpParam(args)) {
+        if(cmdParams.isHelp()) {
             printHelp();
             return 1;
         }
         
-        int runStages = checkRunStages(args);
-        String[] params = removeRunStages(args);
+        PreprocessorConfig ppConfig = cmdParams.getPreprocessorConfig();
+        
+        // find input files
+        Path[] inputFiles = FileSystemHelper.getAllSequenceFilePath(common_conf, ppConfig.getSequencePath());
+        
+        // group samples
+        SampleGrouper grouper = new SampleGrouper(ppConfig.getGroupSize(), ppConfig.getMaxGroupNum());
+        FileTable[] groups = grouper.group(inputFiles, ppConfig.getKmerSize(), common_conf);
         
         int res = 0;
-        try {       
-            if((runStages & RUN_STAGE_1) == RUN_STAGE_1 && res == 0) {
-                res = KmerHistogramBuilder.main2(params);
-            }
-
-            if((runStages & RUN_STAGE_2) == RUN_STAGE_2 && res == 0) {
-                res = KmerIndexBuilder.main2(params);
+        try {
+            for(int i=0;i<groups.length;i++) {
+                FileTable table = groups[i];
+                
+                LOG.info(String.format("Processing sample files : group %d / %d, %d files", i+1, groups.length, table.samples()));
+                
+                PreprocessorRoundConfig roundConfig = new PreprocessorRoundConfig(ppConfig);
+                roundConfig.setFileTable(table);
+                
+                // save file table
+                String fileTableFileName = FileTableHelper.makeFileTableFileName(table.getName());
+                Path fileTableFile = new Path(roundConfig.getFileTablePath(), fileTableFileName);
+                FileSystem outputFileSystem = fileTableFile.getFileSystem(common_conf);
+                roundConfig.getFileTable().saveTo(outputFileSystem, fileTableFile);
+                
+                KmerHistogramBuilder kmerHistogramBuilder = new KmerHistogramBuilder();
+                res = kmerHistogramBuilder.runJob(new Configuration(common_conf), roundConfig);
+                if(res != 0) {
+                    throw new Exception("KmerHistogramBuilder Failed : " + res);
+                }
+                
+                KmerIndexBuilder kmerIndexBuilder = new KmerIndexBuilder();
+                res = kmerIndexBuilder.runJob(new Configuration(common_conf), roundConfig);
+                if(res != 0) {
+                    throw new Exception("KmerIndexBuilder Failed : " + res);
+                }
             }
         } catch (Exception e) {
             LOG.error(e);
@@ -96,11 +109,6 @@ public class Preprocessor {
         
         return res;
     }
-    
-    public static void main(String[] args) throws Exception {
-        int res = main2(args);
-        System.exit(res);
-    }
 
     private static void printHelp() {
         System.out.println("============================================================");
@@ -108,12 +116,6 @@ public class Preprocessor {
         System.out.println("Sample Preprocessor");
         System.out.println("============================================================");
         System.out.println("Usage :");
-        System.out.println("> preprocessor [stage1|stage2|stage3] <arguments ...>");
-        System.out.println();
-        System.out.println("Stage :");
-        System.out.println("> stage1");
-        System.out.println("> \tBuild Kmer Histogram");
-        System.out.println("> stage2");
-        System.out.println("> \tBuild Kmer Indexes");
+        System.out.println("> preprocessor <arguments ...>");
     }
 }

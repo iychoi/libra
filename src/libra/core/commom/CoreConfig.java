@@ -17,36 +17,44 @@ package libra.core.commom;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.List;
 import libra.common.helpers.PathHelper;
 import libra.common.json.JsonSerializer;
 import libra.preprocess.common.PreprocessorConfig;
-import libra.preprocess.common.WeightAlgorithm;
+import libra.preprocess.common.filetable.FileTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
-import org.codehaus.jackson.annotate.JsonTypeInfo;
 
 /**
  *
  * @author iychoi
  */
-@JsonTypeInfo(use=JsonTypeInfo.Id.CLASS, include=JsonTypeInfo.As.PROPERTY, property="@class")
 public class CoreConfig {
     
     public static final String DEFAULT_OUTPUT_PATH = "./libra_output";
     public static WeightAlgorithm DEFAULT_WEIGHT_ALGORITHM = WeightAlgorithm.LOGALITHM;
+    public static RunMode DEFAULT_RUN_MODE = RunMode.MAP;
+    public static final int DEFAULT_TASKNUM = PreprocessorConfig.DEFAULT_TASKNUM; // user system default
     
     private static final String HADOOP_CONFIG_KEY = "libra.core.common.coreconfig";
     
     private String reportFilePath;
     
+    private int taskNum = DEFAULT_TASKNUM;
+    private String fileTablePath;
     private String kmerHistogramPath;
     private String kmerIndexPath;
     private String kmerStatisticsPath;
     private WeightAlgorithm weightAlgorithm = WeightAlgorithm.LOGALITHM;
+    private RunMode runMode = RunMode.MAP;
     private String outputPath = DEFAULT_OUTPUT_PATH;
+    
+    private List<FileTable> fileTables = new ArrayList<FileTable>();
     
     public static CoreConfig createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -73,10 +81,31 @@ public class CoreConfig {
     }
 
     @JsonIgnore
-    public void setPreprocessOutputRootPath(String preprocessOutputRootPath) {
-        this.kmerHistogramPath = PathHelper.concatPath(preprocessOutputRootPath, PreprocessorConfig.DEFAULT_KMER_HISTOGRAM_PATH);
-        this.kmerIndexPath = PathHelper.concatPath(preprocessOutputRootPath, PreprocessorConfig.DEFAULT_KMER_INDEX_PATH);
-        this.kmerStatisticsPath = PathHelper.concatPath(preprocessOutputRootPath, PreprocessorConfig.DEFAULT_KMER_STATISITCS_PATH);
+    public void setPreprocessRootPath(String preprocessRootPath) {
+        this.fileTablePath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_FILE_TABLE_PATH);
+        this.kmerHistogramPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_KMER_HISTOGRAM_PATH);
+        this.kmerIndexPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_KMER_INDEX_PATH);
+        this.kmerStatisticsPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_KMER_STATISITCS_PATH);
+    }
+    
+    @JsonProperty("task_num")
+    public int getTaskNum() {
+        return this.taskNum;
+    }
+    
+    @JsonProperty("task_num")
+    public void setTaskNum(int taskNum) {
+        this.taskNum = taskNum;
+    }
+    
+    @JsonProperty("file_table_path")
+    public String getFileTablePath() {
+        return this.fileTablePath;
+    }
+    
+    @JsonProperty("file_table_path")
+    public void setFileTablePath(String fileTablePath) {
+        this.fileTablePath = fileTablePath;
     }
     
     @JsonProperty("histogram_path")
@@ -119,6 +148,16 @@ public class CoreConfig {
         this.weightAlgorithm = weightAlgorithm;
     }
     
+    @JsonProperty("run_mode")
+    public RunMode getRunMode() {
+        return this.runMode;
+    }
+    
+    @JsonProperty("run_mode")
+    public void setRunMode(RunMode runMode) {
+        this.runMode = runMode;
+    }
+    
     @JsonProperty("output_path")
     public void setOutputPath(String outputPath) {
         this.outputPath = outputPath;
@@ -137,6 +176,21 @@ public class CoreConfig {
     @JsonProperty("report_path")
     public String getReportPath() {
         return this.reportFilePath;
+    }
+    
+    @JsonProperty("file_table")
+    public Collection<FileTable> getFileTable() {
+        return this.fileTables;
+    }
+    
+    @JsonProperty("file_table")
+    public void addFileTable(Collection<FileTable> fileTable) {
+        this.fileTables.addAll(fileTable);
+    }
+    
+    @JsonIgnore
+    public void addFileTable(FileTable fileTable) {
+        this.fileTables.add(fileTable);
     }
     
     @JsonIgnore

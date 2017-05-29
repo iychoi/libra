@@ -17,12 +17,12 @@ package libra.preprocess.common.kmerindex;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.RecordReader;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
@@ -31,7 +31,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  *
  * @author iychoi
  */
-public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritable, IntWritable> {
+public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritable, CompressedIntArrayWritable> {
     private Path[] inputIndexPaths;
     private Configuration conf;
     private AKmerIndexReader indexReader;
@@ -39,7 +39,7 @@ public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritab
     private BigInteger progressEnd;
     private KmerIndexInputFormatConfig inputFormatConfig;
     private CompressedSequenceWritable curKey;
-    private IntWritable curVal;
+    private CompressedIntArrayWritable curVal;
 
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -54,7 +54,7 @@ public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritab
         this.inputFormatConfig = KmerIndexInputFormatConfig.createInstance(this.conf);
         
         FileSystem fs = this.inputIndexPaths[0].getFileSystem(this.conf);
-        this.indexReader = new KmerIndexReader(fs, new Path(this.inputFormatConfig.getKmerIndexIndexPath()), this.conf);
+        this.indexReader = new KmerIndexReader(fs, new Path(this.inputFormatConfig.getKmerIndexTableFilePath()), this.conf);
         
         this.currentProgress = BigInteger.ZERO;
         StringBuilder endKmer = new StringBuilder();
@@ -70,7 +70,7 @@ public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritab
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         CompressedSequenceWritable key = new CompressedSequenceWritable();
-        IntWritable val = new IntWritable();
+        CompressedIntArrayWritable val = new CompressedIntArrayWritable();
         boolean result = this.indexReader.next(key, val);
         
         if(result) {
@@ -89,7 +89,7 @@ public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritab
     }
 
     @Override
-    public IntWritable getCurrentValue() throws IOException, InterruptedException {
+    public CompressedIntArrayWritable getCurrentValue() throws IOException, InterruptedException {
         return this.curVal;
     }
 

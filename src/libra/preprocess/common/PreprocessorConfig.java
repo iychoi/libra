@@ -19,6 +19,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.List;
 import libra.common.helpers.PathHelper;
 import libra.common.json.JsonSerializer;
 import org.apache.hadoop.conf.Configuration;
@@ -34,17 +35,25 @@ import org.codehaus.jackson.annotate.JsonProperty;
 public class PreprocessorConfig {
     
     public static final int DEFAULT_KMERSIZE = 20;
+    public static final long DEFAULT_GROUPSIZE = (long)(1024 * 1024 * 1024) * 10; // 10GB
+    public static final int DEFAULT_MAX_GROUPNUM = 20;
+    public static final int DEFAULT_TASKNUM = 0; // user system default
     public static final String DEFAULT_OUTPUT_ROOT_PATH = "./libra_preprocess_output";
+    public static final String DEFAULT_FILE_TABLE_PATH = "filetable";
     public static final String DEFAULT_KMER_HISTOGRAM_PATH = "histogram";
     public static final String DEFAULT_KMER_INDEX_PATH = "kmerindex";
     public static final String DEFAULT_KMER_STATISITCS_PATH = "statistics";
     
-    private static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.preprocessorconfig";
+    protected static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.preprocessorconfig";
     
     private String reportFilePath;
     
     private int kmerSize = DEFAULT_KMERSIZE;
-    private ArrayList<String> sequencePaths = new ArrayList<String>();
+    private long groupSize = DEFAULT_GROUPSIZE;
+    private int maxGroupNum = DEFAULT_MAX_GROUPNUM;
+    private int taskNum = DEFAULT_TASKNUM;
+    private List<String> sequencePaths = new ArrayList<String>();
+    private String fileTablePath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_FILE_TABLE_PATH;
     private String kmerHistogramPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_HISTOGRAM_PATH;
     private String kmerIndexPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_INDEX_PATH;
     private String kmerStatisticsPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_STATISITCS_PATH;
@@ -72,6 +81,20 @@ public class PreprocessorConfig {
     public PreprocessorConfig() {
         
     }
+    
+    public PreprocessorConfig(PreprocessorConfig config) {
+        this.reportFilePath = config.reportFilePath;
+        this.kmerSize = config.kmerSize;
+        this.groupSize = config.groupSize;
+        this.maxGroupNum = config.maxGroupNum;
+        this.taskNum = config.taskNum;
+        this.sequencePaths = new ArrayList<String>();
+        this.sequencePaths.addAll(config.sequencePaths);
+        this.fileTablePath = config.fileTablePath;
+        this.kmerHistogramPath = config.kmerHistogramPath;
+        this.kmerIndexPath = config.kmerIndexPath;
+        this.kmerStatisticsPath = config.kmerStatisticsPath;
+    }
 
     @JsonProperty("kmer_size")
     public int getKmerSize() {
@@ -81,6 +104,36 @@ public class PreprocessorConfig {
     @JsonProperty("kmer_size")
     public void setKmerSize(int kmerSize) {
         this.kmerSize = kmerSize;
+    }
+    
+    @JsonProperty("group_size")
+    public long getGroupSize() {
+        return this.groupSize;
+    }
+    
+    @JsonProperty("group_size")
+    public void setGroupSize(long groupSize) {
+        this.groupSize = groupSize;
+    }
+    
+    @JsonProperty("max_group_num")
+    public int getMaxGroupNum() {
+        return this.maxGroupNum;
+    }
+    
+    @JsonProperty("max_group_num")
+    public void setMaxGroupNum(int maxGroupNum) {
+        this.maxGroupNum = maxGroupNum;
+    }
+    
+    @JsonProperty("task_num")
+    public int getTaskNum() {
+        return this.taskNum;
+    }
+    
+    @JsonProperty("task_num")
+    public void setTaskNum(int taskNum) {
+        this.taskNum = taskNum;
     }
 
     @JsonProperty("sequence_path")
@@ -97,12 +150,28 @@ public class PreprocessorConfig {
     public void addSequencePath(String sequencePath) {
         this.sequencePaths.add(sequencePath);
     }
+    
+    @JsonIgnore
+    public void clearSequencePath() {
+        this.sequencePaths.clear();
+    }
 
     @JsonIgnore
     public void setOutputRootPath(String outputRootPath) {
+        this.fileTablePath = PathHelper.concatPath(outputRootPath, DEFAULT_FILE_TABLE_PATH);
         this.kmerHistogramPath = PathHelper.concatPath(outputRootPath, DEFAULT_KMER_HISTOGRAM_PATH);
         this.kmerIndexPath = PathHelper.concatPath(outputRootPath, DEFAULT_KMER_INDEX_PATH);
         this.kmerStatisticsPath = PathHelper.concatPath(outputRootPath, DEFAULT_KMER_STATISITCS_PATH);
+    }
+    
+    @JsonProperty("file_table_path")
+    public String getFileTablePath() {
+        return this.fileTablePath;
+    }
+    
+    @JsonProperty("file_table_path")
+    public void setFileTablePath(String fileTablePath) {
+        this.fileTablePath = fileTablePath;
     }
     
     @JsonProperty("histogram_path")

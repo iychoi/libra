@@ -18,6 +18,8 @@ package libra.common.helpers;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import libra.common.sequence.SequencePathFilter;
 import org.apache.hadoop.conf.Configuration;
@@ -29,7 +31,6 @@ import org.apache.hadoop.fs.Path;
  *
  * @author iychoi
  */
-@SuppressWarnings("deprecation")
 public class FileSystemHelper {
     public static String makeCommaSeparated(Path[] strs) {
         if(strs == null) {
@@ -130,8 +131,9 @@ public class FileSystemHelper {
         for(Path path : inputPaths) {
             FileSystem fs = path.getFileSystem(conf);
             FileStatus status = fs.getFileStatus(path);
-            if(status.isDir()) {
+            if(status.isDirectory()) {
                 FileStatus[] entries = fs.listStatus(path);
+                entries = sortFileStatusList(entries);
                 for(FileStatus entry : entries) {
                     if(filter.accept(entry.getPath())) {
                         inputFiles.add(entry.getPath());
@@ -178,8 +180,9 @@ public class FileSystemHelper {
             Path parent = new Path(parentPath);
             FileSystem fs = parent.getFileSystem(conf);
             FileStatus status = fs.getFileStatus(parent);
-            if(status.isDir()) {
+            if(status.isDirectory()) {
                 FileStatus[] entries = fs.listStatus(parent);
+                entries = sortFileStatusList(entries);
                 for(FileStatus entry : entries) {
                     if(!left.isEmpty()) {
                         if(!entry.getPath().getName().startsWith(left)) {
@@ -201,5 +204,22 @@ public class FileSystemHelper {
         }
         
         return paths.toArray(new Path[0]);
+    }
+    
+    private static FileStatus[] sortFileStatusList(FileStatus[] list) {
+        List<FileStatus> l = new ArrayList<FileStatus>();
+        for(FileStatus status : list) {
+            l.add(status);
+        }
+        
+        Collections.sort(l, new Comparator<FileStatus>(){
+
+            @Override
+            public int compare(FileStatus arg0, FileStatus arg1) {
+                return arg0.getPath().getName().compareTo(arg1.getPath().getName());
+            }
+        });
+        
+        return l.toArray(new FileStatus[0]);
     }
 }

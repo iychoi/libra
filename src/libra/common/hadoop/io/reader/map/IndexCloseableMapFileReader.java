@@ -32,7 +32,7 @@ import org.apache.hadoop.io.WritableComparator;
 /**
  * Provide access to an existing map.
  */
-@SuppressWarnings({"rawtypes","deprecation"})
+@SuppressWarnings({"rawtypes", "deprecation"}) 
 public class IndexCloseableMapFileReader implements java.io.Closeable {
 
     private static final Log LOG = LogFactory.getLog(IndexCloseableMapFileReader.class);

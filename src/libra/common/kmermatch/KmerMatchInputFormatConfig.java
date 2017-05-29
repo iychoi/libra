@@ -38,6 +38,8 @@ public class KmerMatchInputFormatConfig {
     
     private int kmerSize;
     private int partitions;
+    private String fileTablePath;
+    private String kmerIndexPath;
     private String kmerHistogramPath;
     
     public static KmerMatchInputFormatConfig createInstance(File file) throws IOException {
@@ -73,14 +75,34 @@ public class KmerMatchInputFormatConfig {
         return this.kmerSize;
     }
     
-    @JsonProperty("kmer_histogram_path")
+    @JsonProperty("file_table_path")
+    public String getFileTablePath() {
+        return this.fileTablePath;
+    }
+    
+    @JsonProperty("file_table_path")
+    public void setFileTablePath(String fileTablePath) {
+        this.fileTablePath = fileTablePath;
+    }
+    
+    @JsonProperty("histogram_path")
     public void setKmerHistogramPath(String path) {
         this.kmerHistogramPath = path;
     }
     
-    @JsonProperty("kmer_histogram_path")
+    @JsonProperty("histogram_path")
     public String getKmerHistogramPath() {
         return kmerHistogramPath;
+    }
+    
+    @JsonProperty("kmer_index_path")
+    public String getKmerIndexPath() {
+        return this.kmerIndexPath;
+    }
+    
+    @JsonProperty("kmer_index_path")
+    public void setKmerIndexPath(String kmerIndexPath) {
+        this.kmerIndexPath = kmerIndexPath;
     }
     
     @JsonProperty("partitions")

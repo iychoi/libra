@@ -20,6 +20,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
+import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
 import libra.preprocess.common.kmerhistogram.KmerRangePartition;
@@ -30,7 +31,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.TaskAttemptContext;
 
 /**
@@ -41,7 +41,7 @@ public class KmerJoiner {
     
     private static final Log LOG = LogFactory.getLog(KmerJoiner.class);
     
-    private Path[] kmerIndexPath;
+    private Path[] kmerIndexTableFilePaths;
     private KmerRangePartition partition;
     private Configuration conf;
     
@@ -52,28 +52,27 @@ public class KmerJoiner {
     private BigInteger beginSequence;
     
     private CompressedSequenceWritable[] stepKeys;
-    private IntWritable[] stepVals;
+    private CompressedIntArrayWritable[] stepVals;
     private List<Integer> stepMinKeys;
     private boolean stepStarted;
     
-    public KmerJoiner(Path[] kmerIndexPath, KmerRangePartition partition, TaskAttemptContext context) throws IOException {
-        initialize(kmerIndexPath, partition, context.getConfiguration());
+    public KmerJoiner(Path[] kmerIndexTableFilePaths, KmerRangePartition partition, TaskAttemptContext context) throws IOException {
+        initialize(kmerIndexTableFilePaths, partition, context.getConfiguration());
     }
     
-    public KmerJoiner(Path[] kmerIndexPath, KmerRangePartition partition, Configuration conf) throws IOException {
-        initialize(kmerIndexPath, partition, conf);
+    public KmerJoiner(Path[] kmerIndexTableFilePaths, KmerRangePartition partition, Configuration conf) throws IOException {
+        initialize(kmerIndexTableFilePaths, partition, conf);
     }
     
-    private void initialize(Path[] kmerIndexPath, KmerRangePartition partition, Configuration conf) throws IOException {
-        this.kmerIndexPath = kmerIndexPath;
+    private void initialize(Path[] kmerIndexTableFilePaths, KmerRangePartition partition, Configuration conf) throws IOException {
+        this.kmerIndexTableFilePaths = kmerIndexTableFilePaths;
         this.partition = partition;
         this.conf = conf;
         
-        this.readers = new AKmerIndexReader[this.kmerIndexPath.length];
-        LOG.info("# of KmerIndexReader : " + this.readers.length);
+        this.readers = new AKmerIndexReader[this.kmerIndexTableFilePaths.length];
         for(int i=0;i<this.readers.length;i++) {
-            FileSystem fs = this.kmerIndexPath[i].getFileSystem(this.conf);
-            this.readers[i] = new KmerIndexReader(fs, this.kmerIndexPath[i], this.partition.getPartitionBeginKmer(), this.partition.getPartitionEndKmer(), this.conf);
+            FileSystem fs = this.kmerIndexTableFilePaths[i].getFileSystem(this.conf);
+            this.readers[i] = new KmerIndexReader(fs, this.kmerIndexTableFilePaths[i], this.partition.getPartitionBeginKmer(), this.partition.getPartitionEndKmer(), this.conf);
         }
         
         this.partitionSize = partition.getPartitionSize();
@@ -81,7 +80,7 @@ public class KmerJoiner {
         this.eof = false;
         this.beginSequence = this.partition.getPartitionBegin();
         this.stepKeys = new CompressedSequenceWritable[this.readers.length];
-        this.stepVals = new IntWritable[this.readers.length];
+        this.stepVals = new CompressedIntArrayWritable[this.readers.length];
         this.stepStarted = false;
         
         LOG.info("Matcher is initialized");
@@ -90,19 +89,19 @@ public class KmerJoiner {
     }
     
     public KmerMatchResult stepNext() throws IOException {
-        List<Integer> minKeyIndice = getNextMinKeys();
-        if(minKeyIndice.size() > 0) {
-            CompressedSequenceWritable minKey = this.stepKeys[minKeyIndice.get(0)];
+        List<Integer> minKeyIndexes = getNextMinKeys();
+        if(minKeyIndexes.size() > 0) {
+            CompressedSequenceWritable minKey = this.stepKeys[minKeyIndexes.get(0)];
             this.progressKey = minKey;
             
             // check matching
-            IntWritable[] minVals = new IntWritable[minKeyIndice.size()];
-            Path[] minIndexPaths = new Path[minKeyIndice.size()];
+            CompressedIntArrayWritable[] minVals = new CompressedIntArrayWritable[minKeyIndexes.size()];
+            Path[] minIndexPaths = new Path[minKeyIndexes.size()];
 
             int valIdx = 0;
-            for (int idx : minKeyIndice) {
+            for (int idx : minKeyIndexes) {
                 minVals[valIdx] = this.stepVals[idx];
-                minIndexPaths[valIdx] = this.readers[idx].getIndexPath();
+                minIndexPaths[valIdx] = this.readers[idx].getKmerIndexTablePath();
                 valIdx++;
             }
 
@@ -147,7 +146,7 @@ public class KmerJoiner {
             for(int i=0;i<this.readers.length;i++) {
                 // fill first
                 CompressedSequenceWritable key = new CompressedSequenceWritable();
-                IntWritable val = new IntWritable();
+                CompressedIntArrayWritable val = new CompressedIntArrayWritable();
                 if(this.readers[i].next(key, val)) {
                     this.stepKeys[i] = key;
                     this.stepVals[i] = val;
@@ -170,7 +169,7 @@ public class KmerJoiner {
             // move min pointers
             for (int idx : this.stepMinKeys) {
                 CompressedSequenceWritable key = new CompressedSequenceWritable();
-                IntWritable val = new IntWritable();
+                CompressedIntArrayWritable val = new CompressedIntArrayWritable();
                 if(this.readers[idx].next(key, val)) {
                     this.stepKeys[idx] = key;
                     this.stepVals[idx] = val;

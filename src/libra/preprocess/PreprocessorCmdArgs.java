@@ -39,6 +39,27 @@ public class PreprocessorCmdArgs extends CommandArgumentsBase {
         return this.kmerSize;
     }
     
+    @Option(name = "-s", aliases = "--groupsize", usage = "specify size of group")
+    protected long groupSize = PreprocessorConfig.DEFAULT_GROUPSIZE;
+    
+    public long getGroupSize() {
+        return this.groupSize;
+    }
+    
+    @Option(name = "-g", aliases = "--maxgroupnum", usage = "specify max number of groups")
+    protected int maxGroupNum = PreprocessorConfig.DEFAULT_MAX_GROUPNUM;
+    
+    public int getMaxGroupNum() {
+        return this.maxGroupNum;
+    }
+    
+    @Option(name = "-t", aliases = "--tasks", usage = "specify number of tasks/reducers")
+    protected int taskNum = PreprocessorConfig.DEFAULT_TASKNUM;
+    
+    public int getTaskNum() {
+        return this.taskNum;
+    }
+    
     @Option(name = "-o", usage = "specify preprocess output path")
     private String outputPath = PreprocessorConfig.DEFAULT_OUTPUT_ROOT_PATH;
         
@@ -89,7 +110,10 @@ public class PreprocessorCmdArgs extends CommandArgumentsBase {
            return false;
         }
         
-        if(this.kmerSize <= 0 || 
+        if(this.kmerSize <= 0 ||
+                this.groupSize <= 0 ||
+                this.maxGroupNum <= 0 ||
+                this.taskNum < 0 ||
                 this.outputPath == null ||
                 this.inputPaths == null || 
                 this.inputPaths.isEmpty() || 
@@ -105,6 +129,9 @@ public class PreprocessorCmdArgs extends CommandArgumentsBase {
         
         config.setReportPath(this.reportfile);
         config.setKmerSize(this.kmerSize);
+        config.setGroupSize(this.groupSize);
+        config.setTaskNum(this.taskNum);
+        config.setMaxGroupNum(this.maxGroupNum);
         config.addSequencePath(this.inputPaths);
         config.setOutputRootPath(this.outputPath);
         return config;

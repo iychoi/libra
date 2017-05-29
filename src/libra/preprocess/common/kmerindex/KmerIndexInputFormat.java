@@ -19,6 +19,7 @@ import libra.preprocess.common.helpers.KmerIndexHelper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -27,7 +28,6 @@ import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.fs.PathFilter;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -41,14 +41,14 @@ import org.apache.hadoop.mapreduce.security.TokenCache;
  *
  * @author iychoi
  */
-public class KmerIndexInputFormat extends SequenceFileInputFormat<CompressedSequenceWritable, IntWritable> {
+public class KmerIndexInputFormat extends SequenceFileInputFormat<CompressedSequenceWritable, CompressedIntArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerIndexInputFormat.class);
     
     private final static String NUM_INPUT_FILES = "mapreduce.input.num.files";
     
     @Override
-    public RecordReader<CompressedSequenceWritable, IntWritable> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException {
+    public RecordReader<CompressedSequenceWritable, CompressedIntArrayWritable> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException {
         return new KmerIndexRecordReader();
     }
     
@@ -113,7 +113,7 @@ public class KmerIndexInputFormat extends SequenceFileInputFormat<CompressedSequ
         if (jobFilter != null) {
             filters.add(jobFilter);
         }
-        filters.add(new KmerIndexPartPathFilter());
+        filters.add(new KmerIndexDataPathFilter());
         PathFilter inputFilter = new MultiPathFilter(filters);
 
         for (int i = 0; i < dirs.length; ++i) {

@@ -17,6 +17,7 @@ package libra.common.kmermatch;
 
 import java.io.File;
 import java.io.IOException;
+import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.json.JsonSerializer;
 import org.apache.commons.logging.Log;
@@ -24,7 +25,6 @@ import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.codehaus.jackson.annotate.JsonIgnore;
 import org.codehaus.jackson.annotate.JsonProperty;
 
@@ -39,8 +39,8 @@ public class KmerMatchResult {
     private static final String HADOOP_CONFIG_KEY = "libra.common.kmermatch.kmermatchresult";
     
     private CompressedSequenceWritable key;
-    private IntWritable[] vals;
-    private Path[] kmerIndexPath;
+    private CompressedIntArrayWritable[] vals;
+    private Path[] kmerIndexTablePaths;
     
     public static KmerMatchResult createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -66,10 +66,10 @@ public class KmerMatchResult {
         
     }
     
-    public KmerMatchResult(CompressedSequenceWritable key, IntWritable[] vals, Path[] kmerIndexPath) {
+    public KmerMatchResult(CompressedSequenceWritable key, CompressedIntArrayWritable[] vals, Path[] kmerIndexTablePaths) {
         this.key = key;
         this.vals = vals;
-        this.kmerIndexPath = kmerIndexPath;
+        this.kmerIndexTablePaths = kmerIndexTablePaths;
     }
     
     @JsonProperty("kmer")
@@ -83,13 +83,13 @@ public class KmerMatchResult {
     }
     
     @JsonIgnore
-    public IntWritable[] getVals() {
+    public CompressedIntArrayWritable[] getVals() {
         return this.vals;
     }
     
-    @JsonProperty("kmer_index_path")
-    public Path[] getKmerIndexPath() {
-        return this.kmerIndexPath;
+    @JsonProperty("kmer_index_table_paths")
+    public Path[] getKmerIndexTablePaths() {
+        return this.kmerIndexTablePaths;
     }
     
     @JsonIgnore

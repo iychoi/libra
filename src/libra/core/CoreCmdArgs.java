@@ -17,7 +17,8 @@ package libra.core;
 
 import libra.common.cmdargs.CommandArgumentsBase;
 import libra.core.commom.CoreConfig;
-import libra.preprocess.common.WeightAlgorithm;
+import libra.core.commom.RunMode;
+import libra.core.commom.WeightAlgorithm;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
@@ -36,6 +37,20 @@ public class CoreCmdArgs extends CommandArgumentsBase {
 
     public WeightAlgorithm getWeightAlgorithm() {
         return WeightAlgorithm.fromString(this.weightAlgorithm);
+    }
+    
+    @Option(name = "-m", aliases = "--mode", usage = "specify run mode")
+    protected String runMode = CoreConfig.DEFAULT_RUN_MODE.name();
+
+    public RunMode getRunMode() {
+        return RunMode.fromString(this.runMode);
+    }
+    
+    @Option(name = "-t", aliases = "--tasks", usage = "specify number of tasks")
+    protected int taskNum = CoreConfig.DEFAULT_TASKNUM;
+    
+    public int getTaskNum() {
+        return this.taskNum;
     }
     
     @Option(name = "-o", usage = "specify output path")
@@ -63,7 +78,8 @@ public class CoreCmdArgs extends CommandArgumentsBase {
            return false;
         }
         
-        if(this.preprocessOutputPath == null ||
+        if(this.taskNum < 0 ||
+                this.preprocessOutputPath == null ||
                 this.outputPath == null) {
             return false;
         }
@@ -74,9 +90,11 @@ public class CoreCmdArgs extends CommandArgumentsBase {
     public CoreConfig getCoreConfig() {
         CoreConfig config = new CoreConfig();
         
-        config.setWeightAlgorithm(getWeightAlgorithm());
         config.setReportPath(this.reportfile);
-        config.setPreprocessOutputRootPath(this.preprocessOutputPath);
+        config.setWeightAlgorithm(getWeightAlgorithm());
+        config.setRunMode(getRunMode());
+        config.setTaskNum(this.taskNum);
+        config.setPreprocessRootPath(this.preprocessOutputPath);
         config.setOutputPath(this.outputPath);
         return config;
     }

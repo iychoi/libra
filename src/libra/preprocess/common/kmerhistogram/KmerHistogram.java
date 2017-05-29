@@ -45,7 +45,7 @@ public class KmerHistogram {
     
     private static final int SAMPLING_CHARS = 6;
     
-    private String sampleName;
+    private String name;
     private int kmerSize;
     
     private Hashtable<String, KmerHistogramRecord> recordCache = new Hashtable<String, KmerHistogramRecord>();
@@ -77,19 +77,19 @@ public class KmerHistogram {
     public KmerHistogram() {
     }
     
-    public KmerHistogram(String sampleName, int kmerSize) {
-        this.sampleName = sampleName;
+    public KmerHistogram(String name, int kmerSize) {
+        this.name = name;
         this.kmerSize = kmerSize;
     }
     
-    @JsonProperty("sample_name")
-    public String getSampleName() {
-        return this.sampleName;
+    @JsonProperty("name")
+    public String getName() {
+        return this.name;
     }
     
-    @JsonProperty("sample_name")
-    public void setSampleName(String sampleName) {
-        this.sampleName = sampleName;
+    @JsonProperty("name")
+    public void setName(String name) {
+        this.name = name;
     }
     
     @JsonProperty("kmer_size")

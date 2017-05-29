@@ -71,13 +71,13 @@ public class KmerMatchFileMapping {
     
     @JsonProperty("sequence_files")
     public Collection<String> getSequenceFiles() {
-        return Collections.unmodifiableCollection(this.objList);
+        return this.objList;
     }
     
     @JsonProperty("sequence_files")
-    public void addSequenceFile(Collection<Path> sequenceFiles) {
-        for(Path sequenceFile : sequenceFiles) {
-            KmerMatchFileMapping.this.addSequenceFile(sequenceFile.getName());
+    public void addSequenceFile(Collection<String> sequenceFiles) {
+        for(String sequenceFile : sequenceFiles) {
+            addSequenceFile(sequenceFile);
         }
     }
     
@@ -101,7 +101,7 @@ public class KmerMatchFileMapping {
         if(this.objList.size() <= id) {
             throw new IOException("could not find filename from " + id);
         } else {
-            return this.objList.get(id);    
+            return this.objList.get(id);
         }
     }
     

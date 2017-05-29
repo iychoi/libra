@@ -34,61 +34,72 @@ import org.codehaus.jackson.annotate.JsonProperty;
  *
  * @author iychoi
  */
-public class KmerIndexIndex {
+public class KmerIndexTable {
     
-    private static final Log LOG = LogFactory.getLog(KmerIndexIndex.class);
+    private static final Log LOG = LogFactory.getLog(KmerIndexTable.class);
     
-    private static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.kmerindex.kmerindexindex";
+    private static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.kmerindex.kmerindextable";
     
-    private List<String> lastKeyList = new ArrayList<String>();
+    private String name;
+    private List<KmerIndexTableRecord> records = new ArrayList<KmerIndexTableRecord>();
     
-    public static KmerIndexIndex createInstance(File file) throws IOException {
+    public static KmerIndexTable createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (KmerIndexIndex) serializer.fromJsonFile(file, KmerIndexIndex.class);
+        return (KmerIndexTable) serializer.fromJsonFile(file, KmerIndexTable.class);
     }
     
-    public static KmerIndexIndex createInstance(String json) throws IOException {
+    public static KmerIndexTable createInstance(String json) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (KmerIndexIndex) serializer.fromJson(json, KmerIndexIndex.class);
+        return (KmerIndexTable) serializer.fromJson(json, KmerIndexTable.class);
     }
     
-    public static KmerIndexIndex createInstance(Configuration conf) throws IOException {
+    public static KmerIndexTable createInstance(Configuration conf) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (KmerIndexIndex) serializer.fromJsonConfiguration(conf, HADOOP_CONFIG_KEY, KmerIndexIndex.class);
+        return (KmerIndexTable) serializer.fromJsonConfiguration(conf, HADOOP_CONFIG_KEY, KmerIndexTable.class);
     }
     
-    public static KmerIndexIndex createInstance(FileSystem fs, Path file) throws IOException {
+    public static KmerIndexTable createInstance(FileSystem fs, Path file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (KmerIndexIndex) serializer.fromJsonFile(fs, file, KmerIndexIndex.class);
+        return (KmerIndexTable) serializer.fromJsonFile(fs, file, KmerIndexTable.class);
     }
     
-    public KmerIndexIndex() {
+    public KmerIndexTable() {
+    }
+    
+    public KmerIndexTable(String name) {
+        this.name = name;
+    }
+    
+    @JsonProperty("name")
+    public String getName() {
+        return this.name;
+    }
+    
+    @JsonProperty("name")
+    public void setName(String name) {
+        this.name = name;
     }
     
     @JsonIgnore
-    public void addLastKey(String key) {
-        this.lastKeyList.add(key);
+    public void addRecord(KmerIndexTableRecord record) {
+        this.records.add(record);
+        Collections.sort(this.records);
     }
     
-    @JsonProperty("last_keys")
-    public void addLastKey(Collection<String> keys) {
-        this.lastKeyList.addAll(keys);
+    @JsonProperty("record")
+    public void addRecord(Collection<KmerIndexTableRecord> record) {
+        this.records.addAll(record);
+        Collections.sort(this.records);
     }
     
-    @JsonIgnore
-    public Collection<String> getLastKey() {
-        return Collections.unmodifiableCollection(this.lastKeyList);
-    }
-    
-    @JsonProperty("last_keys")
-    public Collection<String> getSortedLastKeys() {
-        Collections.sort(this.lastKeyList);
-        return Collections.unmodifiableCollection(this.lastKeyList);
+    @JsonProperty("record")
+    public Collection<KmerIndexTableRecord> getRecord() {
+        return this.records;
     }
     
     @JsonIgnore
     public int getSize() {
-        return this.lastKeyList.size();
+        return this.records.size();
     }
     
     @JsonIgnore

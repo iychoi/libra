@@ -26,8 +26,11 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import libra.common.helpers.FileSystemHelper;
 import libra.preprocess.common.PreprocessorConstants;
-import libra.preprocess.common.kmerindex.KmerIndexIndexPathFilter;
-import libra.preprocess.common.kmerindex.KmerIndexPartPathFilter;
+import libra.preprocess.common.kmerindex.KmerIndexTablePathFilter;
+import libra.preprocess.common.kmerindex.KmerIndexDataPathFilter;
+import libra.preprocess.stage2.KmerIndexBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -38,89 +41,80 @@ import org.apache.hadoop.io.MapFile;
  *
  * @author iychoi
  */
-@SuppressWarnings("deprecation")
 public class KmerIndexHelper {
-    private final static String KMER_INDEX_INDEX_PATH_EXP = ".+\\." + PreprocessorConstants.KMER_INDEX_INDEX_FILENAME_EXTENSION + "$";
-    private final static Pattern KMER_INDEX_INDEX_PATH_PATTERN = Pattern.compile(KMER_INDEX_INDEX_PATH_EXP);
-    private final static String KMER_INDEX_PART_PATH_EXP = ".+\\." + PreprocessorConstants.KMER_INDEX_PART_FILENAME_EXTENSION + "\\.\\d+$";
-    private final static Pattern KMER_INDEX_PART_PATH_PATTERN = Pattern.compile(KMER_INDEX_PART_PATH_EXP);
     
-    public static String makeKmerIndexIndexFileName(Path filePath, int kmerSize) {
-        return makeKmerIndexIndexFileName(filePath.getName(), kmerSize);
+    private static final Log LOG = LogFactory.getLog(KmerIndexHelper.class);
+    
+    private final static String KMER_INDEX_TABLE_PATH_EXP = ".+\\." + PreprocessorConstants.KMER_INDEX_TABLE_FILENAME_EXTENSION + "$";
+    private final static Pattern KMER_INDEX_TABLE_PATH_PATTERN = Pattern.compile(KMER_INDEX_TABLE_PATH_EXP);
+    private final static String KMER_INDEX_DATA_PATH_EXP = ".+\\." + PreprocessorConstants.KMER_INDEX_DATA_FILENAME_EXTENSION + "\\.\\d+$";
+    private final static Pattern KMER_INDEX_DATA_PATH_PATTERN = Pattern.compile(KMER_INDEX_DATA_PATH_EXP);
+    
+    public static String makeKmerIndexTableFileName(String filename) {
+        return filename + "." + PreprocessorConstants.KMER_INDEX_TABLE_FILENAME_EXTENSION;
     }
     
-    public static String makeKmerIndexIndexFileName(String filename, int kmerSize) {
-        return filename + "." + kmerSize + "." + PreprocessorConstants.KMER_INDEX_INDEX_FILENAME_EXTENSION;
+    public static String makeKmerIndexDataFileName(Path filePath, int mapreduceID) {
+        return makeKmerIndexDataFileName(filePath.getName(), mapreduceID);
     }
     
-    public static String makeKmerIndexPartFileName(Path filePath, int kmerSize, int mapreduceID) {
-        return makeKmerIndexPartFileName(filePath.getName(), kmerSize, mapreduceID);
+    public static String makeKmerIndexDataFileName(String filename, int mapreduceID) {
+        return filename + "." + PreprocessorConstants.KMER_INDEX_DATA_FILENAME_EXTENSION + "." + mapreduceID;
     }
     
-    public static String makeKmerIndexPartFileName(String filename, int kmerSize, int mapreduceID) {
-        return filename + "." + kmerSize + "." + PreprocessorConstants.KMER_INDEX_PART_FILENAME_EXTENSION + "." + mapreduceID;
+    public static boolean isKmerIndexTableFile(Path path) {
+        return isKmerIndexTableFile(path.getName());
     }
     
-    public static boolean isKmerIndexIndexFile(Path path) {
-        return isKmerIndexIndexFile(path.getName());
-    }
-    
-    public static boolean isKmerIndexIndexFile(String path) {
-        Matcher matcher = KMER_INDEX_INDEX_PATH_PATTERN.matcher(path.toLowerCase());
+    public static boolean isKmerIndexTableFile(String path) {
+        Matcher matcher = KMER_INDEX_TABLE_PATH_PATTERN.matcher(path.toLowerCase());
         if(matcher.matches()) {
             return true;
         }
         return false;
     }
     
-    public static boolean isKmerIndexPartFile(Path path) {
-        return isKmerIndexPartFile(path.getName());
+    public static boolean isKmerIndexDataFile(Path path) {
+        return isKmerIndexDataFile(path.getName());
     }
     
-    public static boolean isKmerIndexPartFile(String path) {
-        Matcher matcher = KMER_INDEX_PART_PATH_PATTERN.matcher(path.toLowerCase());
+    public static boolean isKmerIndexDataFile(String path) {
+        Matcher matcher = KMER_INDEX_DATA_PATH_PATTERN.matcher(path.toLowerCase());
         if(matcher.matches()) {
             return true;
         }
         return false;
     }
     
-    public static String getSequenceFileName(Path indexFilePath) {
-        return getSequenceFileName(indexFilePath.getName());
+    public static String getFileTableName(Path indexFilePath) {
+        return getFileTableName(indexFilePath.getName());
     }
     
-    public static String getSequenceFileName(String indexFileName) {
-        if(isKmerIndexIndexFile(indexFileName)) {
-            int idx = indexFileName.lastIndexOf("." + PreprocessorConstants.KMER_INDEX_INDEX_FILENAME_EXTENSION);
+    public static String getFileTableName(String indexFileName) {
+        if(isKmerIndexTableFile(indexFileName)) {
+            int idx = indexFileName.lastIndexOf("." + PreprocessorConstants.KMER_INDEX_TABLE_FILENAME_EXTENSION);
             if (idx >= 0) {
-                String part = indexFileName.substring(0, idx);
-                int idx2 = part.lastIndexOf(".");
+                String tableFilePath = indexFileName.substring(0, idx);
+                int idx2 = tableFilePath.lastIndexOf("/");
                 if (idx2 >= 0) {
-                    String sequenceFilePath = part.substring(0, idx2);
-                    int idx3 = sequenceFilePath.lastIndexOf("/");
-                    if (idx3 >= 0) {
-                        return sequenceFilePath.substring(idx3 + 1);
-                    } else {
-                        return sequenceFilePath;
-                    }
+                    return tableFilePath.substring(idx2 + 1);
+                } else {
+                    return tableFilePath;
                 }
             }
-        } else if(isKmerIndexPartFile(indexFileName)) {
-            int idx = indexFileName.lastIndexOf("." + PreprocessorConstants.KMER_INDEX_PART_FILENAME_EXTENSION);
+        } else if(isKmerIndexDataFile(indexFileName)) {
+            int idx = indexFileName.lastIndexOf("." + PreprocessorConstants.KMER_INDEX_DATA_FILENAME_EXTENSION);
             if (idx >= 0) {
-                String part = indexFileName.substring(0, idx);
-                int idx2 = part.lastIndexOf(".");
+                String tableFilePath = indexFileName.substring(0, idx);
+                int idx2 = tableFilePath.lastIndexOf("/");
                 if (idx2 >= 0) {
-                    String sequenceFilePath = part.substring(0, idx2);
-                    int idx3 = sequenceFilePath.lastIndexOf("/");
-                    if (idx3 >= 0) {
-                        return sequenceFilePath.substring(idx3 + 1);
-                    } else {
-                        return sequenceFilePath;
-                    }
+                    return tableFilePath.substring(idx2 + 1);
+                } else {
+                    return tableFilePath;
                 }
             }
         }
+        LOG.error("Not an index table or index data file - " + indexFileName);
         return null;
     }
     
@@ -129,44 +123,21 @@ public class KmerIndexHelper {
     }
     
     public static boolean isSameKmerIndex(String index1, String index2) {
-        String sequenceFileName1 = getSequenceFileName(index1);
-        String sequenceFileName2 = getSequenceFileName(index2);
+        String fileTableName1 = getFileTableName(index1);
+        String fileTableName2 = getFileTableName(index2);
         
-        return sequenceFileName1.equals(sequenceFileName2);
-    }
-    
-    public static int getKmerSize(Path indexFilePath) {
-        return getKmerSize(indexFilePath.getName());
-    }
-    
-    public static int getKmerSize(String indexFileName) {
-        if(isKmerIndexIndexFile(indexFileName)) {
-            int idx = indexFileName.lastIndexOf("." + PreprocessorConstants.KMER_INDEX_INDEX_FILENAME_EXTENSION);
-            if(idx >= 0) {
-                String part = indexFileName.substring(0, idx);
-                int idx2 = part.lastIndexOf(".");
-                if(idx2 >= 0) {
-                    return Integer.parseInt(part.substring(idx2 + 1));
-                }
-            }
-        } else if(isKmerIndexPartFile(indexFileName)) {
-            int idx = indexFileName.lastIndexOf("." + PreprocessorConstants.KMER_INDEX_PART_FILENAME_EXTENSION);
-            if(idx >= 0) {
-                String part = indexFileName.substring(0, idx);
-                int idx2 = part.lastIndexOf(".");
-                if(idx2 >= 0) {
-                    return Integer.parseInt(part.substring(idx2 + 1));
-                }
-            }
+        if(fileTableName1 == null || fileTableName2 == null) {
+            return false;
         }
-        return -1;
+        
+        return fileTableName1.equals(fileTableName2);
     }
     
-    public static int getIndexPartID(Path indexFilePath) {
-        return getIndexPartID(indexFilePath.getName());
+    public static int getIndexDataID(Path indexFilePath) {
+        return getIndexDataID(indexFilePath.getName());
     }
     
-    public static int getIndexPartID(String indexFileName) {
+    public static int getIndexDataID(String indexFileName) {
         int idx = indexFileName.lastIndexOf(".");
         if(idx >= 0) {
             String partID = indexFileName.substring(idx + 1);
@@ -175,119 +146,24 @@ public class KmerIndexHelper {
         return -1;
     }
     
-    public static Path[] getAllKmerIndexIndexFilePath(Configuration conf, String inputPathsCommaSeparated) throws IOException {
-        return KmerIndexHelper.getAllKmerIndexIndexFilePath(conf, FileSystemHelper.makePathFromString(conf, FileSystemHelper.splitCommaSeparated(inputPathsCommaSeparated)));
-    }
-    
-    public static Path[] getAllKmerIndexIndexFilePath(Configuration conf, Path inputPath) throws IOException {
-        Path[] paths = new Path[1];
-        paths[0] = inputPath;
-        return KmerIndexHelper.getAllKmerIndexIndexFilePath(conf, paths);
-    }
-    
-    public static Path[] getAllKmerIndexIndexFilePath(Configuration conf, String[] inputPaths) throws IOException {
-        return KmerIndexHelper.getAllKmerIndexIndexFilePath(conf, FileSystemHelper.makePathFromString(conf, inputPaths));
-    }
-    
-    public static Path[] getAllKmerIndexIndexFilePath(Configuration conf, Collection<String> inputPaths) throws IOException {
-        return KmerIndexHelper.getAllKmerIndexIndexFilePath(conf, FileSystemHelper.makePathFromString(conf, inputPaths));
-    }
-    
-    public static Path[] getAllKmerIndexIndexFilePath(Configuration conf, Path[] inputPaths) throws IOException {
+    public static Path[] getKmerIndexDataFilePath(Configuration conf, Path inputPath) throws IOException {
         List<Path> inputFiles = new ArrayList<Path>();
-        KmerIndexIndexPathFilter filter = new KmerIndexIndexPathFilter();
+        KmerIndexDataPathFilter filter = new KmerIndexDataPathFilter();
         
-        for(Path path : inputPaths) {
-            FileSystem fs = path.getFileSystem(conf);
-            if(fs.exists(path)) {
-                FileStatus status = fs.getFileStatus(path);
-                if(status.isDir()) {
-                    // check child
-                    FileStatus[] entries = fs.listStatus(path);
-                    for (FileStatus entry : entries) {
-                        if(entry.isFile()) {
-                            if (filter.accept(entry.getPath())) {
-                                inputFiles.add(entry.getPath());
-                            }
-                        }
-                    }
-                } else if(status.isFile()) {
-                    if (filter.accept(status.getPath())) {
-                        inputFiles.add(status.getPath());
-                    }
+        FileSystem fs = inputPath.getFileSystem(conf);
+        if(fs.exists(inputPath)) {
+            FileStatus status = fs.getFileStatus(inputPath);
+            if(status.isDirectory()) {
+                if(filter.accept(inputPath)) {
+                    inputFiles.add(inputPath);
                 }
-            }
-        }
-        
-        Path[] files = inputFiles.toArray(new Path[0]);
-        return files;
-    }
-    
-    public static Path[] getAllKmerIndexPartDataFilePath(Configuration conf, String inputPathsCommaSeparated) throws IOException {
-        return KmerIndexHelper.getAllKmerIndexPartDataFilePath(conf, FileSystemHelper.makePathFromString(conf, FileSystemHelper.splitCommaSeparated(inputPathsCommaSeparated)));
-    }
-    
-    public static Path[] getAllKmerIndexPartDataFilePath(Configuration conf, Path inputPath) throws IOException {
-        Path[] paths = new Path[1];
-        paths[0] = inputPath;
-        return KmerIndexHelper.getAllKmerIndexPartDataFilePath(conf, paths);
-    }
-    
-    public static Path[] getAllKmerIndexPartDataFilePath(Configuration conf, String[] inputPaths) throws IOException {
-        return KmerIndexHelper.getAllKmerIndexPartDataFilePath(conf, FileSystemHelper.makePathFromString(conf, inputPaths));
-    }
-    
-    public static Path[] getAllKmerIndexPartDataFilePath(Configuration conf, Collection<String> inputPaths) throws IOException {
-        return KmerIndexHelper.getAllKmerIndexPartDataFilePath(conf, FileSystemHelper.makePathFromString(conf, inputPaths));
-    }
-    
-    public static Path[] getAllKmerIndexPartDataFilePath(Configuration conf, Path[] inputPaths) throws IOException {
-        List<Path> inputFiles = new ArrayList<Path>();
-        KmerIndexPartPathFilter filter = new KmerIndexPartPathFilter();
-        
-        for(Path path : inputPaths) {
-            FileSystem fs = path.getFileSystem(conf);
-            if(fs.exists(path)) {
-                FileStatus status = fs.getFileStatus(path);
-                if(status.isDir()) {
-                    if(filter.accept(path)) {
-                        inputFiles.add(new Path(path, MapFile.DATA_FILE_NAME));
-                    } else {
-                        // check child
-                        FileStatus[] entries = fs.listStatus(path);
-                        for (FileStatus entry : entries) {
-                            if(entry.isDir()) {
-                                if (filter.accept(entry.getPath())) {
-                                    inputFiles.add(new Path(entry.getPath(), MapFile.DATA_FILE_NAME));
-                                }
-                            }
-                        }
-                    }
-                }
-            }
-        }
-        
-        return inputFiles.toArray(new Path[0]);
-    }
-    
-    public static Path[] getKmerIndexPartFilePath(Configuration conf, Path inputPath) throws IOException {
-        List<Path> inputFiles = new ArrayList<Path>();
-        KmerIndexPartPathFilter filter = new KmerIndexPartPathFilter();
-        
-        Path indexDir = inputPath.getParent();
-        
-        FileSystem fs = indexDir.getFileSystem(conf);
-        if(fs.exists(indexDir)) {
-            FileStatus status = fs.getFileStatus(indexDir);
-            if(status.isDir()) {
+                
                 // check child
-                FileStatus[] entries = fs.listStatus(indexDir);
+                FileStatus[] entries = fs.listStatus(inputPath);
                 for (FileStatus entry : entries) {
-                    if(entry.isDir()) {
+                    if(entry.isDirectory()) {
                         if (filter.accept(entry.getPath())) {
-                            if(isSameKmerIndex(inputPath, entry.getPath())) {
-                                inputFiles.add(entry.getPath());
-                            }
+                            inputFiles.add(entry.getPath());
                         }
                     }
                 }

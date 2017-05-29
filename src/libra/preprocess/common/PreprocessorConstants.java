@@ -20,8 +20,9 @@ package libra.preprocess.common;
  * @author iychoi
  */
 public class PreprocessorConstants {
+    public final static String FILE_TABLE_FILENAME_EXTENSION = "ftbl";
     public final static String KMER_HISTOGRAM_FILENAME_EXTENSION = "khist";
-    public final static String KMER_INDEX_INDEX_FILENAME_EXTENSION = "kidx";
-    public final static String KMER_INDEX_PART_FILENAME_EXTENSION = "kidxc";
-    public final static String KMER_STATISTICS_FILENAME_EXTENSION = "kstat";
+    public final static String KMER_INDEX_TABLE_FILENAME_EXTENSION = "kidx";
+    public final static String KMER_INDEX_DATA_FILENAME_EXTENSION = "kidxc";
+    public final static String KMER_STATISTICS_TABLE_FILENAME_EXTENSION = "kstat";
 }

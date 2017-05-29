@@ -16,13 +16,16 @@
 package libra.core.kmersimilarity_r;
 
 import java.io.IOException;
+import java.util.Collection;
 import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.kmermatch.KmerMatchFileMapping;
+import libra.core.commom.CoreConfig;
+import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.mapreduce.Mapper;
 import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
@@ -30,35 +33,58 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  *
  * @author iychoi
  */
-public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, IntWritable, CompressedSequenceWritable, CompressedIntArrayWritable> {
+public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, CompressedIntArrayWritable, CompressedSequenceWritable, CompressedIntArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityMapper.class);
     
+    private CoreConfig cConfig;
+    private FileTable fileTable;
+    private String[] samplesInFileTable;
     private KmerMatchFileMapping fileMapping;
-    private int file_id = 0;
+    
     
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
-        this.fileMapping = KmerMatchFileMapping.createInstance(context.getConfiguration());
+        Configuration conf = context.getConfiguration();
         
+        this.cConfig = CoreConfig.createInstance(conf);
         FileSplit inputSplit = (FileSplit)context.getInputSplit();
+        String fileTableName = KmerIndexHelper.getFileTableName(inputSplit.getPath().getParent().getName());
+        for(FileTable table : this.cConfig.getFileTable()) {
+            if(table.getName().equals(fileTableName)) {
+                this.fileTable = table;
+                break;
+            }
+        }
         
-        String sequenceFilename = KmerIndexHelper.getSequenceFileName(inputSplit.getPath().getParent().getName());
+        Collection<String> samples = this.fileTable.getSamples();
+        this.samplesInFileTable = samples.toArray(new String[0]);
         
-        this.file_id = this.fileMapping.getIDFromSequenceFile(sequenceFilename);
+        this.fileMapping = KmerMatchFileMapping.createInstance(conf);
+        
     }
     
     @Override
-    protected void map(CompressedSequenceWritable key, IntWritable value, Context context) throws IOException, InterruptedException {
-        int[] arr = new int[2];
-        arr[0] = this.file_id;
-        arr[1] = value.get();
+    protected void map(CompressedSequenceWritable key, CompressedIntArrayWritable value, Context context) throws IOException, InterruptedException {
+        int[] value_arr = value.get();
         
-        context.write(key, new CompressedIntArrayWritable(arr));
+        for(int i=0;i<value_arr.length/2;i++) {
+            int file_id_in_table = value_arr[i*2];
+            int freq = value_arr[i*2 + 1];
+            
+            int file_id = convertFileIDToGlobalFileID(file_id_in_table);
+            value_arr[i*2] = file_id;
+        }
+        
+        context.write(key, new CompressedIntArrayWritable(value_arr));
     }
-        
+    
+    private int convertFileIDToGlobalFileID(int file_id_in_table) throws IOException {
+        String sampleName = this.samplesInFileTable[file_id_in_table];
+        return this.fileMapping.getIDFromSequenceFile(sampleName);
+    }
+    
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-        this.fileMapping = null;
     }
 }

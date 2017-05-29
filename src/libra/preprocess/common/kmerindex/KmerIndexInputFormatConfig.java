@@ -33,7 +33,7 @@ public class KmerIndexInputFormatConfig {
     private static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.kmerindex.kmerindexinputformatconfig";
     
     private int kmerSize;
-    private String kmerIndexIndexPath;
+    private String kmerIndexTableFilePath;
     
     public static KmerIndexInputFormatConfig createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -69,14 +69,14 @@ public class KmerIndexInputFormatConfig {
         return this.kmerSize;
     }
     
-    @JsonProperty("kmerindex_index_path")
-    public void setKmerIndexIndexPath(String kmerIndexIndexPath) {
-        this.kmerIndexIndexPath = kmerIndexIndexPath;
+    @JsonProperty("kmer_index_table_file_path")
+    public void setKmerIndexTableFilePath(String kmerIndexIndexPath) {
+        this.kmerIndexTableFilePath = kmerIndexIndexPath;
     }
     
-    @JsonProperty("kmerindex_index_path")
-    public String getKmerIndexIndexPath() {
-        return this.kmerIndexIndexPath;
+    @JsonProperty("kmer_index_table_file_path")
+    public String getKmerIndexTableFilePath() {
+        return this.kmerIndexTableFilePath;
     }
     
     @JsonIgnore

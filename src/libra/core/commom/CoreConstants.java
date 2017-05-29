@@ -20,7 +20,7 @@ package libra.core.commom;
  * @author iychoi
  */
 public class CoreConstants {
-    public final static String KMER_SIMILARITY_TABLE_FILENAME = "table.json";
+    public final static String KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME = "file_mapping_table.json";
     public final static String KMER_SIMILARITY_RESULT_FILENAME_PREFIX = "result";
     public final static String KMER_SIMILARITY_RESULT_FILENAME_EXTENSION = "score";
 }

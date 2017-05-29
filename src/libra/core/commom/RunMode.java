@@ -1,5 +1,5 @@
 /*
- * Copyright 2016 iychoi.
+ * Copyright 2017 iychoi.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,20 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common.kmersimilarity;
-
-import libra.core.common.helpers.KmerSimilarityHelper;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
+package libra.core.commom;
 
 /**
  *
  * @author iychoi
  */
-public class KmerSimilarityResultPathFilter implements PathFilter {
-
-    @Override
-    public boolean accept(Path path) {
-        return KmerSimilarityHelper.isKmerSimilarityResultFile(path);
+public enum RunMode {
+    REDUCE,
+    MAP;
+    
+    public static RunMode fromString(String m) {
+        try {
+            RunMode mode = RunMode.valueOf(m.trim().toUpperCase());
+            return mode;
+        } catch (Exception ex) {
+            // fall
+        }
+        
+        if("r".equalsIgnoreCase(m.trim())) {
+            return REDUCE;
+        } else if("m".equalsIgnoreCase(m.trim())) {
+            return MAP;
+        }
+        
+        return MAP;
     }
 }

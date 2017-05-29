@@ -20,63 +20,39 @@ import java.io.IOException;
 import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
-import libra.common.cmdargs.CommandArgumentsParser;
 import libra.common.helpers.MapReduceHelper;
-import libra.preprocess.PreprocessorCmdArgs;
-import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.PreprocessorConfigException;
+import libra.preprocess.common.PreprocessorRoundConfig;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.NullWritable;
+import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 /**
  *
  * @author iychoi
  */
-@SuppressWarnings("deprecation")
-public class KmerHistogramBuilder extends Configured implements Tool {
-    
+public class KmerHistogramBuilder {
     private static final Log LOG = LogFactory.getLog(KmerHistogramBuilder.class);
-    
-    public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new Configuration(), new KmerHistogramBuilder(), args);
-        System.exit(res);
-    }
-    
-    public static int main2(String[] args) throws Exception {
-        return ToolRunner.run(new Configuration(), new KmerHistogramBuilder(), args);
-    }
     
     public KmerHistogramBuilder() {
         
     }
     
-    @Override
-    public int run(String[] args) throws Exception {
-        CommandArgumentsParser<PreprocessorCmdArgs> parser = new CommandArgumentsParser<PreprocessorCmdArgs>();
-        PreprocessorCmdArgs cmdParams = new PreprocessorCmdArgs();
-        if(!parser.parse(args, cmdParams)) {
-            LOG.error("Failed to parse command line arguments!");
-            return 1;
+    private void validatePreprocessorConfig(PreprocessorRoundConfig ppConfig) throws PreprocessorConfigException {
+        if(ppConfig.getSequencePath().size() <= 0) {
+            throw new PreprocessorConfigException("cannot find input sample path");
         }
         
-        PreprocessorConfig ppConfig = cmdParams.getPreprocessorConfig();
-        
-        return runJob(ppConfig);
-    }
-    
-    private void validatePreprocessorConfig(PreprocessorConfig ppConfig) throws PreprocessorConfigException {
-        if(ppConfig.getSequencePath().size() <= 0) {
+        if(ppConfig.getFileTable() == null || ppConfig.getFileTable().samples() <= 0) {
             throw new PreprocessorConfigException("cannot find input sample path");
         }
         
@@ -89,14 +65,11 @@ public class KmerHistogramBuilder extends Configured implements Tool {
         }
     }
     
-    private int runJob(PreprocessorConfig ppConfig) throws Exception {
+    public int runJob(Configuration conf, PreprocessorRoundConfig ppConfig) throws Exception {
         // check config
         validatePreprocessorConfig(ppConfig);
         
-        // configuration
-        Configuration conf = this.getConf();
-        
-        Job job = new Job(conf, "Libra Preprocessor - Building Kmer Histogram");
+        Job job = Job.getInstance(conf, "Libra Preprocessor - Building Kmer Histogram");
         conf = job.getConfiguration();
         
         // set user configuration
@@ -108,18 +81,23 @@ public class KmerHistogramBuilder extends Configured implements Tool {
 
         // Mapper
         job.setMapperClass(KmerHistogramBuilderMapper.class);
-        SequenceKmerInputFormat.setSplitable(conf, false);
         SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
         job.setInputFormatClass(SequenceKmerInputFormat.class);
-        job.setMapOutputKeyClass(NullWritable.class);
-        job.setMapOutputValueClass(NullWritable.class);
+        job.setMapOutputKeyClass(Text.class);
+        job.setMapOutputValueClass(LongWritable.class);
+        
+        // Combiner
+        job.setCombinerClass(KmerHistogramBuilderCombiner.class);
+        
+        // Reducer
+        job.setReducerClass(KmerHistogramBuilderReducer.class);
         
         // Specify key / value
         job.setOutputKeyClass(NullWritable.class);
         job.setOutputValueClass(NullWritable.class);
         
         // Inputs
-        Path[] inputFiles = FileSystemHelper.getAllSequenceFilePath(conf, ppConfig.getSequencePath());
+        Path[] inputFiles = FileSystemHelper.makePathFromString(conf, ppConfig.getFileTable().getSamples());
         FileInputFormat.addInputPaths(job, FileSystemHelper.makeCommaSeparated(inputFiles));
         
         LOG.info("Input sample files : " + inputFiles.length);
@@ -129,8 +107,7 @@ public class KmerHistogramBuilder extends Configured implements Tool {
         
         job.setOutputFormatClass(NullOutputFormat.class);
         
-        // Map only job
-        job.setNumReduceTasks(0);
+        job.setNumReduceTasks(1);
         
         // Execute job and return status
         boolean result = job.waitForCompletion(true);
@@ -154,7 +131,7 @@ public class KmerHistogramBuilder extends Configured implements Tool {
         FileSystem fs = outputPath.getFileSystem(conf);
         
         FileStatus status = fs.getFileStatus(outputPath);
-        if (status.isDir()) {
+        if (status.isDirectory()) {
             FileStatus[] entries = fs.listStatus(outputPath);
             for (FileStatus entry : entries) {
                 Path entryPath = entry.getPath();

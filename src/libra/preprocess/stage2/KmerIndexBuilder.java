@@ -17,80 +17,56 @@ package libra.preprocess.stage2;
 
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Iterator;
-import java.util.List;
+import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
-import libra.common.cmdargs.CommandArgumentsParser;
 import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
-import libra.common.helpers.MapReduceClusterHelper;
 import libra.common.helpers.MapReduceHelper;
-import libra.preprocess.PreprocessorCmdArgs;
-import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.PreprocessorConfigException;
+import libra.preprocess.common.PreprocessorRoundConfig;
+import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerHistogramHelper;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
-import libra.preprocess.common.kmerindex.KmerIndexIndex;
+import libra.preprocess.common.kmerindex.KmerIndexTable;
+import libra.preprocess.common.kmerindex.KmerIndexTableRecord;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
+import libra.preprocess.common.kmerstatistics.KmerStatisticsPart;
+import libra.preprocess.common.kmerstatistics.KmerStatisticsPartTable;
+import libra.preprocess.common.kmerstatistics.KmerStatisticsTable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.MapFile;
-import org.apache.hadoop.mapreduce.Counter;
-import org.apache.hadoop.mapreduce.CounterGroup;
-import org.apache.hadoop.mapreduce.Counters;
+import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.MapFileOutputFormat;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 /**
  *
  * @author iychoi
  */
-@SuppressWarnings("deprecation")
-public class KmerIndexBuilder extends Configured implements Tool {
+public class KmerIndexBuilder {
     
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilder.class);
-    
-    public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new Configuration(), new KmerIndexBuilder(), args);
-        System.exit(res);
-    }
-    
-    public static int main2(String[] args) throws Exception {
-        return ToolRunner.run(new Configuration(), new KmerIndexBuilder(), args);
-    }
     
     public KmerIndexBuilder() {
         
     }
     
-    @Override
-    public int run(String[] args) throws Exception {
-        CommandArgumentsParser<PreprocessorCmdArgs> parser = new CommandArgumentsParser<PreprocessorCmdArgs>();
-        PreprocessorCmdArgs cmdParams = new PreprocessorCmdArgs();
-        if(!parser.parse(args, cmdParams)) {
-            LOG.error("Failed to parse command line arguments!");
-            return 1;
+    private void validatePreprocessorConfig(PreprocessorRoundConfig ppConfig) throws PreprocessorConfigException {
+        if(ppConfig.getSequencePath().size() <= 0) {
+            throw new PreprocessorConfigException("cannot find input sample path");
         }
         
-        PreprocessorConfig ppConfig = cmdParams.getPreprocessorConfig();
-        
-        return runJob(ppConfig);
-    }
-    
-    private void validatePreprocessorConfig(PreprocessorConfig ppConfig) throws PreprocessorConfigException {
-        if(ppConfig.getSequencePath().size() <= 0) {
+        if(ppConfig.getFileTable() == null || ppConfig.getFileTable().samples() <= 0) {
             throw new PreprocessorConfigException("cannot find input sample path");
         }
         
@@ -107,110 +83,101 @@ public class KmerIndexBuilder extends Configured implements Tool {
         }
     }
     
-    private int runJob(PreprocessorConfig ppConfig) throws Exception {
+    public int runJob(Configuration conf, PreprocessorRoundConfig ppConfig) throws Exception {
         // check config
         validatePreprocessorConfig(ppConfig);
         
-        // configuration
-        Configuration conf = this.getConf();
-        
+        Job job = Job.getInstance(conf, "Libra Preprocessor - Building Kmer Index");
+        conf = job.getConfiguration();
+
         // set user configuration
         ppConfig.saveTo(conf);
         
-        Path[] inputFiles = FileSystemHelper.getAllSequenceFilePath(conf, ppConfig.getSequencePath());
-        
-        boolean job_result = true;
         Report report = new Report();
         
-        for(int round=0;round<inputFiles.length;round++) {
-            Path roundInputFile = inputFiles[round];
-            String roundOutputPath = ppConfig.getKmerIndexPath() + "_round" + round;
-            
-            Job job = new Job(conf, "Libra Preprocessor - Building Kmer Indexes (" + round + " of " + inputFiles.length + ")");
-            job.setJarByClass(KmerIndexBuilder.class);
+        job.setJarByClass(KmerIndexBuilder.class);
+        
+        // Mapper
+        job.setMapperClass(KmerIndexBuilderMapper.class);
+        SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
+        job.setInputFormatClass(SequenceKmerInputFormat.class);
+        job.setMapOutputKeyClass(CompressedSequenceWritable.class);
+        job.setMapOutputValueClass(CompressedIntArrayWritable.class);
+        
+        // Combiner
+        job.setCombinerClass(KmerIndexBuilderCombiner.class);
 
-            // Mapper
-            job.setMapperClass(KmerIndexBuilderMapper.class);
-            SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
-            job.setInputFormatClass(SequenceKmerInputFormat.class);
-            job.setMapOutputKeyClass(CompressedSequenceWritable.class);
-            job.setMapOutputValueClass(IntWritable.class);
-            
-            // Combiner
-            job.setCombinerClass(KmerIndexBuilderCombiner.class);
-            
-            // Partitioner
-            job.setPartitionerClass(KmerIndexBuilderPartitioner.class);
-            
-            // Reducer
-            job.setReducerClass(KmerIndexBuilderReducer.class);
+        // Partitioner
+        job.setPartitionerClass(KmerIndexBuilderPartitioner.class);
 
-            // Specify key / value
-            job.setOutputKeyClass(CompressedSequenceWritable.class);
-            job.setOutputValueClass(IntWritable.class);
-
-            // Inputs
-            FileInputFormat.addInputPaths(job, roundInputFile.toString());
-
-            LOG.info("Input file : ");
-            LOG.info("> " + roundInputFile.toString());
-            
-            String histogramFileName = KmerHistogramHelper.makeKmerHistogramFileName(roundInputFile.getName());
-            Path histogramPath = new Path(ppConfig.getKmerHistogramPath(), histogramFileName);
-            
-            KmerIndexBuilderPartitioner.setHistogramPath(job.getConfiguration(), histogramPath);
-            
-            FileOutputFormat.setOutputPath(job, new Path(roundOutputPath));
-            job.setOutputFormatClass(MapFileOutputFormat.class);
-            
-            // Use many reducers
-            int reducers = conf.getInt("mapred.reduce.tasks", 0);
-            if(reducers <= 0) {
-                int MRNodes = MapReduceClusterHelper.getNodeNum(conf);
-                reducers = MRNodes * 2;
-                job.setNumReduceTasks(reducers);
-            }
-            LOG.info("Reducers : " + reducers);
-            
-            // Execute job and return status
-            boolean result = job.waitForCompletion(true);
-            
-            // commit results
-            if (result) {
-                commitRoundIndexOutputFiles(roundInputFile, new Path(roundOutputPath), new Path(ppConfig.getKmerIndexPath()), job.getConfiguration(), ppConfig.getKmerSize());
-                
-                // create index of index
-                createIndexOfIndex(new Path(ppConfig.getKmerIndexPath()), roundInputFile, job.getConfiguration(), ppConfig.getKmerSize());
-
-                // create statistics of index
-                createStatisticsOfIndex(new Path(ppConfig.getKmerStatisticsPath()), roundInputFile, job.getConfiguration(), job.getCounters(), ppConfig.getKmerSize());
-            }
-            
-            if(!result) {
-                LOG.error("job failed at round " + round + " of " + inputFiles.length);
-                job_result = false;
-                break;
-            }
-            
-            report.addJob(job);
+        // Reducer
+        job.setReducerClass(KmerIndexBuilderReducer.class);
+        
+        // Specify key / value
+        job.setOutputKeyClass(CompressedSequenceWritable.class);
+        job.setOutputValueClass(CompressedIntArrayWritable.class);
+        
+        // Inputs
+        Path[] inputFiles = FileSystemHelper.makePathFromString(conf, ppConfig.getFileTable().getSamples());
+        FileInputFormat.addInputPaths(job, FileSystemHelper.makeCommaSeparated(inputFiles));
+        
+        LOG.info("Input sample files : " + inputFiles.length);
+        for(Path inputFile : inputFiles) {
+            LOG.info("> " + inputFile.toString());
         }
+        
+        // histogram
+        String histogramFileName = KmerHistogramHelper.makeKmerHistogramFileName(ppConfig.getFileTable().getName());
+        Path histogramPath = new Path(ppConfig.getKmerHistogramPath(), histogramFileName);
+
+        KmerIndexBuilderPartitioner.setHistogramPath(conf, histogramPath);
+
+        // output
+        String tempKmerIndexPath = ppConfig.getKmerIndexPath() + "_temp";
+        FileOutputFormat.setOutputPath(job, new Path(tempKmerIndexPath));
+        job.setOutputFormatClass(MapFileOutputFormat.class);
+
+        // reducers
+        int reducers = conf.getInt("mapred.reduce.tasks", 1);
+        if(ppConfig.getTaskNum() > 0) {
+            reducers = ppConfig.getTaskNum();
+        }
+        
+        job.setNumReduceTasks(reducers);
+        LOG.info("# of Reducers : " + reducers);
+        
+        // Execute job and return status
+        boolean result = job.waitForCompletion(true);
+        
+        // commit results
+        if(result) {
+            commit(ppConfig.getFileTable(), new Path(tempKmerIndexPath), new Path(ppConfig.getKmerIndexPath()), conf);
+            
+            // create index of index
+            createIndexTable(new Path(ppConfig.getKmerIndexPath()), ppConfig.getFileTable(), conf);
+            
+            // create statistics of index
+            createStatistics(new Path(ppConfig.getKmerStatisticsPath()), ppConfig.getFileTable(), conf);
+        }
+        
+        report.addJob(job);
         
         // report
         if(ppConfig.getReportPath() != null && !ppConfig.getReportPath().isEmpty()) {
             report.writeTo(ppConfig.getReportPath());
         }
         
-        return job_result ? 0 : 1;
+        return result ? 0 : 1;
     }
     
-    private void commitRoundIndexOutputFiles(Path roundInputPath, Path MROutputPath, Path finalOutputPath, Configuration conf, int kmerSize) throws IOException {
+    private void commit(FileTable fileTable, Path MROutputPath, Path finalOutputPath, Configuration conf) throws IOException {
         FileSystem fs = MROutputPath.getFileSystem(conf);
         if(!fs.exists(finalOutputPath)) {
             fs.mkdirs(finalOutputPath);
         }
         
         FileStatus status = fs.getFileStatus(MROutputPath);
-        if (status.isDir()) {
+        if (status.isDirectory()) {
             FileStatus[] entries = fs.listStatus(MROutputPath);
             for (FileStatus entry : entries) {
                 Path entryPath = entry.getPath();
@@ -221,10 +188,9 @@ public class KmerIndexBuilder extends Configured implements Tool {
                 } else if(MapReduceHelper.isPartialOutputFiles(entryPath)) {
                     // rename outputs
                     int mapreduceID = MapReduceHelper.getMapReduceID(entryPath);
-                    Path toPath = new Path(finalOutputPath, KmerIndexHelper.makeKmerIndexPartFileName(roundInputPath.getName(), kmerSize, mapreduceID));
+                    Path toPath = new Path(finalOutputPath, KmerIndexHelper.makeKmerIndexDataFileName(fileTable.getName(), mapreduceID));
 
-                    LOG.info("output : " + entryPath.toString());
-                    LOG.info("renamed to : " + toPath.toString());
+                    LOG.info(String.format("rename %s ==> %s", entryPath.toString(), toPath.toString()));
                     fs.rename(entryPath, toPath);
                 }
             }
@@ -235,86 +201,85 @@ public class KmerIndexBuilder extends Configured implements Tool {
         fs.delete(MROutputPath, true);
     }
     
-    private void createIndexOfIndex(Path indexPath, Path inputPath, Configuration conf, int kmerSize) throws IOException {
-        String kmerIndexIndexFileName = KmerIndexHelper.makeKmerIndexIndexFileName(inputPath, kmerSize);
-        Path kmerIndexIndexFilePath = new Path(indexPath, kmerIndexIndexFileName);
-        Path[] indexFiles = KmerIndexHelper.getKmerIndexPartFilePath(conf, kmerIndexIndexFilePath);
+    private void createIndexTable(Path indexPath, FileTable fileTable, Configuration conf) throws IOException {
+        String kmerIndexTableFileName = KmerIndexHelper.makeKmerIndexTableFileName(fileTable.getName());
+        Path kmerIndexTableFilePath = new Path(indexPath, kmerIndexTableFileName);
         
-        KmerIndexIndex indexIndex = new KmerIndexIndex();
-        for(Path indexFile : indexFiles) {
-            LOG.info("Reading the final key from " + indexFile.toString());
-            MapFile.Reader reader = new MapFile.Reader(indexFile.getFileSystem(conf), indexFile.toString(), conf);
-            CompressedSequenceWritable finalKey = new CompressedSequenceWritable();
-            reader.finalKey(finalKey);
-            if(finalKey != null && !finalKey.isEmpty()) {
-                indexIndex.addLastKey(finalKey.getSequence());
-                reader.close();
+        LOG.info("Creating an index file : " + kmerIndexTableFilePath.toString());
+        
+        Path[] indexDataFiles = KmerIndexHelper.getKmerIndexDataFilePath(conf, indexPath);
+        KmerIndexTable indexTable = new KmerIndexTable(fileTable.getName());
+        for(Path indexDataFile : indexDataFiles) {
+            if(KmerIndexHelper.isSameKmerIndex(kmerIndexTableFilePath, indexDataFile)) {
+                MapFile.Reader reader = new MapFile.Reader(indexDataFile, conf, new SequenceFile.Reader.Option[0]);
+                CompressedSequenceWritable finalKey = new CompressedSequenceWritable();
+                reader.finalKey(finalKey);
+                if(!finalKey.isEmpty()) {
+                    indexTable.addRecord(new KmerIndexTableRecord(indexDataFile.getName(), finalKey.getSequence()));
+                    reader.close();
+                }
             }
         }
-
-        LOG.info("Creating an index file : " + kmerIndexIndexFilePath.toString());
-        indexIndex.saveTo(kmerIndexIndexFilePath.getFileSystem(conf), kmerIndexIndexFilePath);
+        
+        indexTable.saveTo(kmerIndexTableFilePath.getFileSystem(conf), kmerIndexTableFilePath);
     }
 
-    private void createStatisticsOfIndex(Path statisticsPath, Path inputPath, Configuration conf, Counters counters, int kmerSize) throws IOException {
-        CounterGroup logTFSquareGroup = counters.getGroup(KmerStatisticsHelper.getCounterGroupNameLogTFSquare());
-        CounterGroup naturalTFSquareGroup = counters.getGroup(KmerStatisticsHelper.getCounterGroupNameNaturalTFSquare());
-        CounterGroup booleanTFSquareGroup = counters.getGroup(KmerStatisticsHelper.getCounterGroupNameBooleanTFSquare());
-
-        KmerStatistics statistics = new KmerStatistics();
-        statistics.setSampleName(inputPath.getName());
-        statistics.setKmerSize(kmerSize);
+    private void createStatistics(Path statisticsPath, FileTable fileTable, Configuration conf) throws IOException {
+        String statisticsTableFileName = KmerStatisticsHelper.makeKmerStatisticsTableFileName(fileTable.getName());
+        Path statisticsTableOutputFile = new Path(statisticsPath, statisticsTableFileName);
         
-        Iterator<Counter> logTFSquareGroupIterator = logTFSquareGroup.iterator();
-        while(logTFSquareGroupIterator.hasNext()) {
-            Counter logTFSquareCounter = logTFSquareGroupIterator.next();
-            if(logTFSquareCounter.getName().equals(inputPath.getName())) {
-                double logTFSquare = 0;
-                double log_tf_cosnorm_base = 0;
-
-                logTFSquare = logTFSquareCounter.getValue() / 1000.0;
-
-                log_tf_cosnorm_base = Math.sqrt(logTFSquare);
-                LOG.info("log-tf-cos-norm-base " + logTFSquareCounter.getName() + " : " + log_tf_cosnorm_base);
-                statistics.setLogTFCosineNormBase(log_tf_cosnorm_base);
-                break;
+        LOG.info("Creating a statistics table file : " + statisticsTableFileName);
+        
+        Collection<String> samples = fileTable.getSamples();
+        
+        KmerStatisticsPart[] statisticsWeight = new KmerStatisticsPart[fileTable.samples()];
+        KmerStatistics[] statistics = new KmerStatistics[fileTable.samples()];
+        Iterator<String> iterator = samples.iterator();
+        for(int i=0;i<fileTable.samples();i++) {
+            String sample_name = iterator.next();
+            statisticsWeight[i] = new KmerStatisticsPart(sample_name);
+            statistics[i] = new KmerStatistics(sample_name);
+        }
+        
+        Path[] kmerStatisticsTablePartFiles = KmerStatisticsHelper.getKmerStatisticsPartTableFilePath(conf, statisticsPath);
+        for(Path statisticsTablePartFile : kmerStatisticsTablePartFiles) {
+            FileSystem fs = statisticsTablePartFile.getFileSystem(conf);
+            KmerStatisticsPartTable table = KmerStatisticsPartTable.createInstance(fs, statisticsTablePartFile);
+            int idx = 0;
+            for(KmerStatisticsPart statisticsPart : table.getStatisticsPart()) {
+                statisticsWeight[idx].incrementBooleanTFWeight(statisticsPart.getBooleanTFWeight());
+                statisticsWeight[idx].incrementLogTFWeight(statisticsPart.getLogTFWeight());
+                statisticsWeight[idx].incrementNaturalTFWeight(statisticsPart.getNaturalTFWeight());
+                idx++;
             }
         }
         
-        Iterator<Counter> naturalTFSquareGroupIterator = naturalTFSquareGroup.iterator();
-        while(naturalTFSquareGroupIterator.hasNext()) {
-            Counter naturalTFSquareCounter = naturalTFSquareGroupIterator.next();
-            if(naturalTFSquareCounter.getName().equals(inputPath.getName())) {
-                double naturalTFSquare = 0;
-                double natural_tf_cosnorm_base = 0;
-
-                naturalTFSquare = naturalTFSquareCounter.getValue();
-
-                natural_tf_cosnorm_base = Math.sqrt(naturalTFSquare);
-                LOG.info("natural-tf-cos-norm-base " + naturalTFSquareCounter.getName() + " : " + natural_tf_cosnorm_base);
-                statistics.setNaturalTFCosineNormBase(natural_tf_cosnorm_base);
-                break;
-            }
+        
+        KmerStatisticsTable statisticsTable = new KmerStatisticsTable();
+        statisticsTable.setName(fileTable.getName());
+        
+        for(int j=0;j<fileTable.samples();j++) {
+            double bool_norm_base = Math.sqrt(statisticsWeight[j].getBooleanTFWeight());
+            statistics[j].setBooleanTFCosineNormBase(bool_norm_base);
+            
+            double log_norm_base = Math.sqrt(statisticsWeight[j].getLogTFWeight());
+            statistics[j].setLogTFCosineNormBase(log_norm_base);
+            
+            double natural_norm_base = Math.sqrt(statisticsWeight[j].getNaturalTFWeight());
+            statistics[j].setNaturalTFCosineNormBase(natural_norm_base);
+            
+            statisticsTable.addStatistics(statistics[j]);
         }
         
-        Iterator<Counter> booleanTFSquareGroupIterator = booleanTFSquareGroup.iterator();
-        while(booleanTFSquareGroupIterator.hasNext()) {
-            Counter booleanTFSquareCounter = booleanTFSquareGroupIterator.next();
-            if(booleanTFSquareCounter.getName().equals(inputPath.getName())) {
-                double booleanTFSquare = 0;
-                double boolean_tf_cosnorm_base = 0;
+        // save
+        FileSystem outputFileSystem = statisticsTableOutputFile.getFileSystem(conf);
 
-                booleanTFSquare = booleanTFSquareCounter.getValue();
-
-                boolean_tf_cosnorm_base = Math.sqrt(booleanTFSquare);
-                LOG.info("boolean-tf-cos-norm-base " + booleanTFSquareCounter.getName() + " : " + boolean_tf_cosnorm_base);
-                statistics.setBooleanTFCosineNormBase(boolean_tf_cosnorm_base);
-                break;
-            }
-        }
+        statisticsTable.saveTo(outputFileSystem, statisticsTableOutputFile);
         
-        Path outputHadoopPath = new Path(statisticsPath, KmerStatisticsHelper.makeKmerStatisticsFileName(inputPath.getName()));
-        FileSystem fs = outputHadoopPath.getFileSystem(conf);
-        statistics.saveTo(fs, outputHadoopPath);
+        // delete part files
+        for(Path statisticsTablePartFile : kmerStatisticsTablePartFiles) {
+            FileSystem fs = statisticsTablePartFile.getFileSystem(conf);
+            fs.delete(statisticsTablePartFile, true);
+        }
     }
 }

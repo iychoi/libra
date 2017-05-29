@@ -16,24 +16,27 @@
 package libra.preprocess.stage1;
 
 import java.io.IOException;
-import libra.common.sequence.KmerLines;
 import libra.preprocess.common.PreprocessorRoundConfig;
+import libra.preprocess.common.helpers.KmerHistogramHelper;
 import libra.preprocess.common.kmerhistogram.KmerHistogram;
 import libra.preprocess.common.kmerhistogram.KmerHistogramRecord;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.NullWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.Reducer;
 
 /**
  *
  * @author iychoi
  */
-public class KmerHistogramBuilderMapper extends Mapper<LongWritable, KmerLines, Text, LongWritable> {
+public class KmerHistogramBuilderReducer extends Reducer<Text, LongWritable, NullWritable, NullWritable> {
     
-    private static final Log LOG = LogFactory.getLog(KmerHistogramBuilderMapper.class);
+    private static final Log LOG = LogFactory.getLog(KmerHistogramBuilderReducer.class);
     
     private PreprocessorRoundConfig ppConfig;
     private KmerHistogram histogram;
@@ -41,25 +44,30 @@ public class KmerHistogramBuilderMapper extends Mapper<LongWritable, KmerLines, 
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
+        
         this.ppConfig = PreprocessorRoundConfig.createInstance(conf);
         this.histogram = new KmerHistogram(this.ppConfig.getFileTable().getName(), this.ppConfig.getKmerSize());
     }
     
     @Override
-    protected void map(LongWritable key, KmerLines value, Context context) throws IOException, InterruptedException {
-        for(String line : value.get()) {
-            if(line != null) {
-                String sequence = line.toUpperCase();
-                this.histogram.takeSample(sequence);
-            }
+    protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
+        long frequency_sum = 0;
+        for(LongWritable value : values) {
+            frequency_sum += value.get();
         }
+        
+        this.histogram.addRecord(new KmerHistogramRecord(key.toString(), frequency_sum));
     }
     
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-        for(KmerHistogramRecord record : this.histogram.getRecord()) {
-            context.write(new Text(record.getKmer()), new LongWritable(record.getFrequency()));
-        }
-        this.histogram = null;
+        String histogramName = this.histogram.getName();
+        String histogramFileName = KmerHistogramHelper.makeKmerHistogramFileName(histogramName);
+
+        LOG.info("creating a k-mer histogram file : " + histogramFileName);
+        Path histogramOutputFile = new Path(this.ppConfig.getKmerHistogramPath(), histogramFileName);
+        FileSystem outputFileSystem = histogramOutputFile.getFileSystem(context.getConfiguration());
+
+        this.histogram.saveTo(outputFileSystem, histogramOutputFile);
     }
 }

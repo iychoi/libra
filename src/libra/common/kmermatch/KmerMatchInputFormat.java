@@ -17,11 +17,11 @@ package libra.common.kmermatch;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
+import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerHistogramHelper;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import libra.preprocess.common.kmerhistogram.KmerHistogram;
@@ -29,9 +29,10 @@ import libra.preprocess.common.kmerhistogram.KmerHistogramRecord;
 import libra.preprocess.common.kmerhistogram.KmerHistogramRecordComparator;
 import libra.preprocess.common.kmerhistogram.KmerRangePartition;
 import libra.preprocess.common.kmerhistogram.KmerRangePartitioner;
-import libra.preprocess.common.kmerindex.KmerIndexIndexPathFilter;
+import libra.preprocess.common.kmerindex.KmerIndexTablePathFilter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -63,47 +64,44 @@ public class KmerMatchInputFormat extends SequenceFileInputFormat<CompressedSequ
     }
     
     public List<InputSplit> getSplits(JobContext job) throws IOException {
-        KmerMatchInputFormatConfig inputFormatConfig = KmerMatchInputFormatConfig.createInstance(job.getConfiguration());
+        Configuration conf = job.getConfiguration();
+        KmerMatchInputFormatConfig inputFormatConfig = KmerMatchInputFormatConfig.createInstance(conf);
         
         // generate splits
         List<InputSplit> splits = new ArrayList<InputSplit>();
         List<FileStatus> files = listStatus(job);
-        List<Path> kmerIndexFiles = new ArrayList<Path>();
+        List<Path> kmerIndexTableFiles = new ArrayList<Path>();
         for (FileStatus file : files) {
             Path path = file.getPath();
-            kmerIndexFiles.add(path);
+            kmerIndexTableFiles.add(path);
         }
         
-        LOG.info("# of Split input file : " + kmerIndexFiles.size());
-        for(int i=0;i<kmerIndexFiles.size();i++) {
-            LOG.info("> " + kmerIndexFiles.get(i).toString());
+        LOG.info("# of Split input file : " + kmerIndexTableFiles.size());
+        for(int i=0;i<kmerIndexTableFiles.size();i++) {
+            LOG.info("> " + kmerIndexTableFiles.get(i).toString());
         }
         
-        Path[] kmerIndexFilePath = kmerIndexFiles.toArray(new Path[0]);
-
         // histogram
         List<KmerHistogram> histograms = new ArrayList<KmerHistogram>();
-        for(int i=0;i<kmerIndexFiles.size();i++) {
-            String sequenceFileName = KmerIndexHelper.getSequenceFileName(kmerIndexFilePath[i]);
-            
-            Path histogramPath = new Path(inputFormatConfig.getKmerHistogramPath(), KmerHistogramHelper.makeKmerHistogramFileName(sequenceFileName));
-            FileSystem fs = histogramPath.getFileSystem(job.getConfiguration());
+        for(int i=0;i<kmerIndexTableFiles.size();i++) {
+            String fileTableName = KmerIndexHelper.getFileTableName(kmerIndexTableFiles.get(i));
+            Path histogramPath = new Path(inputFormatConfig.getKmerHistogramPath(), KmerHistogramHelper.makeKmerHistogramFileName(fileTableName));
+            FileSystem fs = histogramPath.getFileSystem(conf);
             if (fs.exists(histogramPath)) {
                 KmerHistogram histogram = KmerHistogram.createInstance(fs, histogramPath);
                 histograms.add(histogram);
             } else {
-                throw new IOException("k-mer histogram is not found in given paths");
+                throw new IOException("k-mer histogram is not found in given paths - " + histogramPath.toString());
             }
         }
         
         // merge histogram
         Hashtable<String, KmerHistogramRecord> histogramRecords = new Hashtable<String, KmerHistogramRecord>();
         long kmerCounts = 0;
-        for(int i=0;i<histograms.size();i++) {
-            Collection<KmerHistogramRecord> records = histograms.get(i).getSortedRecord();
-            kmerCounts += histograms.get(i).getTotalKmerCount();
+        for(KmerHistogram histogram : histograms) {
+            kmerCounts += histogram.getTotalKmerCount();
             
-            for(KmerHistogramRecord rec : records) {
+            for(KmerHistogramRecord rec : histogram.getSortedRecord()) {
                 KmerHistogramRecord ext_rec = histogramRecords.get(rec.getKmer());
                 if(ext_rec == null) {
                     histogramRecords.put(rec.getKmer(), rec);
@@ -121,7 +119,7 @@ public class KmerMatchInputFormat extends SequenceFileInputFormat<CompressedSequ
         KmerRangePartition[] partitions = partitioner.getHistogramPartitions(histogramRecordsArr.toArray(new KmerHistogramRecord[0]), kmerCounts);
         
         for(KmerRangePartition partition : partitions) {
-            splits.add(new KmerMatchInputSplit(kmerIndexFilePath, partition));
+            splits.add(new KmerMatchInputSplit(kmerIndexTableFiles.toArray(new Path[0]), partition));
         }
         
         // Save the number of input files in the job-conf
@@ -133,15 +131,33 @@ public class KmerMatchInputFormat extends SequenceFileInputFormat<CompressedSequ
     
     @Override
     protected List<FileStatus> listStatus(JobContext job) throws IOException {
+        Configuration conf = job.getConfiguration();
+        KmerMatchInputFormatConfig inputFormatConfig = KmerMatchInputFormatConfig.createInstance(conf);
+        
         List<FileStatus> result = new ArrayList<FileStatus>();
-        Path[] dirs = getInputPaths(job);
-        if (dirs.length == 0) {
+        Path[] fileTablePaths = getInputPaths(job);
+        if (fileTablePaths.length == 0) {
             throw new IOException("No input paths specified in job");
         }
-
+        
         // get tokens for all the required FileSystems..
-        TokenCache.obtainTokensForNamenodes(job.getCredentials(), dirs, job.getConfiguration());
+        TokenCache.obtainTokensForNamenodes(job.getCredentials(), fileTablePaths, conf);
 
+        List<FileTable> fileTables = new ArrayList<FileTable>();
+        List<Path> inputKmerIndexTableFiles = new ArrayList<Path>();
+        for(Path fileTablePath : fileTablePaths) {
+            FileSystem fs = fileTablePath.getFileSystem(conf);
+            FileTable ft = FileTable.createInstance(fs, fileTablePath);
+            fileTables.add(ft);
+            
+            String kmerIndexTableFileName = KmerIndexHelper.makeKmerIndexTableFileName(ft.getName());
+            Path kmerIndexTableFilePath = new Path(inputFormatConfig.getKmerIndexPath(), kmerIndexTableFileName);
+            inputKmerIndexTableFiles.add(kmerIndexTableFilePath);
+        }
+        
+        // get tokens for all the required FileSystems..
+        TokenCache.obtainTokensForNamenodes(job.getCredentials(), inputKmerIndexTableFiles.toArray(new Path[0]), conf);
+        
         // creates a MultiPathFilter with the hiddenFileFilter and the
         // user provided one (if any).
         List<PathFilter> filters = new ArrayList<PathFilter>();
@@ -149,14 +165,16 @@ public class KmerMatchInputFormat extends SequenceFileInputFormat<CompressedSequ
         if (jobFilter != null) {
             filters.add(jobFilter);
         }
-        filters.add(new KmerIndexIndexPathFilter());
+        filters.add(new KmerIndexTablePathFilter());
         PathFilter inputFilter = new MultiPathFilter(filters);
-
-        for (int i = 0; i < dirs.length; ++i) {
-            Path p = dirs[i];
-            if(inputFilter.accept(p)) {
-                FileSystem fs = p.getFileSystem(job.getConfiguration());
-                FileStatus status = fs.getFileStatus(p);
+        
+        
+        
+        for (int i = 0; i < inputKmerIndexTableFiles.size(); ++i) {
+            Path inputKmerIndexTableFile = inputKmerIndexTableFiles.get(i);
+            if(inputFilter.accept(inputKmerIndexTableFile)) {
+                FileSystem fs = inputKmerIndexTableFile.getFileSystem(conf);
+                FileStatus status = fs.getFileStatus(inputKmerIndexTableFile);
                 result.add(status);
             }
         }

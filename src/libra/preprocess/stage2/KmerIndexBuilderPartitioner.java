@@ -17,9 +17,10 @@ package libra.preprocess.stage2;
 
 
 import java.io.IOException;
+import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
-import libra.preprocess.common.PreprocessorConfig;
+import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.kmerhistogram.KmerHistogram;
 import libra.preprocess.common.kmerhistogram.KmerRangePartition;
 import libra.preprocess.common.kmerhistogram.KmerRangePartitioner;
@@ -29,14 +30,13 @@ import org.apache.hadoop.conf.Configurable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Partitioner;
 
 /**
  *
  * @author iychoi
  */
-public class KmerIndexBuilderPartitioner extends Partitioner<CompressedSequenceWritable, IntWritable> implements Configurable {
+public class KmerIndexBuilderPartitioner extends Partitioner<CompressedSequenceWritable, CompressedIntArrayWritable> implements Configurable {
 
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilderPartitioner.class);
     
@@ -45,7 +45,7 @@ public class KmerIndexBuilderPartitioner extends Partitioner<CompressedSequenceW
     private Configuration conf;
     
     private boolean initialized = false;
-    private PreprocessorConfig ppConfig;
+    private PreprocessorRoundConfig ppConfig;
     private KmerRangePartition[] partitions;
     private CompressedSequenceWritable[] partitionEndKeys;
     
@@ -72,7 +72,7 @@ public class KmerIndexBuilderPartitioner extends Partitioner<CompressedSequenceW
     }
     
     private void initialize() throws IOException {
-        this.ppConfig = PreprocessorConfig.createInstance(this.conf);
+        this.ppConfig = PreprocessorRoundConfig.createInstance(this.conf);
         
         this.partitions = null;
         this.partitionEndKeys = null;
@@ -105,7 +105,7 @@ public class KmerIndexBuilderPartitioner extends Partitioner<CompressedSequenceW
     }
     
     @Override
-    public int getPartition(CompressedSequenceWritable key, IntWritable value, int numReduceTasks) {
+    public int getPartition(CompressedSequenceWritable key, CompressedIntArrayWritable value, int numReduceTasks) {
         if(!this.initialized) {
             try {
                 initialize();

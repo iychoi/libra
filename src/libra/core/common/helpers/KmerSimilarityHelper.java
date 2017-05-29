@@ -20,9 +20,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import libra.common.helpers.FileSystemHelper;
 import libra.core.commom.CoreConstants;
-import libra.core.common.kmersimilarity.KmerSimilarityResultPathFilter;
+import libra.core.common.kmersimilarity.KmerSimilarityResultPartPathFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -32,76 +31,65 @@ import org.apache.hadoop.fs.Path;
  *
  * @author iychoi
  */
-@SuppressWarnings("deprecation")
 public class KmerSimilarityHelper {
-    private final static String KMER_SIMILARITY_RESULT_PATH_EXP = ".+\\." + CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION + "\\.\\d+$";
-    private final static Pattern KMER_SIMILARITY_RESULT_PATH_PATTERN = Pattern.compile(KMER_SIMILARITY_RESULT_PATH_EXP);
+    private final static String KMER_SIMILARITY_RESULT_PART_PATH_EXP = ".+\\." + CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION + "\\.\\d+$";
+    private final static Pattern KMER_SIMILARITY_RESULT_PART_PATH_PATTERN = Pattern.compile(KMER_SIMILARITY_RESULT_PART_PATH_EXP);
     
-    public static boolean isKmerSimilarityTableFile(Path path) {
-        return isKmerSimilarityTableFile(path.getName());
+    public static boolean isKmerSimilarityFileMappingTableFile(Path path) {
+        return isKmerSimilarityFileMappingTableFile(path.getName());
     }
     
-    public static boolean isKmerSimilarityTableFile(String path) {
-        if(path.compareToIgnoreCase(CoreConstants.KMER_SIMILARITY_TABLE_FILENAME) == 0) {
+    public static boolean isKmerSimilarityFileMappingTableFile(String path) {
+        if(path.compareToIgnoreCase(CoreConstants.KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME) == 0) {
             return true;
         }
         return false;
     }
     
-    public static boolean isKmerSimilarityResultFile(Path path) {
-        return isKmerSimilarityResultFile(path.getName());
+    public static boolean isKmerSimilarityResultPartFile(Path path) {
+        return KmerSimilarityHelper.isKmerSimilarityResultPartFile(path.getName());
     }
     
-    public static boolean isKmerSimilarityResultFile(String path) {
-        Matcher matcher = KMER_SIMILARITY_RESULT_PATH_PATTERN.matcher(path.toLowerCase());
+    public static boolean isKmerSimilarityResultPartFile(String path) {
+        Matcher matcher = KMER_SIMILARITY_RESULT_PART_PATH_PATTERN.matcher(path.toLowerCase());
         if(matcher.matches()) {
             return true;
         }
         return false;
     }
     
-    public static String makeKmerSimilarityTableFileName() {
-        return CoreConstants.KMER_SIMILARITY_TABLE_FILENAME;
+    public static String makeKmerSimilarityFileMappingTableFileName() {
+        return CoreConstants.KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME;
     }
     
-    public static String makeKmerSimilarityResultFileName(int mapreduceID) {
+    public static String makeKmerSimilarityResultPartFileName(int mapreduceID) {
         return CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_PREFIX + "." + CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION + "." + mapreduceID;
     }
     
-    public static String makeKmerSimilarityFinalResultFileName() {
+    public static String makeKmerSimilarityResultFileName() {
         return CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_PREFIX + "." + CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION;
     }
     
-    public static Path[] getAllKmerSimilarityResultFilePath(Configuration conf, String inputPathsCommaSeparated) throws IOException {
-        return getAllKmerSimilarityResultFilePath(conf, FileSystemHelper.makePathFromString(conf, FileSystemHelper.splitCommaSeparated(inputPathsCommaSeparated)));
-    }
-    
-    public static Path[] getAllKmerSimilarityResultFilePath(Configuration conf, String[] inputPath) throws IOException {
-        return getAllKmerSimilarityResultFilePath(conf, FileSystemHelper.makePathFromString(conf, inputPath));
-    }
-    
-    public static Path[] getAllKmerSimilarityResultFilePath(Configuration conf, Path[] inputPaths) throws IOException {
+    public static Path[] getKmerSimilarityResultPartFilePath(Configuration conf, Path inputPath) throws IOException {
         List<Path> inputFiles = new ArrayList<Path>();
-        KmerSimilarityResultPathFilter filter = new KmerSimilarityResultPathFilter();
+        KmerSimilarityResultPartPathFilter filter = new KmerSimilarityResultPartPathFilter();
         
-        for(Path path : inputPaths) {
-            FileSystem fs = path.getFileSystem(conf);
-            if(fs.exists(path)) {
-                FileStatus status = fs.getFileStatus(path);
-                if(status.isDir()) {
-                    // check child
-                    FileStatus[] entries = fs.listStatus(path);
-                    for (FileStatus entry : entries) {
-                        if(!entry.isDir()) {
-                            if (filter.accept(entry.getPath())) {
-                                inputFiles.add(entry.getPath());
-                            }
+        FileSystem fs = inputPath.getFileSystem(conf);
+        if(fs.exists(inputPath)) {
+            FileStatus status = fs.getFileStatus(inputPath);
+            if(status.isDirectory()) {
+                // check child
+                FileStatus[] entries = fs.listStatus(inputPath);
+                for (FileStatus entry : entries) {
+                    if(entry.isFile()) {
+                        if (filter.accept(entry.getPath())) {
+                            inputFiles.add(entry.getPath());
                         }
                     }
-                } else {
-                    if (filter.accept(status.getPath())) {
-                        inputFiles.add(status.getPath());
-                    }
+                }
+            } else {
+                if (filter.accept(status.getPath())) {
+                    inputFiles.add(status.getPath());
                 }
             }
         }

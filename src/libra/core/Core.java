@@ -15,71 +15,80 @@
  */
 package libra.core;
 
-import java.util.ArrayList;
-import java.util.List;
+import libra.common.cmdargs.CommandArgumentsParser;
+import libra.core.commom.CoreConfig;
+import libra.core.commom.RunMode;
 import libra.core.kmersimilarity_m.KmerSimilarityMap;
 import libra.core.kmersimilarity_r.KmerSimilarityReduce;
+import libra.preprocess.common.filetable.FileTable;
+import libra.preprocess.common.helpers.FileTableHelper;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.conf.Configured;
+import org.apache.hadoop.fs.FileSystem;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.util.GenericOptionsParser;
+import org.apache.hadoop.util.Tool;
+import org.apache.hadoop.util.ToolRunner;
 
 /**
  *
  * @author iychoi
  */
-public class Core {
+public class Core extends Configured implements Tool {
     private static final Log LOG = LogFactory.getLog(Core.class);
     
-    private static int RUN_MODE_MAP = 0x00;
-    private static int RUN_MODE_REDUCE = 0x01;
-    
-    private static boolean isHelpParam(String[] args) {
-        if(args.length < 1 || 
-                args[0].equalsIgnoreCase("-h") ||
-                args[0].equalsIgnoreCase("--help")) {
-            return true;
-        }
-        return false;
+    public static void main(String[] args) throws Exception {
+        int res = ToolRunner.run(new Configuration(), new Core(), args);
+        System.exit(res);
     }
     
-    private static int checkRunMode(String[] args) {
-        int runMode = 0;
-        for(String arg : args) {
-            if(arg.equalsIgnoreCase("map")) {
-                runMode = RUN_MODE_MAP;
-            } else if(arg.equalsIgnoreCase("reduce")) {
-                runMode = RUN_MODE_REDUCE;
-            }
+    @Override
+    public int run(String[] args) throws Exception {
+        GenericOptionsParser p = new GenericOptionsParser(new Configuration(), args);
+        Configuration common_conf = p.getConfiguration();
+        String[] remaining_args = p.getRemainingArgs();
+        
+        CommandArgumentsParser<CoreCmdArgs> parser = new CommandArgumentsParser<CoreCmdArgs>();
+        CoreCmdArgs cmdParams = new CoreCmdArgs();
+        if(!parser.parse(remaining_args, cmdParams)) {
+            LOG.error("Failed to parse command line arguments!");
+            return 1;
         }
         
-        return runMode;
-    }
-    
-    private static String[] removeRunMode(String[] args) {
-        List<String> param = new ArrayList<String>();
-        for(String arg : args) {
-            if(!arg.equalsIgnoreCase("map") && !arg.equalsIgnoreCase("reduce")) {
-                param.add(arg);
-            }
-        }
-        
-        return param.toArray(new String[0]);
-    }
-    
-    public static int main2(String[] args) throws Exception {
-        if(isHelpParam(args)) {
+        if(cmdParams.isHelp()) {
             printHelp();
             return 1;
         }
         
-        int runMode = checkRunMode(args);
-        String[] params = removeRunMode(args);
+        CoreConfig cConfig = cmdParams.getCoreConfig();
+        
+        // find file tables
+        Path fileTablePath = new Path(cConfig.getFileTablePath());
+        Path[] fileTableFiles = FileTableHelper.getFileTableFilePath(common_conf, fileTablePath);
+        
+        // load file tables
+        for(Path fileTableFile : fileTableFiles) {
+            FileSystem fs = fileTableFile.getFileSystem(common_conf);
+            FileTable fileTable = FileTable.createInstance(fs, fileTableFile);
+            cConfig.addFileTable(fileTable);
+        }
         
         int res = 0;
         try {
-            if(runMode == RUN_MODE_MAP) {
-                res = KmerSimilarityMap.main2(params);
-            } else if(runMode == RUN_MODE_REDUCE) {
-                res = KmerSimilarityReduce.main2(params);
+            if(cConfig.getRunMode() == RunMode.MAP) {
+                KmerSimilarityMap kmerSimilarityMap = new KmerSimilarityMap();
+                res = kmerSimilarityMap.runJob(new Configuration(common_conf), cConfig);
+                if(res != 0) {
+                    throw new Exception("KmerSimilarityMap Failed : " + res);
+                }
+            } else if(cConfig.getRunMode() == RunMode.REDUCE) {
+                KmerSimilarityReduce kmerSimilarityReduce = new KmerSimilarityReduce();
+                res = kmerSimilarityReduce.runJob(new Configuration(common_conf), cConfig);
+                if(res != 0) {
+                    throw new Exception("KmerSimilarityReduce Failed : " + res);
+                }
             }
         } catch (Exception e) {
             LOG.error(e);
@@ -90,10 +99,6 @@ public class Core {
         return res;
     }
     
-    public static void main(String[] args) throws Exception {
-        int res = main2(args);
-        System.exit(res);
-    }
 
     private static void printHelp() {
         System.out.println("============================================================");
@@ -101,12 +106,6 @@ public class Core {
         System.out.println("Similarity Computer");
         System.out.println("============================================================");
         System.out.println("Usage :");
-        System.out.println("> core [map|reduce] <arguments ...>");
-        System.out.println();
-        System.out.println("Mode :");
-        System.out.println("> map");
-        System.out.println("> \tCompute similarity using mappers");
-        System.out.println("> reduce");
-        System.out.println("> \tCompute similarity using reducers");
+        System.out.println("> core <arguments ...>");
     }
 }

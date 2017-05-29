@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.common;
+package libra.core.commom;
 
 /**
  *
@@ -36,6 +36,8 @@ public enum WeightAlgorithm {
             return LOGALITHM;
         } else if("bool".equalsIgnoreCase(alg.trim())) {
             return BOOLEAN;
+        } else if("nat".equalsIgnoreCase(alg.trim())) {
+            return NATURAL;
         }
         
         return LOGALITHM;

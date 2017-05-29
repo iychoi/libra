@@ -36,8 +36,7 @@ public class KmerStatistics {
     
     private static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.kmerstatistics.kmerstatistics";
     
-    private String sampleName;
-    private int kmerSize;
+    private String name;
     private double logTFCosnormBase;
     private double naturalTFCosnormBase;
     private double booleanTFCosnormBase;
@@ -65,29 +64,18 @@ public class KmerStatistics {
     public KmerStatistics() {
     }
     
-    public KmerStatistics(String sampleName, int kmerSize) {
-        this.sampleName = sampleName;
-        this.kmerSize = kmerSize;
+    public KmerStatistics(String name) {
+        this.name = name;
     }
     
-    @JsonProperty("sample_name")
-    public String getSampleName() {
-        return this.sampleName;
+    @JsonProperty("name")
+    public String getName() {
+        return this.name;
     }
     
-    @JsonProperty("sample_name")
-    public void setSampleName(String sampleName) {
-        this.sampleName = sampleName;
-    }
-    
-    @JsonProperty("kmer_size")
-    public int getKmerSize() {
-        return this.kmerSize;
-    }
-    
-    @JsonProperty("kmer_size")
-    public void setKmerSize(int kmerSize) {
-        this.kmerSize = kmerSize;
+    @JsonProperty("name")
+    public void setName(String name) {
+        this.name = name;
     }
     
     @JsonProperty("log_tf_cosnorm_base")
@@ -100,6 +88,11 @@ public class KmerStatistics {
         return this.logTFCosnormBase;
     }
     
+    @JsonIgnore
+    public void incrementLogTFCosineNormBase(double tfCosnormBase) {
+        this.logTFCosnormBase += tfCosnormBase;
+    }
+    
     @JsonProperty("natural_tf_cosnorm_base")
     public void setNaturalTFCosineNormBase(double tfCosnormBase) {
         this.naturalTFCosnormBase = tfCosnormBase;
@@ -110,6 +103,11 @@ public class KmerStatistics {
         return this.naturalTFCosnormBase;
     }
     
+    @JsonIgnore
+    public void incrementNaturalTFCosineNormBase(double tfCosnormBase) {
+        this.naturalTFCosnormBase += tfCosnormBase;
+    }
+    
     @JsonProperty("boolean_tf_cosnorm_base")
     public void setBooleanTFCosineNormBase(double tfCosnormBase) {
         this.booleanTFCosnormBase = tfCosnormBase;
@@ -118,6 +116,11 @@ public class KmerStatistics {
     @JsonProperty("boolean_tf_cosnorm_base")
     public double getBooleanTFCosineNormBase() {
         return this.booleanTFCosnormBase;
+    }
+    
+    @JsonIgnore
+    public void incrementBooleanTFCosineNormBase(double tfCosnormBase) {
+        this.booleanTFCosnormBase += tfCosnormBase;
     }
     
     @JsonIgnore

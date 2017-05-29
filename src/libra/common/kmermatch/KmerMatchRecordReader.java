@@ -34,7 +34,7 @@ public class KmerMatchRecordReader extends RecordReader<CompressedSequenceWritab
     
     private static final Log LOG = LogFactory.getLog(KmerMatchRecordReader.class);
     
-    private Path[] inputIndexPath;
+    private Path[] indexTableFilePaths;
     private KmerJoiner joiner;
     private Configuration conf;
     private KmerMatchResult curResult;
@@ -47,15 +47,14 @@ public class KmerMatchRecordReader extends RecordReader<CompressedSequenceWritab
         
         KmerMatchInputSplit kmerIndexSplit = (KmerMatchInputSplit) split;
         this.conf = context.getConfiguration();
-        this.inputIndexPath = kmerIndexSplit.getIndexFilePath();
+        this.indexTableFilePaths = kmerIndexSplit.getIndexTableFilePaths();
         
         KmerRangePartition partition = kmerIndexSplit.getPartition();
         
-        this.joiner = new KmerJoiner(this.inputIndexPath, partition, context);
+        this.joiner = new KmerJoiner(this.indexTableFilePaths, partition, context);
     }
 
     @Override
-    @SuppressWarnings("unchecked")
     public boolean nextKeyValue() throws IOException, InterruptedException {
         this.curResult = this.joiner.stepNext();
         if(this.curResult != null) {

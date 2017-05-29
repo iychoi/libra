@@ -30,7 +30,6 @@ import static org.apache.hadoop.io.WritableComparator.compareBytes;
  *
  * @author iychoi
  */
-@SuppressWarnings("cast")
 public class CompressedIntArrayWritable extends BinaryComparable implements WritableComparable<BinaryComparable> {
 
     private static final Log LOG = LogFactory.getLog(CompressedIntArrayWritable.class);
@@ -258,7 +257,7 @@ public class CompressedIntArrayWritable extends BinaryComparable implements Writ
             }
         } else if((flag & 0xf0) == 0x20) {
             for (int i = 0; i < count; i++) {
-                out.writeInt((int)this.intArray[i]);
+                out.writeInt(this.intArray[i]);
             }
         } else {
             throw new IOException("unhandled flag");

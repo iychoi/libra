@@ -13,53 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.stage2;
+package libra.core.kmersimilarity_r;
 
 import java.io.IOException;
 import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
-import libra.preprocess.common.PreprocessorRoundConfig;
-import libra.preprocess.common.filetable.FileTable;
-import libra.preprocess.common.helpers.KmerStatisticsHelper;
-import libra.preprocess.common.kmerstatistics.KmerStatisticsPart;
-import libra.preprocess.common.kmerstatistics.KmerStatisticsPartTable;
+import libra.common.kmermatch.KmerMatchFileMapping;
+import libra.core.commom.CoreConfig;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileSystem;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.mapreduce.Reducer;
 
 /**
  *
  * @author iychoi
  */
-public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable, CompressedIntArrayWritable, CompressedSequenceWritable, CompressedIntArrayWritable> {
+public class KmerSimilarityCombiner extends Reducer<CompressedSequenceWritable, CompressedIntArrayWritable, CompressedSequenceWritable, CompressedIntArrayWritable> {
     
-    private static final Log LOG = LogFactory.getLog(KmerIndexBuilderReducer.class);
-
-    private PreprocessorRoundConfig ppConfig;
-    private FileTable fileTable;
-    private KmerStatisticsPart[] statisticsParts;
+    private static final Log LOG = LogFactory.getLog(KmerSimilarityCombiner.class);
+    
+    private CoreConfig cConfig;
+    private KmerMatchFileMapping fileMapping;
     
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
         
-        this.ppConfig = PreprocessorRoundConfig.createInstance(conf);
-        this.fileTable = this.ppConfig.getFileTable();
-        this.statisticsParts = new KmerStatisticsPart[this.ppConfig.getFileTable().samples()];
-        
-        int idx = 0;
-        for(String sample : this.fileTable.getSamples()) {
-            this.statisticsParts[idx] = new KmerStatisticsPart(sample);
-            idx++;
-        }
+        this.cConfig = CoreConfig.createInstance(conf);
+        this.fileMapping = KmerMatchFileMapping.createInstance(conf);
     }
     
     @Override
     protected void reduce(CompressedSequenceWritable key, Iterable<CompressedIntArrayWritable> values, Context context) throws IOException, InterruptedException {
-        int[] freqTable = new int[this.fileTable.samples()];
+        int[] freqTable = new int[this.fileMapping.getSize()];
         for(int i=0;i<freqTable.length;i++) {
             freqTable[i] = 0;
         }
@@ -95,34 +82,11 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
                 idx += 2;
             }
         }
-
-        // compute base
-        for(int m=0;m<freqTable.length;m++) {
-            int frequency = freqTable[m];
-            if(frequency > 0) {
-                this.statisticsParts[m].incrementLogTFWeight(Math.pow(1 + Math.log10(frequency), 2));
-                this.statisticsParts[m].incrementNaturalTFWeight(Math.pow(frequency, 2));
-                this.statisticsParts[m].incrementBooleanTFWeight(1);
-            }
-        }
         
         context.write(key, new CompressedIntArrayWritable(outputFreqArr));
     }
     
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-        int taskID = context.getTaskAttemptID().getTaskID().getId();
-        
-        KmerStatisticsPartTable table = new KmerStatisticsPartTable(this.fileTable.getName());
-        for(KmerStatisticsPart statisticsPart : this.statisticsParts) {
-            table.addStatisticsPart(statisticsPart);
-        }
-        
-        String statisticsPartTableFileName = KmerStatisticsHelper.makeKmerStatisticsPartTableFileName(this.fileTable.getName(), taskID);
-
-        Path statisticsPartTableOutputFile = new Path(this.ppConfig.getKmerStatisticsPath(), statisticsPartTableFileName);
-        FileSystem outputFileSystem = statisticsPartTableOutputFile.getFileSystem(context.getConfiguration());
-
-        table.saveTo(outputFileSystem, statisticsPartTableOutputFile);
     }
 }

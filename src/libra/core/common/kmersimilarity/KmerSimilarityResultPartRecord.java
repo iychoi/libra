@@ -30,35 +30,35 @@ import org.codehaus.jackson.annotate.JsonProperty;
  *
  * @author iychoi
  */
-public class KmerSimilarityOutputRecord {
+public class KmerSimilarityResultPartRecord {
     
-    private static final Log LOG = LogFactory.getLog(KmerSimilarityOutputRecord.class);
+    private static final Log LOG = LogFactory.getLog(KmerSimilarityResultPartRecord.class);
     
-    private static final String HADOOP_CONFIG_KEY = "libra.core.common.kmersimilarity.kmersimilarityoutputrecord";
+    private static final String HADOOP_CONFIG_KEY = "libra.core.common.kmersimilarity.kmersimilarityresultpartrecord";
     
     private double[] similarityScore;
     
-    public static KmerSimilarityOutputRecord createInstance(File file) throws IOException {
+    public static KmerSimilarityResultPartRecord createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (KmerSimilarityOutputRecord) serializer.fromJsonFile(file, KmerSimilarityOutputRecord.class);
+        return (KmerSimilarityResultPartRecord) serializer.fromJsonFile(file, KmerSimilarityResultPartRecord.class);
     }
     
-    public static KmerSimilarityOutputRecord createInstance(String json) throws IOException {
+    public static KmerSimilarityResultPartRecord createInstance(String json) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (KmerSimilarityOutputRecord) serializer.fromJson(json, KmerSimilarityOutputRecord.class);
+        return (KmerSimilarityResultPartRecord) serializer.fromJson(json, KmerSimilarityResultPartRecord.class);
     }
     
-    public static KmerSimilarityOutputRecord createInstance(Configuration conf) throws IOException {
+    public static KmerSimilarityResultPartRecord createInstance(Configuration conf) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (KmerSimilarityOutputRecord) serializer.fromJsonConfiguration(conf, HADOOP_CONFIG_KEY, KmerSimilarityOutputRecord.class);
+        return (KmerSimilarityResultPartRecord) serializer.fromJsonConfiguration(conf, HADOOP_CONFIG_KEY, KmerSimilarityResultPartRecord.class);
     }
     
-    public static KmerSimilarityOutputRecord createInstance(FileSystem fs, Path file) throws IOException {
+    public static KmerSimilarityResultPartRecord createInstance(FileSystem fs, Path file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (KmerSimilarityOutputRecord) serializer.fromJsonFile(fs, file, KmerSimilarityOutputRecord.class);
+        return (KmerSimilarityResultPartRecord) serializer.fromJsonFile(fs, file, KmerSimilarityResultPartRecord.class);
     }
     
-    public KmerSimilarityOutputRecord() {
+    public KmerSimilarityResultPartRecord() {
     }
     
     @JsonProperty("score")
@@ -79,6 +79,16 @@ public class KmerSimilarityOutputRecord {
         
         for(int i=0;i<score.length;i++) {
             this.similarityScore[i] += score[i];
+        }
+    }
+    
+    @JsonIgnore
+    public String toString() {
+        try {
+        JsonSerializer serializer = new JsonSerializer();
+            return serializer.toJson(this);
+        } catch(Exception ex) {
+            return null;
         }
     }
     

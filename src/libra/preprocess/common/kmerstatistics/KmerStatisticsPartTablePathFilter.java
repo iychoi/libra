@@ -13,29 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.common.kmerindex;
+package libra.preprocess.common.kmerstatistics;
 
-import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
-import org.apache.hadoop.io.IntWritable;
+import libra.preprocess.common.helpers.KmerStatisticsHelper;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 
 /**
  *
  * @author iychoi
  */
-public class KmerIndexBufferEntry {
-    private CompressedSequenceWritable key;
-    private IntWritable val;
+public class KmerStatisticsPartTablePathFilter implements PathFilter {
 
-    public KmerIndexBufferEntry(CompressedSequenceWritable key, IntWritable val) {
-        this.key = key;
-        this.val = val;
-    }
-
-    public CompressedSequenceWritable getKey() {
-        return this.key;
-    }
-
-    public IntWritable getVal() {
-        return this.val;
+    @Override
+    public boolean accept(Path path) {
+        return KmerStatisticsHelper.isKmerStatisticsPartTableFile(path);
     }
 }

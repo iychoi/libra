@@ -30,19 +30,19 @@ import org.apache.hadoop.mapreduce.InputSplit;
  */
 public class KmerMatchInputSplit extends InputSplit implements Writable {
 
-    private Path[] kmerIndexPath;
+    private Path[] kmerIndexTableFilePaths;
     private KmerRangePartition partition;
 
     public KmerMatchInputSplit() {    
     }
     
-    public KmerMatchInputSplit(Path[] kmerIndexFilePath, KmerRangePartition partition) {
-        this.kmerIndexPath = kmerIndexFilePath;
+    public KmerMatchInputSplit(Path[] kmerIndexTableFilePaths, KmerRangePartition partition) {
+        this.kmerIndexTableFilePaths = kmerIndexTableFilePaths;
         this.partition = partition;
     }
     
-    public Path[] getIndexFilePath() {
-        return this.kmerIndexPath;
+    public Path[] getIndexTableFilePaths() {
+        return this.kmerIndexTableFilePaths;
     }
     
     public KmerRangePartition getPartition() {
@@ -52,7 +52,7 @@ public class KmerMatchInputSplit extends InputSplit implements Writable {
     @Override
     public String toString() {
         StringBuilder sb = new StringBuilder();
-        for(Path path : this.kmerIndexPath) {
+        for(Path path : this.kmerIndexTableFilePaths) {
             if(sb.length() != 0) {
                 sb.append(", ");
             }
@@ -68,8 +68,8 @@ public class KmerMatchInputSplit extends InputSplit implements Writable {
 
     @Override
     public void write(DataOutput out) throws IOException {
-        out.writeInt(this.kmerIndexPath.length);
-        for (Path indexPath : this.kmerIndexPath) {
+        out.writeInt(this.kmerIndexTableFilePaths.length);
+        for (Path indexPath : this.kmerIndexTableFilePaths) {
             Text.writeString(out, indexPath.toString());
         }
         this.partition.write(out);
@@ -77,9 +77,9 @@ public class KmerMatchInputSplit extends InputSplit implements Writable {
 
     @Override
     public void readFields(DataInput in) throws IOException {
-        this.kmerIndexPath = new Path[in.readInt()];
-        for(int i=0;i<this.kmerIndexPath.length;i++) {
-            this.kmerIndexPath[i] = new Path(Text.readString(in));
+        this.kmerIndexTableFilePaths = new Path[in.readInt()];
+        for(int i=0;i<this.kmerIndexTableFilePaths.length;i++) {
+            this.kmerIndexTableFilePaths[i] = new Path(Text.readString(in));
         }
         this.partition = new KmerRangePartition();
         this.partition.read(in);

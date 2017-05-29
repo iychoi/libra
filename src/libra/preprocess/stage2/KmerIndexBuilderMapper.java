@@ -17,36 +17,53 @@ package libra.preprocess.stage2;
 
 import java.io.IOException;
 import libra.common.algorithms.KmerKeySelection.KmerRecord;
+import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.sequence.KmerLines;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
-import libra.preprocess.common.PreprocessorConfig;
+import libra.preprocess.common.PreprocessorRoundConfig;
+import libra.preprocess.common.filetable.FileTable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.io.IntWritable;
+import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.mapreduce.Mapper;
+import org.apache.hadoop.mapreduce.lib.input.FileSplit;
 
 /**
  *
  * @author iychoi
  */
-public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, CompressedSequenceWritable, IntWritable> {
+public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, CompressedSequenceWritable, CompressedIntArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilderMapper.class);
     
-    private PreprocessorConfig ppConfig;
+    private PreprocessorRoundConfig ppConfig;
+    private FileTable fileTable;
     
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
         
-        this.ppConfig = PreprocessorConfig.createInstance(conf);
+        this.ppConfig = PreprocessorRoundConfig.createInstance(conf);
+        
+        this.fileTable = this.ppConfig.getFileTable();
+    }
+    
+    private int getFileID(Path filePath) throws IOException {
+        int fileID = this.fileTable.getSampleID(filePath.toString());
+        if(fileID < 0) {
+            throw new IOException(String.format("Cannot find fileID from path %s", filePath.toString()));
+        }
+        return fileID;
     }
     
     @Override
     protected void map(LongWritable key, KmerLines value, Context context) throws IOException, InterruptedException {
+        FileSplit fis = (FileSplit)context.getInputSplit();
+        int fileID = getFileID(fis.getPath());
+        
         for(String line : value.get()) {
             if(line != null) {
                 String sequence = line.toUpperCase();
@@ -75,7 +92,10 @@ public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, Comp
                     KmerRecord kmerRecord = new KmerRecord(kmer);
                     KmerRecord keyRecord = kmerRecord.getSelectedKey();
 
-                    context.write(new CompressedSequenceWritable(keyRecord.getSequence()), new IntWritable(1));
+                    int[] arr = new int[2];
+                    arr[0] = fileID;
+                    arr[1] = 1;
+                    context.write(new CompressedSequenceWritable(keyRecord.getSequence()), new CompressedIntArrayWritable(arr));
                 }
             }
         }

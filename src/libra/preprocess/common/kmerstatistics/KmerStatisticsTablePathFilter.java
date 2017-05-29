@@ -13,21 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.common.kmerindex;
+package libra.preprocess.common.kmerstatistics;
 
-import java.io.Closeable;
-import java.io.IOException;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
-import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
+import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 
 /**
  *
  * @author iychoi
  */
-public abstract class AKmerIndexReader implements Closeable {
+public class KmerStatisticsTablePathFilter implements PathFilter {
+
     @Override
-    public abstract void close() throws IOException;
-    public abstract Path getKmerIndexTablePath();
-    public abstract boolean next(CompressedSequenceWritable key, CompressedIntArrayWritable val) throws IOException;
+    public boolean accept(Path path) {
+        return KmerStatisticsHelper.isKmerStatisticsTableFile(path);
+    }
 }

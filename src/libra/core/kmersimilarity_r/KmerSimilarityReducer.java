@@ -18,15 +18,17 @@ package libra.core.kmersimilarity_r;
 import java.io.IOException;
 import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
-import libra.common.json.JsonSerializer;
 import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.core.commom.CoreConfig;
-import libra.core.common.kmersimilarity.KmerSimilarityOutputRecord;
-import libra.preprocess.common.WeightAlgorithm;
+import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecord;
+import libra.core.commom.WeightAlgorithm;
+import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
+import libra.preprocess.common.kmerstatistics.KmerStatisticsTable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
@@ -36,60 +38,64 @@ import org.apache.hadoop.mapreduce.Reducer;
  *
  * @author iychoi
  */
-@SuppressWarnings("cast")
 public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, CompressedIntArrayWritable, Text, Text> {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityReducer.class);
     
-    private CoreConfig libraConfig;
-    private JsonSerializer serializer;
+    private CoreConfig cConfig;
     private KmerMatchFileMapping fileMapping;
-    private int valuesLen;
     private double[] scoreAccumulated;
     private WeightAlgorithm weightAlgorithm;
     private double[] tfConsineNormBase;
     
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
-        this.libraConfig = CoreConfig.createInstance(context.getConfiguration());
-        this.serializer = new JsonSerializer();
+        Configuration conf = context.getConfiguration();
+        this.cConfig = CoreConfig.createInstance(conf);
         
-        this.fileMapping = KmerMatchFileMapping.createInstance(context.getConfiguration());
+        this.fileMapping = KmerMatchFileMapping.createInstance(conf);
         
-        this.valuesLen = this.fileMapping.getSize();
-        this.scoreAccumulated = new double[this.valuesLen * this.valuesLen];
+        int value_len = this.fileMapping.getSize();
+        this.scoreAccumulated = new double[value_len * value_len];
         for(int i=0;i<this.scoreAccumulated.length;i++) {
             this.scoreAccumulated[i] = 0;
         }
         
-        this.weightAlgorithm = this.libraConfig.getWeightAlgorithm();
+        this.weightAlgorithm = this.cConfig.getWeightAlgorithm();
         if(this.weightAlgorithm == null) {
             this.weightAlgorithm = CoreConfig.DEFAULT_WEIGHT_ALGORITHM;
         }
         
-        this.tfConsineNormBase = new double[this.valuesLen];
-        for(int i=0;i<this.valuesLen;i++) {
-            // fill ConsineNormBase
-            String sequenceFilename = this.fileMapping.getSequenceFileFromID(i);
-            String statisticsFilename = KmerStatisticsHelper.makeKmerStatisticsFileName(sequenceFilename);
-            Path statisticsPath = new Path(this.libraConfig.getKmerStatisticsPath(), statisticsFilename);
-            FileSystem fs = statisticsPath.getFileSystem(context.getConfiguration());
-            
-            KmerStatistics statistics = KmerStatistics.createInstance(fs, statisticsPath);
+        this.tfConsineNormBase = new double[value_len];
+        int idx = 0;
+        for(FileTable fileTable : this.cConfig.getFileTable()) {
+            String statisticsTableFilename = KmerStatisticsHelper.makeKmerStatisticsTableFileName(fileTable.getName());
+            Path statisticsTablePath = new Path(this.cConfig.getKmerStatisticsPath(), statisticsTableFilename);
+            FileSystem fs = statisticsTablePath.getFileSystem(conf);
 
-            switch(this.weightAlgorithm) {
-                case LOGALITHM:
-                    this.tfConsineNormBase[i] = statistics.getLogTFCosineNormBase();
-                    break;
-                case NATURAL:
-                    this.tfConsineNormBase[i] = statistics.getNaturalTFCosineNormBase();
-                    break;
-                case BOOLEAN:
-                    this.tfConsineNormBase[i] = statistics.getBooleanTFCosineNormBase();
-                    break;
-                default:
-                    LOG.info("Unknown algorithm specified : " + this.weightAlgorithm.toString());
-                    throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
+            KmerStatisticsTable statisticsTable = KmerStatisticsTable.createInstance(fs, statisticsTablePath);
+            for(KmerStatistics statistics : statisticsTable.getStatistics()) {
+                String sequenceFile = this.fileMapping.getSequenceFileFromID(idx);
+                if(!sequenceFile.equals(statistics.getName())) {
+                    throw new IOException(String.format("File order is not correct - %s ==> %s", sequenceFile, statistics.getName()));
+                }
+                
+                switch(this.weightAlgorithm) {
+                    case LOGALITHM:
+                        this.tfConsineNormBase[idx] = statistics.getLogTFCosineNormBase();
+                        break;
+                    case NATURAL:
+                        this.tfConsineNormBase[idx] = statistics.getNaturalTFCosineNormBase();
+                        break;
+                    case BOOLEAN:
+                        this.tfConsineNormBase[idx] = statistics.getBooleanTFCosineNormBase();
+                        break;
+                    default:
+                        LOG.info("Unknown algorithm specified : " + this.weightAlgorithm.toString());
+                        throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
+                }
+
+                idx++;
             }
         }
     }
@@ -97,7 +103,7 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, C
     private double getTFWeight(int freq) throws IOException {
         switch(this.weightAlgorithm) {
             case LOGALITHM:
-                return (double)(1 + Math.log10(freq));
+                return 1 + Math.log10(freq);
             case NATURAL:
                 return freq;
             case BOOLEAN:
@@ -113,41 +119,40 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, C
     @Override
     protected void reduce(CompressedSequenceWritable key, Iterable<CompressedIntArrayWritable> values, Context context) throws IOException, InterruptedException {
         // compute normal
-        double[] normal = new double[this.valuesLen];
-        for(int i=0;i<this.valuesLen;i++) {
+        int value_len = this.fileMapping.getSize();
+        double[] normal = new double[value_len];
+        for(int i=0;i<value_len;i++) {
             normal[i] = 0;
         }
         
         for(CompressedIntArrayWritable value : values) {
             int[] arr = value.get();
-            int file_id = arr[0];
-            int freq = arr[1];
-            double weight = getTFWeight(freq);
-            normal[file_id] = weight / this.tfConsineNormBase[file_id];
+            for(int i=0;i<arr.length/2;i++) {
+                int file_id = arr[i*2];
+                int freq = arr[i*2 + 1];
+                double weight = getTFWeight(freq);
+                normal[file_id] = weight / this.tfConsineNormBase[file_id];
+            }
         }
         
         accumulateScore(normal);
     }
     
     private void accumulateScore(double[] normal) {
-        for(int i=0;i<this.valuesLen;i++) {
-            for(int j=0;j<this.valuesLen;j++) {
-                this.scoreAccumulated[i*this.valuesLen + j] += normal[i] * normal[j];
+        int value_len = this.fileMapping.getSize();
+        for(int i=0;i<value_len;i++) {
+            for(int j=0;j<value_len;j++) {
+                this.scoreAccumulated[i*value_len + j] += normal[i] * normal[j];
             }
         }
     }
     
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-        KmerSimilarityOutputRecord rec = new KmerSimilarityOutputRecord();
+        KmerSimilarityResultPartRecord rec = new KmerSimilarityResultPartRecord();
         rec.setScore(this.scoreAccumulated);
 
-        String json = this.serializer.toJson(rec);
+        String json = rec.toString();
         context.write(new Text(" "), new Text(json));
-
-        this.libraConfig = null;
-        this.serializer = null;
-        
-        this.fileMapping = null;
     }
 }

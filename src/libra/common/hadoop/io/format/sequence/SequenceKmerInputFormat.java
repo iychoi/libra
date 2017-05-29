@@ -53,7 +53,7 @@ public class SequenceKmerInputFormat extends FileInputFormat<LongWritable, KmerL
     @Override
     protected boolean isSplitable(JobContext context, Path filename) {
         boolean splitable = SequenceKmerInputFormat.isSplitable(context.getConfiguration());
-        LOG.info("splitable = " + splitable);
+        //LOG.info("splitable = " + splitable);
         if(!splitable) {
             return false;
         }

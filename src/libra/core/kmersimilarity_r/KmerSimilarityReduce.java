@@ -22,20 +22,19 @@ import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
-import libra.common.cmdargs.CommandArgumentsParser;
-import libra.common.helpers.MapReduceClusterHelper;
 import libra.common.helpers.MapReduceHelper;
 import libra.common.kmermatch.KmerMatchFileMapping;
-import libra.core.CoreCmdArgs;
 import libra.core.commom.CoreConfig;
 import libra.core.commom.CoreConfigException;
 import libra.core.common.helpers.KmerSimilarityHelper;
-import libra.core.common.kmersimilarity.KmerSimilarityOutputRecord;
+import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecord;
+import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerIndexHelper;
+import libra.preprocess.common.kmerindex.KmerIndexTable;
+import libra.preprocess.common.kmerindex.KmerIndexTableRecord;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.conf.Configured;
 import org.apache.hadoop.fs.FSDataInputStream;
 import org.apache.hadoop.fs.FSDataOutputStream;
 import org.apache.hadoop.fs.FileStatus;
@@ -48,48 +47,25 @@ import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
-import org.apache.hadoop.util.Tool;
-import org.apache.hadoop.util.ToolRunner;
 
 /**
  *
  * @author iychoi
  */
-@SuppressWarnings("deprecation")
-public class KmerSimilarityReduce extends Configured implements Tool {
-    
+public class KmerSimilarityReduce {
     private static final Log LOG = LogFactory.getLog(KmerSimilarityReduce.class);
-    
-    public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new Configuration(), new KmerSimilarityReduce(), args);
-        System.exit(res);
-    }
-    
-    public static int main2(String[] args) throws Exception {
-        return ToolRunner.run(new Configuration(), new KmerSimilarityReduce(), args);
-    }
     
     public KmerSimilarityReduce() {
         
     }
     
-    @Override
-    public int run(String[] args) throws Exception {
-        CommandArgumentsParser<CoreCmdArgs> parser = new CommandArgumentsParser<CoreCmdArgs>();
-        CoreCmdArgs cmdParams = new CoreCmdArgs();
-        if(!parser.parse(args, cmdParams)) {
-            LOG.error("Failed to parse command line arguments!");
-            return 1;
-        }
-        
-        CoreConfig cConfig = cmdParams.getCoreConfig();
-        
-        return runJob(cConfig);
-    }
-    
     private void validateCoreConfig(CoreConfig cConfig) throws CoreConfigException {
         if(cConfig.getKmerIndexPath() == null) {
             throw new CoreConfigException("cannot find input kmer index path");
+        }
+        
+        if(cConfig.getFileTable() == null || cConfig.getFileTable().size() <= 0) {
+            throw new CoreConfigException("cannot find input path");
         }
         
         if(cConfig.getKmerHistogramPath() == null) {
@@ -105,14 +81,11 @@ public class KmerSimilarityReduce extends Configured implements Tool {
         }
     }
     
-    private int runJob(CoreConfig cConfig) throws Exception {
+    public int runJob(Configuration conf, CoreConfig cConfig) throws Exception {
         // check config
         validateCoreConfig(cConfig);
         
-        // configuration
-        Configuration conf = this.getConf();
-        
-        Job job = new Job(conf, "Libra Core - Computing similarity between samples");
+        Job job = Job.getInstance(conf, "Libra Core - Computing similarity");
         conf = job.getConfiguration();
         
         // set user configuration
@@ -128,6 +101,9 @@ public class KmerSimilarityReduce extends Configured implements Tool {
         job.setMapOutputKeyClass(CompressedSequenceWritable.class);
         job.setMapOutputValueClass(CompressedIntArrayWritable.class);
         
+        // Combiner
+        job.setCombinerClass(KmerSimilarityCombiner.class);
+        
         // Partitioner
         job.setPartitionerClass(KmerSimilarityPartitioner.class);
 
@@ -139,42 +115,35 @@ public class KmerSimilarityReduce extends Configured implements Tool {
         job.setOutputValueClass(Text.class);
 
         // Inputs
-        Path[] kmerIndexFiles = KmerIndexHelper.getAllKmerIndexIndexFilePath(conf, cConfig.getKmerIndexPath());
-        List<Path> indexPartFileArray = new ArrayList<Path>();
-        for(Path kmerIndexFile : kmerIndexFiles) {
-            Path[] inputKmerIndexPartFiles = KmerIndexHelper.getKmerIndexPartFilePath(conf, kmerIndexFile);
-            for(Path indexPartFile : inputKmerIndexPartFiles) {
-                Path[] kmerIndexPartDataFiles = KmerIndexHelper.getAllKmerIndexPartDataFilePath(conf, indexPartFile);
-                for(Path kmerIndexPartDataFile : kmerIndexPartDataFiles) {
-                    indexPartFileArray.add(kmerIndexPartDataFile);
-                }
+        List<Path> inputKmerIndexFiles = new ArrayList<Path>();
+        List<Path> inputKmerIndexDataFiles = new ArrayList<Path>();
+        for(FileTable fileTable : cConfig.getFileTable()) {
+            String kmerIndexTableFileName = KmerIndexHelper.makeKmerIndexTableFileName(fileTable.getName());
+            Path kmerIndexTableFilePath = new Path(cConfig.getKmerIndexPath(), kmerIndexTableFileName);
+            inputKmerIndexFiles.add(kmerIndexTableFilePath);
+
+            // add data
+            FileSystem fs = kmerIndexTableFilePath.getFileSystem(conf);
+            KmerIndexTable kmerIndexTable = KmerIndexTable.createInstance(fs, kmerIndexTableFilePath);
+            for(KmerIndexTableRecord record : kmerIndexTable.getRecord()) {
+                String indexDataFile = record.getIndexDataFile();
+                Path kmerIndexDataFilePath = new Path(cConfig.getKmerIndexPath(), indexDataFile);
+                Path kmerIndexDataFilePath_DATA = new Path(kmerIndexDataFilePath, "data");
+                inputKmerIndexDataFiles.add(kmerIndexDataFilePath_DATA);
             }
         }
         
-        SequenceFileInputFormat.addInputPaths(job, FileSystemHelper.makeCommaSeparated(indexPartFileArray.toArray(new Path[0])));
-
-        LOG.info("Input kmer index files : " + kmerIndexFiles.length);
-        for(Path inputFile : kmerIndexFiles) {
+        SequenceFileInputFormat.addInputPaths(job, FileSystemHelper.makeCommaSeparated(inputKmerIndexDataFiles.toArray(new Path[0])));
+        LOG.info("Input kmer index files : " + inputKmerIndexFiles.size());
+        for(Path inputFile : inputKmerIndexFiles) {
             LOG.info("> " + inputFile.toString());
         }
         
-        int kmerSize = 0;
-        for(Path inputFile : kmerIndexFiles) {
-            // check kmerSize
-            int myKmerSize = KmerIndexHelper.getKmerSize(inputFile);
-            if(kmerSize == 0) {
-                kmerSize = myKmerSize;
-            } else {
-                if(kmerSize != myKmerSize) {
-                    throw new Exception("kmer size must be the same over all given kmer indices");
-                }
-            }
-        }
-        
         KmerMatchFileMapping fileMapping = new KmerMatchFileMapping();
-        for(Path kmerIndexFile : kmerIndexFiles) {
-            String sequenceFilename = KmerIndexHelper.getSequenceFileName(kmerIndexFile.getName());
-            fileMapping.addSequenceFile(sequenceFilename);
+        for(FileTable fileTable : cConfig.getFileTable()) {
+            for(String sample : fileTable.getSamples()) {
+                fileMapping.addSequenceFile(sample);
+            }
         }
         fileMapping.saveTo(conf);
         
@@ -183,13 +152,12 @@ public class KmerSimilarityReduce extends Configured implements Tool {
 
         // Reducer
         // Use many reducers
-        int reducers = conf.getInt("mapred.reduce.tasks", 0);
-        if(reducers <= 0) {
-            int MRNodes = MapReduceClusterHelper.getNodeNum(conf);
-            reducers = MRNodes * 2;
-            job.setNumReduceTasks(reducers);
+        int reducers = conf.getInt("mapred.reduce.tasks", 1);
+        if(cConfig.getTaskNum() > 0) {
+            reducers = cConfig.getTaskNum();
         }
-        LOG.info("Reducers : " + reducers);
+        job.setNumReduceTasks(reducers);
+        LOG.info("# of Reducers : " + reducers);
         
         // Execute job and return status
         boolean result = job.waitForCompletion(true);
@@ -198,12 +166,13 @@ public class KmerSimilarityReduce extends Configured implements Tool {
         if(result) {
             commit(new Path(cConfig.getOutputPath()), conf);
             
-            Path tableFilePath = new Path(cConfig.getOutputPath(), KmerSimilarityHelper.makeKmerSimilarityTableFileName());
-            FileSystem fs = tableFilePath.getFileSystem(conf);
-            fileMapping.saveTo(fs, tableFilePath);
+            // create a file mapping table file
+            Path fileMappingTablePath = new Path(cConfig.getOutputPath(), KmerSimilarityHelper.makeKmerSimilarityFileMappingTableFileName());
+            FileSystem fs = fileMappingTablePath.getFileSystem(conf);
+            fileMapping.saveTo(fs, fileMappingTablePath);
             
             // combine results
-            sumScores(new Path(cConfig.getOutputPath()), conf);
+            combineResults(new Path(cConfig.getOutputPath()), conf);
         }
         
         report.addJob(job);
@@ -220,7 +189,7 @@ public class KmerSimilarityReduce extends Configured implements Tool {
         FileSystem fs = outputPath.getFileSystem(conf);
         
         FileStatus status = fs.getFileStatus(outputPath);
-        if (status.isDir()) {
+        if (status.isDirectory()) {
             FileStatus[] entries = fs.listStatus(outputPath);
             for (FileStatus entry : entries) {
                 Path entryPath = entry.getPath();
@@ -231,11 +200,10 @@ public class KmerSimilarityReduce extends Configured implements Tool {
                 } else if(MapReduceHelper.isPartialOutputFiles(entryPath)) {
                     // rename outputs
                     int mapreduceID = MapReduceHelper.getMapReduceID(entryPath);
-                    String newName = KmerSimilarityHelper.makeKmerSimilarityResultFileName(mapreduceID);
+                    String newName = KmerSimilarityHelper.makeKmerSimilarityResultPartFileName(mapreduceID);
                     Path toPath = new Path(entryPath.getParent(), newName);
 
-                    LOG.info("output : " + entryPath.toString());
-                    LOG.info("renamed to : " + toPath.toString());
+                    LOG.info(String.format("rename %s ==> %s", entryPath.toString(), toPath.toString()));
                     fs.rename(entryPath, toPath);
                 } else {
                     // let it be
@@ -246,15 +214,14 @@ public class KmerSimilarityReduce extends Configured implements Tool {
         }
     }
     
-    private void sumScores(Path outputPath, Configuration conf) throws IOException {
-        Path[] resultFiles = KmerSimilarityHelper.getAllKmerSimilarityResultFilePath(conf, outputPath.toString());
+    private void combineResults(Path outputPath, Configuration conf) throws IOException {
+        Path[] resultPartFiles = KmerSimilarityHelper.getKmerSimilarityResultPartFilePath(conf, outputPath);
         FileSystem fs = outputPath.getFileSystem(conf);
 
-        KmerSimilarityOutputRecord scoreRec = null;
-        for(Path resultFile : resultFiles) {
-            LOG.info("Reading the scores from " + resultFile.toString());
-            FSDataInputStream is = fs.open(resultFile);
-            FileStatus status = fs.getFileStatus(resultFile);
+        KmerSimilarityResultPartRecord scoreRec = null;
+        for(Path resultPartFile : resultPartFiles) {
+            FSDataInputStream is = fs.open(resultPartFile);
+            FileStatus status = fs.getFileStatus(resultPartFile);
             
             LineRecordReader reader = new LineRecordReader(is, 0, status.getLen(), conf);
             
@@ -263,9 +230,9 @@ public class KmerSimilarityReduce extends Configured implements Tool {
 
             while(reader.next(off, val)) {
                 if(scoreRec == null) {
-                    scoreRec = KmerSimilarityOutputRecord.createInstance(val.toString());
+                    scoreRec = KmerSimilarityResultPartRecord.createInstance(val.toString());
                 } else {
-                    KmerSimilarityOutputRecord rec2 = KmerSimilarityOutputRecord.createInstance(val.toString());
+                    KmerSimilarityResultPartRecord rec2 = KmerSimilarityResultPartRecord.createInstance(val.toString());
                     scoreRec.addScore(rec2.getScore());
                 }
             }
@@ -275,7 +242,7 @@ public class KmerSimilarityReduce extends Configured implements Tool {
         
         double[] accumulatedScore = scoreRec.getScore();
         
-        String resultFilename = KmerSimilarityHelper.makeKmerSimilarityFinalResultFileName();
+        String resultFilename = KmerSimilarityHelper.makeKmerSimilarityResultFileName();
         Path resultFilePath = new Path(outputPath, resultFilename);
         
         LOG.info("Creating a final score file : " + resultFilePath.toString());
@@ -285,13 +252,18 @@ public class KmerSimilarityReduce extends Configured implements Tool {
         for(int i=0;i<accumulatedScore.length;i++) {
             int x = i/n;
             int y = i%n;
+            double score = Math.min(accumulatedScore[i], 1.0);
             
             String k = x + "\t" + y;
-            String v = Double.toString(accumulatedScore[i]);
+            String v = Double.toString(score);
             String out = k + "\t" + v + "\n";
             os.write(out.getBytes());
         }
         
         os.close();
+        
+        for(Path resultPartFile : resultPartFiles) {
+            fs.delete(resultPartFile, true);
+        }
     }
 }

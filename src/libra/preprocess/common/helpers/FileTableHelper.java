@@ -21,7 +21,7 @@ import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import libra.preprocess.common.PreprocessorConstants;
-import libra.preprocess.common.kmerstatistics.KmerStatisticsPartTablePathFilter;
+import libra.preprocess.common.filetable.FileTablePathFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -31,49 +31,29 @@ import org.apache.hadoop.fs.Path;
  *
  * @author iychoi
  */
-public class KmerStatisticsHelper {
+public class FileTableHelper {
+    private final static String FILE_TABLE_PATH_EXP = ".+\\." + PreprocessorConstants.FILE_TABLE_FILENAME_EXTENSION + "$";
+    private final static Pattern FILE_TABLE_PATH_PATTERN = Pattern.compile(FILE_TABLE_PATH_EXP);
     
-    private final static String KMER_STATISTICS_TABLE_PATH_EXP = ".+\\." + PreprocessorConstants.KMER_STATISTICS_TABLE_FILENAME_EXTENSION + "$";
-    private final static Pattern KMER_STATISTICS_TABLE_PATH_PATTERN = Pattern.compile(KMER_STATISTICS_TABLE_PATH_EXP);
-    
-    private final static String KMER_STATISTICS_PART_TABLE_PATH_EXP = ".+\\." + PreprocessorConstants.KMER_STATISTICS_TABLE_FILENAME_EXTENSION + "\\.\\d+$";
-    private final static Pattern KMER_STATISTICS_PART_TABLE_PATH_PATTERN = Pattern.compile(KMER_STATISTICS_PART_TABLE_PATH_EXP);
-    
-    public static String makeKmerStatisticsTableFileName(String filename) {
-        return filename + "." + PreprocessorConstants.KMER_STATISTICS_TABLE_FILENAME_EXTENSION;
+    public static String makeFileTableFileName(String sampleFileName) {
+        return sampleFileName + "." + PreprocessorConstants.FILE_TABLE_FILENAME_EXTENSION;
     }
     
-    public static String makeKmerStatisticsPartTableFileName(String filename, int taskID) {
-        return filename + "." + PreprocessorConstants.KMER_STATISTICS_TABLE_FILENAME_EXTENSION + "." + taskID;
+    public static boolean isFileTableFile(Path path) {
+        return isFileTableFile(path.getName());
     }
     
-    public static boolean isKmerStatisticsTableFile(Path path) {
-        return isKmerStatisticsTableFile(path.getName());
-    }
-    
-    public static boolean isKmerStatisticsTableFile(String path) {
-        Matcher matcher = KMER_STATISTICS_TABLE_PATH_PATTERN.matcher(path.toLowerCase());
+    public static boolean isFileTableFile(String path) {
+        Matcher matcher = FILE_TABLE_PATH_PATTERN.matcher(path.toLowerCase());
         if(matcher.matches()) {
             return true;
         }
         return false;
     }
     
-    public static boolean isKmerStatisticsPartTableFile(Path path) {
-        return isKmerStatisticsPartTableFile(path.getName());
-    }
-    
-    public static boolean isKmerStatisticsPartTableFile(String path) {
-        Matcher matcher = KMER_STATISTICS_PART_TABLE_PATH_PATTERN.matcher(path.toLowerCase());
-        if(matcher.matches()) {
-            return true;
-        }
-        return false;
-    }
-    
-    public static Path[] getKmerStatisticsPartTableFilePath(Configuration conf, Path inputPath) throws IOException {
+    public static Path[] getFileTableFilePath(Configuration conf, Path inputPath) throws IOException {
         List<Path> inputFiles = new ArrayList<Path>();
-        KmerStatisticsPartTablePathFilter filter = new KmerStatisticsPartTablePathFilter();
+        FileTablePathFilter filter = new FileTablePathFilter();
         
         FileSystem fs = inputPath.getFileSystem(conf);
         if(fs.exists(inputPath)) {

@@ -15,18 +15,27 @@
  */
 package libra.preprocess.common.kmerindex;
 
-import libra.preprocess.common.helpers.KmerIndexHelper;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.fs.PathFilter;
+import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 
 /**
  *
  * @author iychoi
  */
-public class KmerIndexPartPathFilter implements PathFilter {
+public class KmerIndexRecordBufferEntry {
+    private CompressedSequenceWritable key;
+    private CompressedIntArrayWritable val;
 
-    @Override
-    public boolean accept(Path path) {
-        return KmerIndexHelper.isKmerIndexPartFile(path);
+    public KmerIndexRecordBufferEntry(CompressedSequenceWritable key, CompressedIntArrayWritable val) {
+        this.key = key;
+        this.val = val;
+    }
+
+    public CompressedSequenceWritable getKey() {
+        return this.key;
+    }
+
+    public CompressedIntArrayWritable getVal() {
+        return this.val;
     }
 }
