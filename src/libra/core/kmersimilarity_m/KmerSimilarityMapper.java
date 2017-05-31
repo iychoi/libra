@@ -144,23 +144,15 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         List<IntArrayWritable> filteredValueArray = new ArrayList<IntArrayWritable>();
         List<Path> filteredKmerIndexPathArray = new ArrayList<Path>();
         
-        int matches = 0;
         for(int i=0;i<valueArray.length;i++) {
             if(valueArray[i] != null) {
                 filteredValueArray.add(valueArray[i]);
                 filteredKmerIndexPathArray.add(kmerIndexTablePathArray[i]);
-                
-                matches += valueArray[i].getLength() / 2;
             }
         }
         
         valueArray = null;
         kmerIndexTablePathArray = null;
-        
-        if(matches <= 1) {
-            // skip
-            return;
-        }
         
         // compute normal
         double[] normal = new double[valuesLen];
@@ -186,7 +178,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
                 normal[file_id] = weight / this.tfConsineNormBase[file_id];
             }
         }
-        
+
         accumulateScore(normal);
     }
     
@@ -212,11 +204,39 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
     
     private void accumulateScore(double[] normal) {
         int valuesLen = this.fileMapping.getSize();
+        int nonZeroFields = 0;
         for(int i=0;i<valuesLen;i++) {
-            for(int j=0;j<valuesLen;j++) {
-                this.scoreAccumulated[i*valuesLen + j] += normal[i] * normal[j];
+            if(normal[i] != 0) {
+                nonZeroFields++;
             }
         }
+        
+        int[] nonZeroNormalsIdx = new int[nonZeroFields];
+        double[] nonZeroNormalsVal = new double[nonZeroFields];
+        int idx = 0;
+        for(int i=0;i<valuesLen;i++) {
+            if(normal[i] != 0) {
+                nonZeroNormalsIdx[idx] = i;
+                nonZeroNormalsVal[idx] = normal[i];
+                idx++;
+            }
+        }
+        
+        for(int i=0;i<nonZeroFields;i++) {
+            for(int j=0;j<nonZeroFields;j++) {
+                this.scoreAccumulated[nonZeroNormalsIdx[i]*valuesLen + nonZeroNormalsIdx[j]] += nonZeroNormalsVal[i] * nonZeroNormalsVal[j];
+            }
+        }
+        /*
+        for(int i=0;i<valuesLen;i++) {
+            double i_normal = normal[i];
+            if(i_normal != 0) {
+                for(int j=0;j<valuesLen;j++) {
+                    this.scoreAccumulated[i*valuesLen + j] += i_normal * normal[j];
+                }
+            }
+        }
+        */
     }
     
     @Override

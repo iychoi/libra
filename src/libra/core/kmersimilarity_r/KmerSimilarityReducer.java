@@ -139,12 +139,40 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, I
     }
     
     private void accumulateScore(double[] normal) {
-        int value_len = this.fileMapping.getSize();
-        for(int i=0;i<value_len;i++) {
-            for(int j=0;j<value_len;j++) {
-                this.scoreAccumulated[i*value_len + j] += normal[i] * normal[j];
+        int valuesLen = this.fileMapping.getSize();
+        int nonZeroFields = 0;
+        for(int i=0;i<valuesLen;i++) {
+            if(normal[i] != 0) {
+                nonZeroFields++;
             }
         }
+        
+        int[] nonZeroNormalsIdx = new int[nonZeroFields];
+        double[] nonZeroNormalsVal = new double[nonZeroFields];
+        int idx = 0;
+        for(int i=0;i<valuesLen;i++) {
+            if(normal[i] != 0) {
+                nonZeroNormalsIdx[idx] = i;
+                nonZeroNormalsVal[idx] = normal[i];
+                idx++;
+            }
+        }
+        
+        for(int i=0;i<nonZeroFields;i++) {
+            for(int j=0;j<nonZeroFields;j++) {
+                this.scoreAccumulated[nonZeroNormalsIdx[i]*valuesLen + nonZeroNormalsIdx[j]] += nonZeroNormalsVal[i] * nonZeroNormalsVal[j];
+            }
+        }
+        /*
+        for(int i=0;i<valuesLen;i++) {
+            double i_normal = normal[i];
+            if(i_normal != 0) {
+                for(int j=0;j<valuesLen;j++) {
+                    this.scoreAccumulated[i*valuesLen + j] += i_normal * normal[j];
+                }
+            }
+        }
+        */
     }
     
     @Override
