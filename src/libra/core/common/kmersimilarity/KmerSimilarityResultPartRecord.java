@@ -36,7 +36,9 @@ public class KmerSimilarityResultPartRecord {
     
     private static final String HADOOP_CONFIG_KEY = "libra.core.common.kmersimilarity.kmersimilarityresultpartrecord";
     
-    private double[] similarityScore;
+    private int file1ID;
+    private int file2ID;
+    private double score;
     
     public static KmerSimilarityResultPartRecord createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -61,31 +63,55 @@ public class KmerSimilarityResultPartRecord {
     public KmerSimilarityResultPartRecord() {
     }
     
-    @JsonProperty("score")
-    public double[] getScore() {
-        return this.similarityScore;
+    @JsonProperty("file1_id")
+    public int getFile1ID() {
+        return this.file1ID;
+    }
+    
+    @JsonProperty("file1_id")
+    public void setFile1ID(int file1ID) {
+        this.file1ID = file1ID;
+    }
+    
+    @JsonProperty("file2_id")
+    public int getFile2ID() {
+        return this.file2ID;
+    }
+    
+    @JsonProperty("file2_id")
+    public void setFile2ID(int file2ID) {
+        this.file2ID = file2ID;
     }
     
     @JsonProperty("score")
-    public void setScore(double[] score) {
-        this.similarityScore = score;
+    public double getScore() {
+        return this.score;
+    }
+    
+    @JsonProperty("score")
+    public void setScore(double score) {
+        this.score = score;
     }
     
     @JsonIgnore
-    public void addScore(double[] score) {
-        if(this.similarityScore == null) {
-            this.similarityScore = score;
-        }
-        
-        for(int i=0;i<score.length;i++) {
-            this.similarityScore[i] += score[i];
+    public void addScore(double score) {
+        this.score += score;
+    }
+    
+    @JsonIgnore
+    public String toJson() {
+        try {
+            JsonSerializer serializer = new JsonSerializer();
+            return serializer.toJson(this);
+        } catch(Exception ex) {
+            return null;
         }
     }
     
     @JsonIgnore
     public String toString() {
         try {
-        JsonSerializer serializer = new JsonSerializer();
+            JsonSerializer serializer = new JsonSerializer();
             return serializer.toJson(this);
         } catch(Exception ex) {
             return null;

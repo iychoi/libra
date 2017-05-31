@@ -172,7 +172,7 @@ public class KmerSimilarityReduce {
             fileMapping.saveTo(fs, fileMappingTablePath);
             
             // combine results
-            combineResults(new Path(cConfig.getOutputPath()), conf);
+            combineResults(fileMapping, new Path(cConfig.getOutputPath()), conf);
         }
         
         report.addJob(job);
@@ -214,12 +214,20 @@ public class KmerSimilarityReduce {
         }
     }
     
-    private void combineResults(Path outputPath, Configuration conf) throws IOException {
+    private void combineResults(KmerMatchFileMapping fileMapping, Path outputPath, Configuration conf) throws IOException {
+        int valuesLen = fileMapping.getSize();
+        
+        double[] accumulatedScore = new double[valuesLen * valuesLen];
+        for(int i=0;i<accumulatedScore.length;i++) {
+            accumulatedScore[i] = 0;
+        }
+        
         Path[] resultPartFiles = KmerSimilarityHelper.getKmerSimilarityResultPartFilePath(conf, outputPath);
         FileSystem fs = outputPath.getFileSystem(conf);
-
-        KmerSimilarityResultPartRecord scoreRec = null;
+        
         for(Path resultPartFile : resultPartFiles) {
+            LOG.info("Combining a score file : " + resultPartFile.toString());
+            
             FSDataInputStream is = fs.open(resultPartFile);
             FileStatus status = fs.getFileStatus(resultPartFile);
             
@@ -229,18 +237,16 @@ public class KmerSimilarityReduce {
             Text val = new Text();
 
             while(reader.next(off, val)) {
-                if(scoreRec == null) {
-                    scoreRec = KmerSimilarityResultPartRecord.createInstance(val.toString());
-                } else {
-                    KmerSimilarityResultPartRecord rec2 = KmerSimilarityResultPartRecord.createInstance(val.toString());
-                    scoreRec.addScore(rec2.getScore());
-                }
+                KmerSimilarityResultPartRecord scoreRec = KmerSimilarityResultPartRecord.createInstance(val.toString());
+                int file1ID = scoreRec.getFile1ID();
+                int file2ID = scoreRec.getFile2ID();
+                double score = scoreRec.getScore();
+                
+                accumulatedScore[file1ID*valuesLen + file2ID] += score;
             }
             
             reader.close();
         }
-        
-        double[] accumulatedScore = scoreRec.getScore();
         
         String resultFilename = KmerSimilarityHelper.makeKmerSimilarityResultFileName();
         Path resultFilePath = new Path(outputPath, resultFilename);

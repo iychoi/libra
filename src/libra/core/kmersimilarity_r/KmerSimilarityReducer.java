@@ -177,10 +177,20 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, I
     
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-        KmerSimilarityResultPartRecord rec = new KmerSimilarityResultPartRecord();
-        rec.setScore(this.scoreAccumulated);
-
-        String json = rec.toString();
-        context.write(new Text(" "), new Text(json));
+        int valuesLen = this.fileMapping.getSize();
+        
+        for(int i=0;i<valuesLen;i++) {
+            for(int j=0;j<valuesLen;j++) {
+                double score = this.scoreAccumulated[i*valuesLen + j];
+                if(score != 0) {
+                    KmerSimilarityResultPartRecord rec = new KmerSimilarityResultPartRecord();
+                    rec.setFile1ID(i);
+                    rec.setFile2ID(j);
+                    rec.setScore(score);
+                    String json = rec.toString();
+                    context.write(new Text(" "), new Text(json));
+                }
+            }
+        }
     }
 }
