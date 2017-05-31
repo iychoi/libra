@@ -20,7 +20,7 @@ import java.math.BigDecimal;
 import java.math.BigInteger;
 import java.util.ArrayList;
 import java.util.List;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
 import libra.preprocess.common.kmerhistogram.KmerRangePartition;
@@ -52,7 +52,7 @@ public class KmerJoiner {
     private BigInteger beginSequence;
     
     private CompressedSequenceWritable[] stepKeys;
-    private CompressedIntArrayWritable[] stepVals;
+    private IntArrayWritable[] stepVals;
     private List<Integer> stepMinKeys;
     private boolean stepStarted;
     
@@ -80,7 +80,7 @@ public class KmerJoiner {
         this.eof = false;
         this.beginSequence = this.partition.getPartitionBegin();
         this.stepKeys = new CompressedSequenceWritable[this.readers.length];
-        this.stepVals = new CompressedIntArrayWritable[this.readers.length];
+        this.stepVals = new IntArrayWritable[this.readers.length];
         this.stepStarted = false;
         
         LOG.info("Matcher is initialized");
@@ -95,7 +95,7 @@ public class KmerJoiner {
             this.progressKey = minKey;
             
             // check matching
-            CompressedIntArrayWritable[] minVals = new CompressedIntArrayWritable[minKeyIndexes.size()];
+            IntArrayWritable[] minVals = new IntArrayWritable[minKeyIndexes.size()];
             Path[] minIndexPaths = new Path[minKeyIndexes.size()];
 
             int valIdx = 0;
@@ -146,7 +146,7 @@ public class KmerJoiner {
             for(int i=0;i<this.readers.length;i++) {
                 // fill first
                 CompressedSequenceWritable key = new CompressedSequenceWritable();
-                CompressedIntArrayWritable val = new CompressedIntArrayWritable();
+                IntArrayWritable val = new IntArrayWritable();
                 if(this.readers[i].next(key, val)) {
                     this.stepKeys[i] = key;
                     this.stepVals[i] = val;
@@ -169,7 +169,7 @@ public class KmerJoiner {
             // move min pointers
             for (int idx : this.stepMinKeys) {
                 CompressedSequenceWritable key = new CompressedSequenceWritable();
-                CompressedIntArrayWritable val = new CompressedIntArrayWritable();
+                IntArrayWritable val = new IntArrayWritable();
                 if(this.readers[idx].next(key, val)) {
                     this.stepKeys[idx] = key;
                     this.stepVals[idx] = val;

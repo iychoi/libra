@@ -16,7 +16,7 @@
 package libra.core.kmersimilarity_r;
 
 import java.io.IOException;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.core.commom.CoreConfig;
@@ -38,7 +38,7 @@ import org.apache.hadoop.mapreduce.Reducer;
  *
  * @author iychoi
  */
-public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, CompressedIntArrayWritable, Text, Text> {
+public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, IntArrayWritable, Text, Text> {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityReducer.class);
     
@@ -117,7 +117,7 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, C
     }
     
     @Override
-    protected void reduce(CompressedSequenceWritable key, Iterable<CompressedIntArrayWritable> values, Context context) throws IOException, InterruptedException {
+    protected void reduce(CompressedSequenceWritable key, Iterable<IntArrayWritable> values, Context context) throws IOException, InterruptedException {
         // compute normal
         int value_len = this.fileMapping.getSize();
         double[] normal = new double[value_len];
@@ -125,7 +125,7 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, C
             normal[i] = 0;
         }
         
-        for(CompressedIntArrayWritable value : values) {
+        for(IntArrayWritable value : values) {
             int[] arr = value.get();
             for(int i=0;i<arr.length/2;i++) {
                 int file_id = arr[i*2];

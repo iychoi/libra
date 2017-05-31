@@ -19,7 +19,7 @@ import libra.preprocess.common.helpers.KmerIndexHelper;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.Iterator;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
@@ -102,7 +102,7 @@ public class KmerIndexBuilder {
         SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
         job.setInputFormatClass(SequenceKmerInputFormat.class);
         job.setMapOutputKeyClass(CompressedSequenceWritable.class);
-        job.setMapOutputValueClass(CompressedIntArrayWritable.class);
+        job.setMapOutputValueClass(IntArrayWritable.class);
         
         // Combiner
         job.setCombinerClass(KmerIndexBuilderCombiner.class);
@@ -115,7 +115,7 @@ public class KmerIndexBuilder {
         
         // Specify key / value
         job.setOutputKeyClass(CompressedSequenceWritable.class);
-        job.setOutputValueClass(CompressedIntArrayWritable.class);
+        job.setOutputValueClass(IntArrayWritable.class);
         
         // Inputs
         Path[] inputFiles = FileSystemHelper.makePathFromString(conf, ppConfig.getFileTable().getSamples());

@@ -19,7 +19,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.common.kmermatch.KmerMatchResult;
@@ -137,11 +137,11 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
     protected void map(CompressedSequenceWritable key, KmerMatchResult value, Context context) throws IOException, InterruptedException {
         int valuesLen = this.fileMapping.getSize();
         
-        CompressedIntArrayWritable[] valueArray = value.getVals();
+        IntArrayWritable[] valueArray = value.getVals();
         Path[] kmerIndexTablePathArray = value.getKmerIndexTablePaths();
         
         // filter out empty values
-        List<CompressedIntArrayWritable> filteredValueArray = new ArrayList<CompressedIntArrayWritable>();
+        List<IntArrayWritable> filteredValueArray = new ArrayList<IntArrayWritable>();
         List<Path> filteredKmerIndexPathArray = new ArrayList<Path>();
         
         int matches = 0;
@@ -170,7 +170,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         
         for(int i=0;i<filteredValueArray.size();i++) {
             Path path = filteredKmerIndexPathArray.get(i);
-            CompressedIntArrayWritable valueArr = filteredValueArray.get(i);
+            IntArrayWritable valueArr = filteredValueArray.get(i);
             
             String fileTableName = KmerIndexHelper.getFileTableName(path);
             

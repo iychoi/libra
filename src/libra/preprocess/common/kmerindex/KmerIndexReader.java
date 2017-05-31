@@ -18,7 +18,7 @@ package libra.preprocess.common.kmerindex;
 import java.io.IOException;
 import java.util.concurrent.BlockingQueue;
 import java.util.concurrent.LinkedBlockingQueue;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.hadoop.io.reader.map.IndexCloseableMapFileReader;
 import org.apache.commons.logging.Log;
@@ -107,7 +107,7 @@ public class KmerIndexReader extends AKmerIndexReader {
             int added = 0;
             while(added < BUFFER_SIZE) {
                 CompressedSequenceWritable key = new CompressedSequenceWritable();
-                CompressedIntArrayWritable val = new CompressedIntArrayWritable();
+                IntArrayWritable val = new IntArrayWritable();
                 if(this.indexDataReaders[this.currentIndexDataID].next(key, val)) {
                     KmerIndexRecordBufferEntry entry = new KmerIndexRecordBufferEntry(key, val);
                     if(!this.buffer.offer(entry)) {
@@ -178,7 +178,7 @@ public class KmerIndexReader extends AKmerIndexReader {
     private void seek(CompressedSequenceWritable key) throws IOException {
         this.buffer.clear();
         
-        CompressedIntArrayWritable val = new CompressedIntArrayWritable();
+        IntArrayWritable val = new IntArrayWritable();
         CompressedSequenceWritable nextKey = (CompressedSequenceWritable)this.indexDataReaders[this.currentIndexDataID].getClosest(key, val);
         if(nextKey == null) {
             this.eof = true;
@@ -208,7 +208,7 @@ public class KmerIndexReader extends AKmerIndexReader {
     }
     
     @Override
-    public boolean next(CompressedSequenceWritable key, CompressedIntArrayWritable val) throws IOException {
+    public boolean next(CompressedSequenceWritable key, IntArrayWritable val) throws IOException {
         KmerIndexRecordBufferEntry entry = this.buffer.poll();
         if(entry != null) {
             key.set(entry.getKey());

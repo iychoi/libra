@@ -17,7 +17,7 @@ package libra.preprocess.common.kmerindex;
 
 import java.io.IOException;
 import java.math.BigInteger;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
 import org.apache.hadoop.conf.Configuration;
@@ -31,7 +31,7 @@ import org.apache.hadoop.mapreduce.TaskAttemptContext;
  *
  * @author iychoi
  */
-public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritable, CompressedIntArrayWritable> {
+public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritable, IntArrayWritable> {
     private Path[] inputIndexPaths;
     private Configuration conf;
     private AKmerIndexReader indexReader;
@@ -39,7 +39,7 @@ public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritab
     private BigInteger progressEnd;
     private KmerIndexInputFormatConfig inputFormatConfig;
     private CompressedSequenceWritable curKey;
-    private CompressedIntArrayWritable curVal;
+    private IntArrayWritable curVal;
 
     @Override
     public void initialize(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
@@ -70,7 +70,7 @@ public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritab
     @Override
     public boolean nextKeyValue() throws IOException, InterruptedException {
         CompressedSequenceWritable key = new CompressedSequenceWritable();
-        CompressedIntArrayWritable val = new CompressedIntArrayWritable();
+        IntArrayWritable val = new IntArrayWritable();
         boolean result = this.indexReader.next(key, val);
         
         if(result) {
@@ -89,7 +89,7 @@ public class KmerIndexRecordReader extends RecordReader<CompressedSequenceWritab
     }
 
     @Override
-    public CompressedIntArrayWritable getCurrentValue() throws IOException, InterruptedException {
+    public IntArrayWritable getCurrentValue() throws IOException, InterruptedException {
         return this.curVal;
     }
 

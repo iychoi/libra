@@ -19,7 +19,7 @@ import libra.preprocess.common.helpers.KmerIndexHelper;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -41,14 +41,14 @@ import org.apache.hadoop.mapreduce.security.TokenCache;
  *
  * @author iychoi
  */
-public class KmerIndexInputFormat extends SequenceFileInputFormat<CompressedSequenceWritable, CompressedIntArrayWritable> {
+public class KmerIndexInputFormat extends SequenceFileInputFormat<CompressedSequenceWritable, IntArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerIndexInputFormat.class);
     
     private final static String NUM_INPUT_FILES = "mapreduce.input.num.files";
     
     @Override
-    public RecordReader<CompressedSequenceWritable, CompressedIntArrayWritable> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException {
+    public RecordReader<CompressedSequenceWritable, IntArrayWritable> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException {
         return new KmerIndexRecordReader();
     }
     

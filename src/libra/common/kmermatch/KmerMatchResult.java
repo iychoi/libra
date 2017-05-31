@@ -17,7 +17,7 @@ package libra.common.kmermatch;
 
 import java.io.File;
 import java.io.IOException;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.json.JsonSerializer;
 import org.apache.commons.logging.Log;
@@ -39,7 +39,7 @@ public class KmerMatchResult {
     private static final String HADOOP_CONFIG_KEY = "libra.common.kmermatch.kmermatchresult";
     
     private CompressedSequenceWritable key;
-    private CompressedIntArrayWritable[] vals;
+    private IntArrayWritable[] vals;
     private Path[] kmerIndexTablePaths;
     
     public static KmerMatchResult createInstance(File file) throws IOException {
@@ -66,7 +66,7 @@ public class KmerMatchResult {
         
     }
     
-    public KmerMatchResult(CompressedSequenceWritable key, CompressedIntArrayWritable[] vals, Path[] kmerIndexTablePaths) {
+    public KmerMatchResult(CompressedSequenceWritable key, IntArrayWritable[] vals, Path[] kmerIndexTablePaths) {
         this.key = key;
         this.vals = vals;
         this.kmerIndexTablePaths = kmerIndexTablePaths;
@@ -83,7 +83,7 @@ public class KmerMatchResult {
     }
     
     @JsonIgnore
-    public CompressedIntArrayWritable[] getVals() {
+    public IntArrayWritable[] getVals() {
         return this.vals;
     }
     

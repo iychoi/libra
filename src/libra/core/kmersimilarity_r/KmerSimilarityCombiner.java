@@ -16,7 +16,7 @@
 package libra.core.kmersimilarity_r;
 
 import java.io.IOException;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.core.commom.CoreConfig;
@@ -29,7 +29,7 @@ import org.apache.hadoop.mapreduce.Reducer;
  *
  * @author iychoi
  */
-public class KmerSimilarityCombiner extends Reducer<CompressedSequenceWritable, CompressedIntArrayWritable, CompressedSequenceWritable, CompressedIntArrayWritable> {
+public class KmerSimilarityCombiner extends Reducer<CompressedSequenceWritable, IntArrayWritable, CompressedSequenceWritable, IntArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityCombiner.class);
     
@@ -45,13 +45,13 @@ public class KmerSimilarityCombiner extends Reducer<CompressedSequenceWritable, 
     }
     
     @Override
-    protected void reduce(CompressedSequenceWritable key, Iterable<CompressedIntArrayWritable> values, Context context) throws IOException, InterruptedException {
+    protected void reduce(CompressedSequenceWritable key, Iterable<IntArrayWritable> values, Context context) throws IOException, InterruptedException {
         int[] freqTable = new int[this.fileMapping.getSize()];
         for(int i=0;i<freqTable.length;i++) {
             freqTable[i] = 0;
         }
         
-        for(CompressedIntArrayWritable value : values) {
+        for(IntArrayWritable value : values) {
             int[] v_arr = value.get();
             
             if(v_arr.length % 2 != 0) {
@@ -83,7 +83,7 @@ public class KmerSimilarityCombiner extends Reducer<CompressedSequenceWritable, 
             }
         }
         
-        context.write(key, new CompressedIntArrayWritable(outputFreqArr));
+        context.write(key, new IntArrayWritable(outputFreqArr));
     }
     
     @Override

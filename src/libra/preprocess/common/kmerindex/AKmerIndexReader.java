@@ -17,7 +17,7 @@ package libra.preprocess.common.kmerindex;
 
 import java.io.Closeable;
 import java.io.IOException;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import org.apache.hadoop.fs.Path;
 
@@ -29,5 +29,5 @@ public abstract class AKmerIndexReader implements Closeable {
     @Override
     public abstract void close() throws IOException;
     public abstract Path getKmerIndexTablePath();
-    public abstract boolean next(CompressedSequenceWritable key, CompressedIntArrayWritable val) throws IOException;
+    public abstract boolean next(CompressedSequenceWritable key, IntArrayWritable val) throws IOException;
 }

@@ -16,7 +16,7 @@
 package libra.core.kmersimilarity_r;
 
 
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -26,12 +26,12 @@ import org.apache.hadoop.mapreduce.Partitioner;
  *
  * @author iychoi
  */
-public class KmerSimilarityPartitioner extends Partitioner<CompressedSequenceWritable, CompressedIntArrayWritable> {
+public class KmerSimilarityPartitioner extends Partitioner<CompressedSequenceWritable, IntArrayWritable> {
 
     private static final Log LOG = LogFactory.getLog(KmerSimilarityPartitioner.class);
     
     @Override
-    public int getPartition(CompressedSequenceWritable key, CompressedIntArrayWritable value, int numReduceTasks) {
+    public int getPartition(CompressedSequenceWritable key, IntArrayWritable value, int numReduceTasks) {
         return (key.getSequence().hashCode() & Integer.MAX_VALUE) % numReduceTasks;
     }
 }

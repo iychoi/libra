@@ -17,7 +17,7 @@ package libra.preprocess.stage2;
 
 import java.io.IOException;
 import libra.common.algorithms.KmerKeySelection.KmerRecord;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.sequence.KmerLines;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
@@ -35,7 +35,7 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  *
  * @author iychoi
  */
-public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, CompressedSequenceWritable, CompressedIntArrayWritable> {
+public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, CompressedSequenceWritable, IntArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilderMapper.class);
     
@@ -95,7 +95,7 @@ public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, Comp
                     int[] arr = new int[2];
                     arr[0] = fileID;
                     arr[1] = 1;
-                    context.write(new CompressedSequenceWritable(keyRecord.getSequence()), new CompressedIntArrayWritable(arr));
+                    context.write(new CompressedSequenceWritable(keyRecord.getSequence()), new IntArrayWritable(arr));
                 }
             }
         }

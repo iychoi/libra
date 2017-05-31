@@ -17,7 +17,7 @@ package libra.preprocess.stage2;
 
 
 import java.io.IOException;
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
 import libra.preprocess.common.PreprocessorRoundConfig;
@@ -36,7 +36,7 @@ import org.apache.hadoop.mapreduce.Partitioner;
  *
  * @author iychoi
  */
-public class KmerIndexBuilderPartitioner extends Partitioner<CompressedSequenceWritable, CompressedIntArrayWritable> implements Configurable {
+public class KmerIndexBuilderPartitioner extends Partitioner<CompressedSequenceWritable, IntArrayWritable> implements Configurable {
 
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilderPartitioner.class);
     
@@ -105,7 +105,7 @@ public class KmerIndexBuilderPartitioner extends Partitioner<CompressedSequenceW
     }
     
     @Override
-    public int getPartition(CompressedSequenceWritable key, CompressedIntArrayWritable value, int numReduceTasks) {
+    public int getPartition(CompressedSequenceWritable key, IntArrayWritable value, int numReduceTasks) {
         if(!this.initialized) {
             try {
                 initialize();

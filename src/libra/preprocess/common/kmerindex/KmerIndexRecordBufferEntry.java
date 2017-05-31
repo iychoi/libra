@@ -15,7 +15,7 @@
  */
 package libra.preprocess.common.kmerindex;
 
-import libra.common.hadoop.io.datatypes.CompressedIntArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 
 /**
@@ -24,9 +24,9 @@ import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
  */
 public class KmerIndexRecordBufferEntry {
     private CompressedSequenceWritable key;
-    private CompressedIntArrayWritable val;
+    private IntArrayWritable val;
 
-    public KmerIndexRecordBufferEntry(CompressedSequenceWritable key, CompressedIntArrayWritable val) {
+    public KmerIndexRecordBufferEntry(CompressedSequenceWritable key, IntArrayWritable val) {
         this.key = key;
         this.val = val;
     }
@@ -35,7 +35,7 @@ public class KmerIndexRecordBufferEntry {
         return this.key;
     }
 
-    public CompressedIntArrayWritable getVal() {
+    public IntArrayWritable getVal() {
         return this.val;
     }
 }
