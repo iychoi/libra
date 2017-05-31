@@ -22,6 +22,7 @@ import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.core.commom.CoreConfig;
 import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecord;
 import libra.core.commom.WeightAlgorithm;
+import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecordGroup;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
@@ -180,6 +181,7 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, I
         int valuesLen = this.fileMapping.getSize();
         
         for(int i=0;i<valuesLen;i++) {
+            KmerSimilarityResultPartRecordGroup group = new KmerSimilarityResultPartRecordGroup();
             for(int j=0;j<valuesLen;j++) {
                 double score = this.scoreAccumulated[i*valuesLen + j];
                 if(score != 0) {
@@ -187,10 +189,12 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, I
                     rec.setFile1ID(i);
                     rec.setFile2ID(j);
                     rec.setScore(score);
-                    String json = rec.toString();
-                    context.write(new Text(" "), new Text(json));
+                    
+                    group.addScore(rec);
                 }
             }
+            String json = group.toString();
+            context.write(new Text(" "), new Text(json));
         }
     }
 }

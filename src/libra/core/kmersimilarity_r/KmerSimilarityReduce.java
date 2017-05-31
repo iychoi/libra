@@ -28,6 +28,7 @@ import libra.core.commom.CoreConfig;
 import libra.core.commom.CoreConfigException;
 import libra.core.common.helpers.KmerSimilarityHelper;
 import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecord;
+import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecordGroup;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import libra.preprocess.common.kmerindex.KmerIndexTable;
@@ -237,12 +238,14 @@ public class KmerSimilarityReduce {
             Text val = new Text();
 
             while(reader.next(off, val)) {
-                KmerSimilarityResultPartRecord scoreRec = KmerSimilarityResultPartRecord.createInstance(val.toString());
-                int file1ID = scoreRec.getFile1ID();
-                int file2ID = scoreRec.getFile2ID();
-                double score = scoreRec.getScore();
-                
-                accumulatedScore[file1ID*valuesLen + file2ID] += score;
+                KmerSimilarityResultPartRecordGroup group = KmerSimilarityResultPartRecordGroup.createInstance(val.toString());
+                for(KmerSimilarityResultPartRecord scoreRec : group.getScore()) {
+                    int file1ID = scoreRec.getFile1ID();
+                    int file2ID = scoreRec.getFile2ID();
+                    double score = scoreRec.getScore();
+
+                    accumulatedScore[file1ID*valuesLen + file2ID] += score;
+                }
             }
             
             reader.close();
