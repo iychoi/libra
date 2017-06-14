@@ -17,13 +17,15 @@ package libra.preprocess;
 
 import libra.common.cmdargs.CommandArgumentsParser;
 import libra.common.helpers.FileSystemHelper;
+import libra.preprocess.common.FilterAlgorithm;
 import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.helpers.FileTableHelper;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.filetable.SampleGrouper;
 import libra.preprocess.stage1.KmerHistogramBuilder;
-import libra.preprocess.stage2.KmerIndexBuilder;
+import libra.preprocess.stage2.KmerFilterBuilder;
+import libra.preprocess.stage3.KmerIndexBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -93,6 +95,14 @@ public class Preprocessor extends Configured implements Tool {
                 res = kmerHistogramBuilder.runJob(new Configuration(common_conf), roundConfig);
                 if(res != 0) {
                     throw new Exception("KmerHistogramBuilder Failed : " + res);
+                }
+                
+                if(ppConfig.getFilterAlgorithm() != FilterAlgorithm.NONE) {
+                    KmerFilterBuilder kmerFilterBuilder = new KmerFilterBuilder();
+                    res = kmerFilterBuilder.runJob(new Configuration(common_conf), roundConfig);
+                    if(res != 0) {
+                        throw new Exception("KmerFilterBuilder Failed : " + res);
+                    }
                 }
                 
                 KmerIndexBuilder kmerIndexBuilder = new KmerIndexBuilder();

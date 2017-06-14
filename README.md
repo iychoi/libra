@@ -13,7 +13,7 @@ Build without dependent libs
 ant
 ```
 
-Build with dependent libs
+Build with dependent libs (recommended)
 ```
 ant allinone
 ```
@@ -30,21 +30,20 @@ hadoop jar libra-all.jar preprocess -k 20 -t 8 -o /index_dir /source_dir
 
 Preprocessing Options
 - k : k-mer size
-- t : number of tasks (reducers)
+- t : number of tasks (reducers). 1 by default.
 - s : min size of group in bytes. 10GB by default. For each file group, a separate index file is created. 
 - g : max number of groups. 20 groups by default. If groups to be created by "-s" option exceeds this value, combine groups.
+- f : kmer filter algorithm. NONE | STDDEV (standard deviation) | STDDEV2 (two's standard deviation, default)
 - o : output directory
 
 
 Scoring
 ```
-hadoop jar libra-all.jar core -m MAP -w LOGALITHM -t 100 -o /score_dir /index_dir
+hadoop jar libra-all.jar core -m MAP -w LOGALITHM -t 8 -o /score_dir /index_dir
 ```
 
 Scoring Options
 - m : run mode. MAP | REDUCE
-- w : weighting algorithm. LOGALITHM | BOOLEAN | NATURAL
+- w : weighting algorithm. LOGALITHM (default) | BOOLEAN | NATURAL
 - t : number of tasks (input splits at MAP mode, reducers at REDUCE mode)
 - o : output directory
-
-

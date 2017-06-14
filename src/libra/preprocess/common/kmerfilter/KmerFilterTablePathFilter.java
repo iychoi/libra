@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.common;
+package libra.preprocess.common.kmerfilter;
+
+import libra.preprocess.common.helpers.KmerFilterHelper;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 
 /**
  *
  * @author iychoi
  */
-public class PreprocessorConstants {
-    public final static String FILE_TABLE_FILENAME_EXTENSION = "ftbl";
-    public final static String KMER_FILTER_TABLE_FILENAME_EXTENSION = "kflt";
-    public final static String KMER_HISTOGRAM_FILENAME_EXTENSION = "khist";
-    public final static String KMER_INDEX_TABLE_FILENAME_EXTENSION = "kidx";
-    public final static String KMER_INDEX_DATA_FILENAME_EXTENSION = "kidxc";
-    public final static String KMER_STATISTICS_TABLE_FILENAME_EXTENSION = "kstat";
+public class KmerFilterTablePathFilter implements PathFilter {
+
+    @Override
+    public boolean accept(Path path) {
+        return KmerFilterHelper.isKmerFilterTableFile(path);
+    }
 }

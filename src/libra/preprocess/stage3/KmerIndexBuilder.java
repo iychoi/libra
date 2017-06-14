@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.stage2;
+package libra.preprocess.stage3;
 
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import java.io.IOException;
@@ -25,11 +25,14 @@ import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
 import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
 import libra.common.helpers.MapReduceHelper;
+import libra.preprocess.common.FilterAlgorithm;
 import libra.preprocess.common.PreprocessorConfigException;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.filetable.FileTable;
+import libra.preprocess.common.helpers.KmerFilterHelper;
 import libra.preprocess.common.helpers.KmerHistogramHelper;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
+import libra.preprocess.common.kmerfilter.KmerFilterTable;
 import libra.preprocess.common.kmerindex.KmerIndexTable;
 import libra.preprocess.common.kmerindex.KmerIndexTableRecord;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
@@ -124,6 +127,18 @@ public class KmerIndexBuilder {
         LOG.info("Input sample files : " + inputFiles.length);
         for(Path inputFile : inputFiles) {
             LOG.info("> " + inputFile.toString());
+        }
+        
+        // filter
+        if(ppConfig.getFilterAlgorithm() != FilterAlgorithm.NONE) {
+            // read filter
+            String filterTableFileName = KmerFilterHelper.makeKmerFilterTableFileName(ppConfig.getFileTable().getName());
+            Path filterTablePath = new Path(ppConfig.getKmerFilterPath(), filterTableFileName);
+            
+            FileSystem fs = filterTablePath.getFileSystem(conf);
+            KmerFilterTable filterTable = KmerFilterTable.createInstance(fs, filterTablePath);
+            
+            filterTable.saveTo(conf);
         }
         
         // histogram

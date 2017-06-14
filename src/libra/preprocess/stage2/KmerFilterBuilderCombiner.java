@@ -28,9 +28,9 @@ import org.apache.hadoop.mapreduce.Reducer;
  *
  * @author iychoi
  */
-public class KmerIndexBuilderCombiner extends Reducer<CompressedSequenceWritable, IntArrayWritable, CompressedSequenceWritable, IntArrayWritable> {
+public class KmerFilterBuilderCombiner extends Reducer<CompressedSequenceWritable, IntArrayWritable, CompressedSequenceWritable, IntArrayWritable> {
     
-    private static final Log LOG = LogFactory.getLog(KmerIndexBuilderCombiner.class);
+    private static final Log LOG = LogFactory.getLog(KmerFilterBuilderCombiner.class);
     
     private PreprocessorRoundConfig ppConfig;
     

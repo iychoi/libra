@@ -19,6 +19,7 @@ import libra.preprocess.common.PreprocessorConfig;
 import java.util.ArrayList;
 import java.util.List;
 import libra.common.cmdargs.CommandArgumentsBase;
+import libra.preprocess.common.FilterAlgorithm;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
@@ -58,6 +59,13 @@ public class PreprocessorCmdArgs extends CommandArgumentsBase {
     
     public int getTaskNum() {
         return this.taskNum;
+    }
+    
+    @Option(name = "-f", aliases = "--filter", usage = "specify filter algorithm")
+    protected String filterAlgorithm = PreprocessorConfig.DEFAULT_FILTER_ALGORITHM.name();
+
+    public FilterAlgorithm getFilterAlgorithm() {
+        return FilterAlgorithm.fromString(this.filterAlgorithm);
     }
     
     @Option(name = "-o", usage = "specify preprocess output path")
@@ -131,6 +139,7 @@ public class PreprocessorCmdArgs extends CommandArgumentsBase {
         config.setKmerSize(this.kmerSize);
         config.setGroupSize(this.groupSize);
         config.setTaskNum(this.taskNum);
+        config.setFilterAlgorithm(this.getFilterAlgorithm());
         config.setMaxGroupNum(this.maxGroupNum);
         config.addSequencePath(this.inputPaths);
         config.setOutputRootPath(this.outputPath);

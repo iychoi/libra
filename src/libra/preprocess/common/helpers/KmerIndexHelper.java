@@ -18,24 +18,19 @@ package libra.preprocess.common.helpers;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import libra.common.helpers.FileSystemHelper;
 import libra.preprocess.common.PreprocessorConstants;
-import libra.preprocess.common.kmerindex.KmerIndexTablePathFilter;
 import libra.preprocess.common.kmerindex.KmerIndexDataPathFilter;
-import libra.preprocess.stage2.KmerIndexBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.MapFile;
 
 /**
  *

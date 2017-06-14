@@ -112,11 +112,6 @@ public class KmerHistogramBuilder {
         // Execute job and return status
         boolean result = job.waitForCompletion(true);
 
-        // commit results
-        if(result) {
-            commit(new Path(ppConfig.getKmerHistogramPath()), conf);
-        }
-        
         report.addJob(job);
         
         // report
@@ -125,28 +120,5 @@ public class KmerHistogramBuilder {
         }
         
         return result ? 0 : 1;
-    }
-
-    private void commit(Path outputPath, Configuration conf) throws IOException {
-        FileSystem fs = outputPath.getFileSystem(conf);
-        
-        FileStatus status = fs.getFileStatus(outputPath);
-        if (status.isDirectory()) {
-            FileStatus[] entries = fs.listStatus(outputPath);
-            for (FileStatus entry : entries) {
-                Path entryPath = entry.getPath();
-                
-                // remove unnecessary outputs
-                if(MapReduceHelper.isLogFiles(entryPath)) {
-                    fs.delete(entryPath, true);
-                } else if(MapReduceHelper.isPartialOutputFiles(entryPath)) {
-                    fs.delete(entryPath, true);
-                } else if(KmerHistogramHelper.isKmerHistogramFile(entryPath)) {
-                    // not necessary
-                }
-            }
-        } else {
-            throw new IOException("path not found : " + outputPath.toString());
-        }
     }
 }
