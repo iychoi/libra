@@ -21,7 +21,6 @@ import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.preprocess.common.FilterAlgorithm;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.filetable.FileTable;
-import libra.preprocess.common.helpers.KmerFilterHelper;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import libra.preprocess.common.kmerfilter.KmerFilter;
 import libra.preprocess.common.kmerfilter.KmerFilterTable;
@@ -158,7 +157,9 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
             }
         }
         
-        context.write(key, new IntArrayWritable(outputFreqArr));
+        if(nonZeroFiles > 0) {
+            context.write(key, new IntArrayWritable(outputFreqArr));
+        }
     }
     
     @Override
