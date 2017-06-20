@@ -22,7 +22,8 @@ package libra.preprocess.common;
 public enum FilterAlgorithm {
     NONE,
     STDDEV,
-    STDDEV2;
+    STDDEV2,
+    NOTUNIQUE;
     
     public static FilterAlgorithm fromString(String alg) {
         try {

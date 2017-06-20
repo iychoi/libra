@@ -58,7 +58,20 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
         // filter
         this.frequencyMinAccept = new int[sample_size];
         this.frequencyMaxAccept = new int[sample_size];
-        if(this.ppConfig.getFilterAlgorithm() != FilterAlgorithm.NONE) {
+        
+        FilterAlgorithm filterAlgorithm = this.ppConfig.getFilterAlgorithm();
+        
+        if(filterAlgorithm == FilterAlgorithm.NONE) {
+            for(int i=0;i<sample_size;i++) {
+                this.frequencyMinAccept[i] = 1;
+                this.frequencyMaxAccept[i] = Integer.MAX_VALUE;
+            }
+        } else if(filterAlgorithm == FilterAlgorithm.NOTUNIQUE) {
+            for(int i=0;i<sample_size;i++) {
+                this.frequencyMinAccept[i] = 2;
+                this.frequencyMaxAccept[i] = Integer.MAX_VALUE;
+            }
+        } else {
             // read filter
             KmerFilterTable kmerFilterTable = KmerFilterTable.createInstance(conf);
             KmerFilter[] filters = kmerFilterTable.getFilter().toArray(new KmerFilter[0]);
@@ -80,11 +93,6 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
                         this.frequencyMaxAccept[i] = (int) Math.floor(mean + stddev);
                     }
                     break;
-            }
-        } else {
-            for(int i=0;i<sample_size;i++) {
-                this.frequencyMinAccept[i] = 0;
-                this.frequencyMaxAccept[i] = Integer.MAX_VALUE;
             }
         }
         

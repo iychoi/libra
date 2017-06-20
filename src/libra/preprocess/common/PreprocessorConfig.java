@@ -44,7 +44,7 @@ public class PreprocessorConfig {
     public static final String DEFAULT_KMER_HISTOGRAM_PATH = "histogram";
     public static final String DEFAULT_KMER_INDEX_PATH = "kmerindex";
     public static final String DEFAULT_KMER_STATISITCS_PATH = "statistics";
-    public static FilterAlgorithm DEFAULT_FILTER_ALGORITHM = FilterAlgorithm.STDDEV2;
+    public static FilterAlgorithm DEFAULT_FILTER_ALGORITHM = FilterAlgorithm.NOTUNIQUE;
     
     protected static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.preprocessorconfig";
     
@@ -54,7 +54,7 @@ public class PreprocessorConfig {
     private long groupSize = DEFAULT_GROUPSIZE;
     private int maxGroupNum = DEFAULT_MAX_GROUPNUM;
     private int taskNum = DEFAULT_TASKNUM;
-    private FilterAlgorithm filterAlgorithm = FilterAlgorithm.STDDEV2;
+    private FilterAlgorithm filterAlgorithm = FilterAlgorithm.NOTUNIQUE;
     private List<String> sequencePaths = new ArrayList<String>();
     private String fileTablePath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_FILE_TABLE_PATH;
     private String kmerFilterPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_FILTER_PATH;

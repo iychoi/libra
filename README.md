@@ -33,7 +33,7 @@ Preprocessing Options
 - t : number of tasks (reducers). 1 by default.
 - s : min size of group in bytes. 10GB by default. For each file group, a separate index file is created. 
 - g : max number of groups. 20 groups by default. If groups to be created by "-s" option exceeds this value, combine groups.
-- f : kmer filter algorithm. NONE | STDDEV (standard deviation) | STDDEV2 (two's standard deviation, default)
+- f : kmer filter algorithm. NONE | STDDEV (standard deviation) | STDDEV2 (two's standard deviation) | NOTUNIQUE (default) 
 - o : output directory
 
 
