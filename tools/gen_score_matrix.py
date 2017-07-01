@@ -50,6 +50,7 @@ def getScore(path):
 
 def writeMatrix(out_matrix, file_table, score, dissimilarity=False):
     with open(out_matrix, "w") as f:
+        f.write("\t")
         for i in range(0, len(score)):
             if i != 0:
                 f.write("\t")
