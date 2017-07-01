@@ -1,2 +1,7 @@
-/build/
-/dist/
+travis.log
+.idea/
+build/
+dist/
+libra.iml
+nbproject/private/
+test/
