@@ -16,9 +16,9 @@
 package libra.core;
 
 import libra.common.cmdargs.CommandArgumentsBase;
-import libra.core.commom.CoreConfig;
-import libra.core.commom.RunMode;
-import libra.core.commom.WeightAlgorithm;
+import libra.core.common.CoreConfig;
+import libra.core.common.RunMode;
+import libra.core.common.WeightAlgorithm;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 

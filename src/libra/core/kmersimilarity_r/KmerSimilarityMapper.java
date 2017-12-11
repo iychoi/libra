@@ -20,7 +20,7 @@ import java.util.Collection;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.kmermatch.KmerMatchFileMapping;
-import libra.core.commom.CoreConfig;
+import libra.core.common.CoreConfig;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import org.apache.commons.logging.Log;

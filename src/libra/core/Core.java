@@ -16,8 +16,8 @@
 package libra.core;
 
 import libra.common.cmdargs.CommandArgumentsParser;
-import libra.core.commom.CoreConfig;
-import libra.core.commom.RunMode;
+import libra.core.common.CoreConfig;
+import libra.core.common.RunMode;
 import libra.core.kmersimilarity_m.KmerSimilarityMap;
 import libra.core.kmersimilarity_r.KmerSimilarityReduce;
 import libra.preprocess.common.filetable.FileTable;

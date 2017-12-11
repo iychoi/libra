@@ -20,7 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import libra.core.commom.CoreConstants;
+import libra.core.common.CoreConstants;
 import libra.core.common.kmersimilarity.KmerSimilarityResultPartPathFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;

@@ -13,14 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.commom;
+package libra.core.common;
 
 /**
  *
  * @author iychoi
  */
-public class CoreConstants {
-    public final static String KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME = "file_mapping_table.json";
-    public final static String KMER_SIMILARITY_RESULT_FILENAME_PREFIX = "result";
-    public final static String KMER_SIMILARITY_RESULT_FILENAME_EXTENSION = "score";
+public class CoreConfigException extends Exception {
+    static final long serialVersionUID = 7818375828146090155L;
+
+    public CoreConfigException() {
+        super();
+    }
+
+    public CoreConfigException(String string) {
+        super(string);
+    }
+
+    public CoreConfigException(String string, Throwable thrwbl) {
+        super(string, thrwbl);
+    }
+
+    public CoreConfigException(Throwable thrwbl) {
+        super(thrwbl);
+    }
 }
