@@ -4,21 +4,28 @@
 
 Compute the Similarity between Metagenomic Samples
 
-BUILD
------
-Use `ANT` build system.
+DOWNLOAD
+--------
+Download a pre-built JAR package from following url:
+[Libra Releases](https://github.com/iychoi/libra/releases)
 
-Build without dependent libs
+
+BUILD FROM SOURCE
+-----------------
+To build, use `ANT` build system.
+
+Type following to build without dependent libs:
 ```
 ant
 ```
 
-Build with dependent libs (recommended)
+Type following to build with dependent libs (recommended):
 ```
 ant allinone
 ```
 
 The `jar` package built will be located at the `/dist` directory.
+
 
 RUN
 ---
@@ -31,9 +38,9 @@ hadoop jar libra-all.jar preprocess -k 20 -t 8 -o /index_dir /source_dir
 Preprocessing Options
 - k : k-mer size
 - t : number of tasks (reducers). 1 by default.
-- s : min size of group in bytes. 10GB by default. For each file group, a separate index file is created. 
+- s : min size of group in bytes. 10GB by default. For each file group, a separate index file is created.
 - g : max number of groups. 20 groups by default. If groups to be created by "-s" option exceeds this value, combine groups.
-- f : kmer filter algorithm. NONE | STDDEV (standard deviation) | STDDEV2 (two's standard deviation) | NOTUNIQUE (default) 
+- f : kmer filter algorithm. NONE | STDDEV (standard deviation) | STDDEV2 (two's standard deviation) | NOTUNIQUE (default)
 - o : output directory
 
 
