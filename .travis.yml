@@ -4,3 +4,11 @@ jdk:
   - oraclejdk8
   - openjdk7
 sudo: false
+deploy:
+  provider: releases
+  api_key: '$GITHUB_API_KEY'
+  file:
+    - 'dist/libra-all.jar'
+  skip_cleanup: true
+  on:
+    tags: true
