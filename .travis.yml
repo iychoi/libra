@@ -2,6 +2,5 @@ language: java
 install: ant allinone
 jdk:
   - oraclejdk8
-  - oraclejdk7
   - openjdk7
 sudo: false
