@@ -16,6 +16,8 @@
 package libra.preprocess.stage1;
 
 import java.io.IOException;
+import libra.common.hadoop.io.datatypes.LongArrayWritable;
+import libra.common.helpers.SequenceHelper;
 import libra.common.sequence.KmerLines;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.kmerhistogram.KmerHistogram;
@@ -23,15 +25,15 @@ import libra.preprocess.common.kmerhistogram.KmerHistogramRecord;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Mapper;
 
 /**
  *
  * @author iychoi
  */
-public class KmerHistogramBuilderMapper extends Mapper<LongWritable, KmerLines, Text, LongWritable> {
+public class KmerHistogramBuilderMapper extends Mapper<LongWritable, KmerLines, IntWritable, LongArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerHistogramBuilderMapper.class);
     
@@ -57,9 +59,21 @@ public class KmerHistogramBuilderMapper extends Mapper<LongWritable, KmerLines, 
     
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
-        for(KmerHistogramRecord record : this.histogram.getRecord()) {
-            context.write(new Text(record.getKmer()), new LongWritable(record.getFrequency()));
+        int samplingCharLen = this.histogram.getSamplingCharLen();
+        int arrLen = (int)Math.pow(4, samplingCharLen);
+        
+        long histoArr[] = new long[arrLen];
+        for(int i=0;i<arrLen;i++) {
+            histoArr[i] = 0;
         }
+        
+        for(KmerHistogramRecord record : this.histogram.getRecord()) {
+            int idx = SequenceHelper.convertToInteger(record.getKmer());
+            histoArr[idx] = record.getFrequency();
+        }
+        
+        context.write(new IntWritable(0), new LongArrayWritable(histoArr));
+        
         this.histogram = null;
     }
 }

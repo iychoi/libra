@@ -38,6 +38,8 @@ public class PreprocessorConfig {
     public static final long DEFAULT_GROUPSIZE = (long)(1024 * 1024 * 1024) * 10; // 10GB
     public static final int DEFAULT_MAX_GROUPNUM = 20;
     public static final int DEFAULT_TASKNUM = 0; // user system default
+    public static final boolean DEFAULT_USE_HISTOGRAM = true;
+    public static final boolean DEFAULT_SKIP_HISTOGRAM = false;
     public static final String DEFAULT_OUTPUT_ROOT_PATH = "./libra_preprocess_output";
     public static final String DEFAULT_FILE_TABLE_PATH = "filetable";
     public static final String DEFAULT_KMER_FILTER_PATH = "filter";
@@ -54,6 +56,8 @@ public class PreprocessorConfig {
     private long groupSize = DEFAULT_GROUPSIZE;
     private int maxGroupNum = DEFAULT_MAX_GROUPNUM;
     private int taskNum = DEFAULT_TASKNUM;
+    private boolean useHistogram = DEFAULT_USE_HISTOGRAM;
+    private boolean skipHistogram = DEFAULT_SKIP_HISTOGRAM;
     private FilterAlgorithm filterAlgorithm = FilterAlgorithm.NOTUNIQUE;
     private List<String> sequencePaths = new ArrayList<String>();
     private String fileTablePath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_FILE_TABLE_PATH;
@@ -92,6 +96,8 @@ public class PreprocessorConfig {
         this.groupSize = config.groupSize;
         this.maxGroupNum = config.maxGroupNum;
         this.taskNum = config.taskNum;
+        this.useHistogram = config.useHistogram;
+        this.skipHistogram = config.skipHistogram;
         this.filterAlgorithm = config.filterAlgorithm;
         this.sequencePaths = new ArrayList<String>();
         this.sequencePaths.addAll(config.sequencePaths);
@@ -140,6 +146,26 @@ public class PreprocessorConfig {
     @JsonProperty("task_num")
     public void setTaskNum(int taskNum) {
         this.taskNum = taskNum;
+    }
+    
+    @JsonProperty("use_histogram")
+    public boolean getUseHistogram() {
+        return this.useHistogram;
+    }
+    
+    @JsonProperty("use_histogram")
+    public void setUseHistogram(boolean useHistogram) {
+        this.useHistogram = useHistogram;
+    }
+    
+    @JsonProperty("skip_histogram")
+    public boolean getSkipHistogram() {
+        return this.skipHistogram;
+    }
+    
+    @JsonProperty("skip_histogram")
+    public void setSkipHistogram(boolean skipHistogram) {
+        this.skipHistogram = skipHistogram;
     }
     
     @JsonProperty("filter_algorithm")

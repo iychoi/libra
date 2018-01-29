@@ -155,6 +155,11 @@ public class KmerHistogram {
     }
     
     @JsonIgnore
+    public int getSamplingCharLen() {
+        return SAMPLING_CHARS;
+    }
+    
+    @JsonIgnore
     public Collection<KmerHistogramRecord> getRecord() {
         return this.recordList;
     }

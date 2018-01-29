@@ -68,6 +68,20 @@ public class PreprocessorCmdArgs extends CommandArgumentsBase {
         return FilterAlgorithm.fromString(this.filterAlgorithm);
     }
     
+    @Option(name = "--no-histogram", usage = "do not use histogram, fixed-range partitioning will be used")
+    protected boolean noHistogram = false;
+    
+    public boolean useHistogram() {
+        return !this.noHistogram;
+    }
+    
+    @Option(name = "--skip-histogram", usage = "skip building histogram")
+    protected boolean skipHistogram = false;
+    
+    public boolean skipHistogram() {
+        return this.skipHistogram;
+    }
+    
     @Option(name = "-o", usage = "specify preprocess output path")
     private String outputPath = PreprocessorConfig.DEFAULT_OUTPUT_ROOT_PATH;
         
@@ -139,6 +153,8 @@ public class PreprocessorCmdArgs extends CommandArgumentsBase {
         config.setKmerSize(this.kmerSize);
         config.setGroupSize(this.groupSize);
         config.setTaskNum(this.taskNum);
+        config.setUseHistogram(this.useHistogram());
+        config.setSkipHistogram(this.skipHistogram());
         config.setFilterAlgorithm(this.getFilterAlgorithm());
         config.setMaxGroupNum(this.maxGroupNum);
         config.addSequencePath(this.inputPaths);

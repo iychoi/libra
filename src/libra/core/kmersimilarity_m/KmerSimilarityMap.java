@@ -69,8 +69,10 @@ public class KmerSimilarityMap {
             throw new CoreConfigException("cannot find input path");
         }
         
-        if(cConfig.getKmerHistogramPath() == null) {
-            throw new CoreConfigException("cannot find kmer histogram path");
+        if(cConfig.getUseHistogram()) {
+            if(cConfig.getKmerHistogramPath() == null) {
+                throw new CoreConfigException("cannot find kmer histogram path");
+            }
         }
         
         if(cConfig.getKmerStatisticsPath() == null) {
@@ -146,7 +148,12 @@ public class KmerSimilarityMap {
         matchInputFormatConfig.setPartitionNum(tasks);
         matchInputFormatConfig.setFileTablePath(cConfig.getFileTablePath());
         matchInputFormatConfig.setKmerIndexPath(cConfig.getKmerIndexPath());
-        matchInputFormatConfig.setKmerHistogramPath(cConfig.getKmerHistogramPath());
+        if(cConfig.getUseHistogram()) {
+            matchInputFormatConfig.setUseHistogram(true);
+            matchInputFormatConfig.setKmerHistogramPath(cConfig.getKmerHistogramPath());
+        } else {
+            matchInputFormatConfig.setUseHistogram(false);
+        }
         
         KmerMatchInputFormat.setInputFormatConfig(job, matchInputFormatConfig);
         

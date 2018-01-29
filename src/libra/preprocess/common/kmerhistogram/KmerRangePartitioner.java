@@ -146,7 +146,7 @@ public class KmerRangePartitioner {
 
             KmerRangePartition slice = new KmerRangePartition(this.kmerSize, this.numPartitions, i, slice_width, slice_begin, slice_end);
             partitions[i] = slice;
-        }
+        }      
         
         return partitions;
     }

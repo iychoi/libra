@@ -16,17 +16,17 @@
 package libra.preprocess.stage1;
 
 import java.io.IOException;
+import libra.common.hadoop.io.datatypes.LongArrayWritable;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.io.LongWritable;
-import org.apache.hadoop.io.Text;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.mapreduce.Reducer;
 
 /**
  *
  * @author iychoi
  */
-public class KmerHistogramBuilderCombiner extends Reducer<Text, LongWritable, Text, LongWritable> {
+public class KmerHistogramBuilderCombiner extends Reducer<IntWritable, LongArrayWritable, IntWritable, LongArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerHistogramBuilderCombiner.class);
     
@@ -35,14 +35,22 @@ public class KmerHistogramBuilderCombiner extends Reducer<Text, LongWritable, Te
     }
     
     @Override
-    protected void reduce(Text key, Iterable<LongWritable> values, Context context) throws IOException, InterruptedException {
-        long frequency_sum = 0;
+    protected void reduce(IntWritable key, Iterable<LongArrayWritable> values, Context context) throws IOException, InterruptedException {
+        long[] freqArrSum = null;
         
-        for(LongWritable value : values) {
-            frequency_sum += value.get();
+        for(LongArrayWritable value : values) {
+            long[] freqArr = value.get();
+            
+            if(freqArrSum == null) {
+                freqArrSum = freqArr;
+            } else {
+                for(int i=0;i<freqArrSum.length;i++) {
+                    freqArrSum[i] += freqArr[i];
+                }
+            }
         }
         
-        context.write(key, new LongWritable(frequency_sum));
+        context.write(key, new LongArrayWritable(freqArrSum));
     }
     
     @Override

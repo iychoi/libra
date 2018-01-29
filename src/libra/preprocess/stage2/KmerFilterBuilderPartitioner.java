@@ -80,18 +80,25 @@ public class KmerFilterBuilderPartitioner extends Partitioner<CompressedSequence
     
     private void initializeSecond(int numReduceTasks) throws IOException {
         if(this.partitions == null) {
-            KmerHistogram histogram = null;
-            // search index file
-            Path histogramPath = getHistogramPath(this.conf);
-            FileSystem fs = histogramPath.getFileSystem(this.conf);
-            if (fs.exists(histogramPath)) {
-                histogram = KmerHistogram.createInstance(fs, histogramPath);
+            if(this.ppConfig.getUseHistogram()) {
+                KmerHistogram histogram = null;
+                // search index file
+                Path histogramPath = getHistogramPath(this.conf);
+                FileSystem fs = histogramPath.getFileSystem(this.conf);
+                if (fs.exists(histogramPath)) {
+                    histogram = KmerHistogram.createInstance(fs, histogramPath);
+                } else {
+                    throw new IOException("k-mer histogram is not found in given paths");
+                }
+                
+                LOG.info("Use variable range partitioning by histogram");
+                KmerRangePartitioner partitioner = new KmerRangePartitioner(this.ppConfig.getKmerSize(), numReduceTasks);
+                this.partitions = partitioner.getHistogramPartitions(histogram.getSortedRecord(), histogram.getTotalKmerCount());
             } else {
-                throw new IOException("k-mer histogram is not found in given paths");
+                LOG.info("Use equal range partitioning");
+                KmerRangePartitioner partitioner = new KmerRangePartitioner(this.ppConfig.getKmerSize(), numReduceTasks);
+                this.partitions = partitioner.getEqualRangePartitions();
             }
-
-            KmerRangePartitioner partitioner = new KmerRangePartitioner(this.ppConfig.getKmerSize(), numReduceTasks);
-            this.partitions = partitioner.getHistogramPartitions(histogram.getSortedRecord(), histogram.getTotalKmerCount());
 
             this.partitionEndKeys = new CompressedSequenceWritable[this.partitions.length];
             for (int i = 0; i < this.partitions.length; i++) {

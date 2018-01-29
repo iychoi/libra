@@ -69,8 +69,10 @@ public class KmerSimilarityReduce {
             throw new CoreConfigException("cannot find input path");
         }
         
-        if(cConfig.getKmerHistogramPath() == null) {
-            throw new CoreConfigException("cannot find kmer histogram path");
+        if(cConfig.getUseHistogram()) {
+            if(cConfig.getKmerHistogramPath() == null) {
+                throw new CoreConfigException("cannot find kmer histogram path");
+            }
         }
         
         if(cConfig.getKmerStatisticsPath() == null) {

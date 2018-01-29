@@ -63,8 +63,10 @@ public class KmerFilterBuilder {
             throw new PreprocessorConfigException("cannot find input sample path");
         }
         
-        if(ppConfig.getKmerHistogramPath() == null) {
-            throw new PreprocessorConfigException("cannot find kmer histogram path");
+        if(ppConfig.getUseHistogram()) {
+            if(ppConfig.getKmerHistogramPath() == null) {
+                throw new PreprocessorConfigException("cannot find kmer histogram path");
+            }
         }
         
         if(ppConfig.getKmerSize() <= 0) {
@@ -120,11 +122,13 @@ public class KmerFilterBuilder {
         }
         
         // histogram
-        String histogramFileName = KmerHistogramHelper.makeKmerHistogramFileName(ppConfig.getFileTable().getName());
-        Path histogramPath = new Path(ppConfig.getKmerHistogramPath(), histogramFileName);
+        if(ppConfig.getUseHistogram()) {
+            String histogramFileName = KmerHistogramHelper.makeKmerHistogramFileName(ppConfig.getFileTable().getName());
+            Path histogramPath = new Path(ppConfig.getKmerHistogramPath(), histogramFileName);
 
-        KmerFilterBuilderPartitioner.setHistogramPath(conf, histogramPath);
-
+            KmerFilterBuilderPartitioner.setHistogramPath(conf, histogramPath);
+        }
+        
         job.setOutputFormatClass(NullOutputFormat.class);
 
         // reducers

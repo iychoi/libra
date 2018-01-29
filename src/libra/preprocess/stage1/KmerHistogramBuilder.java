@@ -15,23 +15,18 @@
  */
 package libra.preprocess.stage1;
 
-import libra.preprocess.common.helpers.KmerHistogramHelper;
-import java.io.IOException;
+import libra.common.hadoop.io.datatypes.LongArrayWritable;
 import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
-import libra.common.helpers.MapReduceHelper;
 import libra.preprocess.common.PreprocessorConfigException;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.FileStatus;
-import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.LongWritable;
+import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.NullWritable;
-import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.NullOutputFormat;
@@ -83,8 +78,8 @@ public class KmerHistogramBuilder {
         job.setMapperClass(KmerHistogramBuilderMapper.class);
         SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
         job.setInputFormatClass(SequenceKmerInputFormat.class);
-        job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(LongWritable.class);
+        job.setMapOutputKeyClass(IntWritable.class);
+        job.setMapOutputValueClass(LongArrayWritable.class);
         
         // Combiner
         job.setCombinerClass(KmerHistogramBuilderCombiner.class);

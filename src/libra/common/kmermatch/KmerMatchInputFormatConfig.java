@@ -38,6 +38,7 @@ public class KmerMatchInputFormatConfig {
     
     private int kmerSize;
     private int partitions;
+    private boolean useHistogram = true;
     private String fileTablePath;
     private String kmerIndexPath;
     private String kmerHistogramPath;
@@ -73,6 +74,16 @@ public class KmerMatchInputFormatConfig {
     @JsonProperty("kmer_size")
     public int getKmerSize() {
         return this.kmerSize;
+    }
+    
+    @JsonProperty("use_histogram")
+    public void setUseHistogram(boolean useHistogram) {
+        this.useHistogram = useHistogram;
+    }
+    
+    @JsonProperty("use_histogram")
+    public boolean getUseHistogram() {
+        return this.useHistogram;
     }
     
     @JsonProperty("file_table_path")

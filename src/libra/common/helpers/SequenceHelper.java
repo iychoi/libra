@@ -167,6 +167,29 @@ public class SequenceHelper {
         return new String(byteArr);
     }
     
+    public static int convertToInteger(String sequence) {
+        int iSequence = 0;
+        int kmerSize = sequence.length();
+        for(int i=0;i<kmerSize;i++) {
+            char ch = sequence.charAt(i);
+            if(ch == 'A') {
+                iSequence += 0;
+            } else if(ch == 'C') {
+                iSequence += 1;
+            } else if(ch == 'G') {
+                iSequence += 2;
+            } else if(ch == 'T') {
+                iSequence += 3;
+            }
+            
+            if(i < kmerSize - 1) {
+                iSequence *= 4;
+            }
+        }
+        
+        return iSequence;
+    }
+    
     public static BigInteger convertToBigInteger(String sequence) {
         BigInteger biSequence = BigInteger.ZERO;
         int kmerSize = sequence.length();
@@ -188,6 +211,25 @@ public class SequenceHelper {
         }
         
         return biSequence;
+    }
+    
+    public static String convertToString(int iSequence, int kmerSize) {
+        String str = "";
+        for(int i=0;i<kmerSize;i++) {
+            int idx = iSequence % 4;
+            if(idx == 0) {
+                str = "A" + str;
+            } else if(idx == 1) {
+                str = "C" + str;
+            } else if(idx == 2) {
+                str = "G" + str;
+            } else if(idx == 3) {
+                str = "T" + str;
+            }
+            iSequence /= 4;
+        }
+        
+        return str;
     }
     
     public static String convertToString(BigInteger biSequence, int kmerSize) {

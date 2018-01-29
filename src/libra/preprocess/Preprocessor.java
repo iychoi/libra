@@ -74,6 +74,15 @@ public class Preprocessor extends Configured implements Tool {
         int res = 0;
         try {
             for(int i=0;i<groups.length;i++) {
+                // save file table
+                FileTable table = groups[i];
+                String fileTableFileName = FileTableHelper.makeFileTableFileName(table.getName());
+                Path fileTableFile = new Path(ppConfig.getFileTablePath(), fileTableFileName);
+                FileSystem outputFileSystem = fileTableFile.getFileSystem(common_conf);
+                table.saveTo(outputFileSystem, fileTableFile);
+            }
+            
+            for(int i=0;i<groups.length;i++) {
                 FileTable table = groups[i];
                 
                 LOG.info(String.format("Processing sample files : group %d / %d, %d files", i+1, groups.length, table.samples()));
@@ -81,16 +90,14 @@ public class Preprocessor extends Configured implements Tool {
                 PreprocessorRoundConfig roundConfig = new PreprocessorRoundConfig(ppConfig);
                 roundConfig.setFileTable(table);
                 
-                // save file table
-                String fileTableFileName = FileTableHelper.makeFileTableFileName(table.getName());
-                Path fileTableFile = new Path(roundConfig.getFileTablePath(), fileTableFileName);
-                FileSystem outputFileSystem = fileTableFile.getFileSystem(common_conf);
-                roundConfig.getFileTable().saveTo(outputFileSystem, fileTableFile);
-                
-                KmerHistogramBuilder kmerHistogramBuilder = new KmerHistogramBuilder();
-                res = kmerHistogramBuilder.runJob(new Configuration(common_conf), roundConfig);
-                if(res != 0) {
-                    throw new Exception("KmerHistogramBuilder Failed : " + res);
+                if (!ppConfig.getSkipHistogram()) {
+                    if (ppConfig.getUseHistogram()) {
+                        KmerHistogramBuilder kmerHistogramBuilder = new KmerHistogramBuilder();
+                        res = kmerHistogramBuilder.runJob(new Configuration(common_conf), roundConfig);
+                        if(res != 0) {
+                            throw new Exception("KmerHistogramBuilder Failed : " + res);
+                        }
+                    }
                 }
                 
                 if(ppConfig.getFilterAlgorithm() != FilterAlgorithm.NONE) {

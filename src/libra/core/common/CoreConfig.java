@@ -40,12 +40,14 @@ public class CoreConfig {
     public static WeightAlgorithm DEFAULT_WEIGHT_ALGORITHM = WeightAlgorithm.LOGALITHM;
     public static RunMode DEFAULT_RUN_MODE = RunMode.MAP;
     public static final int DEFAULT_TASKNUM = PreprocessorConfig.DEFAULT_TASKNUM; // user system default
+    public static final boolean DEFAULT_USE_HISTOGRAM = PreprocessorConfig.DEFAULT_USE_HISTOGRAM;
     
     private static final String HADOOP_CONFIG_KEY = "libra.core.common.coreconfig";
     
     private String reportFilePath;
     
     private int taskNum = DEFAULT_TASKNUM;
+    private boolean useHistogram = DEFAULT_USE_HISTOGRAM;
     private String fileTablePath;
     private String kmerHistogramPath;
     private String kmerIndexPath;
@@ -96,6 +98,16 @@ public class CoreConfig {
     @JsonProperty("task_num")
     public void setTaskNum(int taskNum) {
         this.taskNum = taskNum;
+    }
+    
+    @JsonProperty("use_histogram")
+    public boolean getUseHistogram() {
+        return this.useHistogram;
+    }
+    
+    @JsonProperty("use_histogram")
+    public void setUseHistogram(boolean useHistogram) {
+        this.useHistogram = useHistogram;
     }
     
     @JsonProperty("file_table_path")

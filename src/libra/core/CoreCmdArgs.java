@@ -53,6 +53,13 @@ public class CoreCmdArgs extends CommandArgumentsBase {
         return this.taskNum;
     }
     
+    @Option(name = "--no-histogram", usage = "do not use histogram, fixed-range partitioning will be used")
+    protected boolean noHistogram = false;
+    
+    public boolean useHistogram() {
+        return !this.noHistogram;
+    }
+    
     @Option(name = "-o", usage = "specify output path")
     private String outputPath = CoreConfig.DEFAULT_OUTPUT_PATH;
         
@@ -94,6 +101,7 @@ public class CoreCmdArgs extends CommandArgumentsBase {
         config.setWeightAlgorithm(getWeightAlgorithm());
         config.setRunMode(getRunMode());
         config.setTaskNum(this.taskNum);
+        config.setUseHistogram(this.useHistogram());
         config.setPreprocessRootPath(this.preprocessOutputPath);
         config.setOutputPath(this.outputPath);
         return config;
