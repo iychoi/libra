@@ -1,25 +1,30 @@
-# libra
+#libra
 
 [![Build Status](https://travis-ci.org/iychoi/libra.svg?branch=master)](https://travis-ci.org/iychoi/libra)
 
 Compute the Similarity between Metagenomic Samples
 
-DOWNLOAD
---------
-Download a pre-built JAR package from following url:
-[Libra Releases](https://github.com/iychoi/libra/releases)
+DOWNLOAD BINARY
+---------------
+Download a pre-built binary (compiled with Java 7, including dependencies):
+- [Libra v1.1 stable](https://github.com/iychoi/libra/releases/download/v1.1/libra-all.jar)
+
+For old releases, check out the release page:
+- [Libra Releases](https://github.com/iychoi/libra/releases)
 
 
 BUILD FROM SOURCE
 -----------------
-To build, use `ANT` build system.
+**Most users do not need to build a binary from source. Use pre-built binaries.**
 
-Type following to build without dependent libs:
+To build, use [ANT](ant.apache.org/) build system.
+
+Type following to build without dependencies:
 ```
 ant
 ```
 
-Type following to build with dependent libs (recommended):
+Type following to build with dependencies (recommended):
 ```
 ant allinone
 ```
