@@ -49,6 +49,8 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityMapper.class);
     
+    private static final double log2 = Math.log(2);
+    
     private CoreConfig cConfig;
     private FileTable[] fileTables;
     private String[][] samplesInFileTable;
@@ -142,11 +144,28 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
                             }
                         }
                         break;
+                    case JENSENSHANNON:
+                        {
+                            switch(this.weightAlgorithm) {
+                                case LOGALITHM:
+                                    this.base[idx] = statistics.getLogTFSum();
+                                    break;
+                                case NATURAL:
+                                    this.base[idx] = statistics.getNaturalTFSum();
+                                    break;
+                                case BOOLEAN:
+                                    this.base[idx] = statistics.getBooleanTFSum();
+                                    break;
+                                default:
+                                    LOG.info("Unknown algorithm specified : " + this.weightAlgorithm.toString());
+                                    throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
+                            }
+                        }
+                        break;
                     default:
                         LOG.info("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
                         throw new IOException("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
                 }
-                
 
                 idx++;
             }
@@ -246,6 +265,9 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
             case BRAYCURTIS:
                 accumulateScoreBrayCurtis(score_array);
                 break;
+            case JENSENSHANNON:
+                accumulateScoreJensenShannon(score_array);
+                break;
             default:
                 LOG.info("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
                 throw new IOException("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
@@ -289,6 +311,23 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         }
     }
     
+    private void accumulateScoreJensenShannon(double[] score_array) throws IOException {
+        int valuesLen = this.fileMapping.getSize();
+        double[] score_array_new = new double[valuesLen];
+        for(int i=0;i<valuesLen;i++) {
+            score_array_new[i] = score_array[i] / this.base[i];
+        }
+        
+        for(int i=0;i<valuesLen;i++) {
+            for(int j=0;j<valuesLen;j++) {
+                double avg = (score_array_new[i] + score_array_new[j]) / 2;
+                if(avg != 0) {
+                    this.scoreAccumulated[i*valuesLen + j] += ((score_array_new[i] * Math.log(score_array_new[i] / avg)) + (score_array_new[j] * Math.log(score_array_new[j] / avg))) / log2;
+                }
+            }
+        }
+    }
+    
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
         int valuesLen = this.fileMapping.getSize();
@@ -296,7 +335,22 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         for(int i=0;i<valuesLen;i++) {
             KmerSimilarityResultPartRecordGroup group = new KmerSimilarityResultPartRecordGroup();
             for(int j=0;j<valuesLen;j++) {
-                double score = this.scoreAccumulated[i*valuesLen + j];
+                double score = 0;
+                switch(this.scoreAlgorithm) {
+                    case COSINESIMILARITY:
+                        score = this.scoreAccumulated[i*valuesLen + j];
+                        break;
+                    case BRAYCURTIS:
+                        score = this.scoreAccumulated[i*valuesLen + j];
+                        break;
+                    case JENSENSHANNON:
+                        score = this.scoreAccumulated[i*valuesLen + j] / 2;
+                        break;
+                    default:
+                        LOG.info("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
+                        throw new IOException("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
+                }
+                
                 if(score != 0) {
                     KmerSimilarityResultPartRecord rec = new KmerSimilarityResultPartRecord();
                     rec.setFile1ID(i);

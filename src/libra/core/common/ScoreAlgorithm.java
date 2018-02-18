@@ -21,7 +21,8 @@ package libra.core.common;
  */
 public enum ScoreAlgorithm {
     COSINESIMILARITY,
-    BRAYCURTIS;
+    BRAYCURTIS,
+    JENSENSHANNON;
     
     public static ScoreAlgorithm fromString(String alg) {
         try {
@@ -43,6 +44,12 @@ public enum ScoreAlgorithm {
             return BRAYCURTIS;
         } else if ("bray".equalsIgnoreCase(alg.trim())) {
             return BRAYCURTIS;
+        } else if ("jensen".equalsIgnoreCase(alg.trim())) {
+            return JENSENSHANNON;
+        } else if ("jensha".equalsIgnoreCase(alg.trim())) {
+            return JENSENSHANNON;
+        } else if ("js".equalsIgnoreCase(alg.trim())) {
+            return JENSENSHANNON;
         }
         
         return COSINESIMILARITY;
