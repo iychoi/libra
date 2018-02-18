@@ -40,6 +40,9 @@ public class KmerStatistics {
     private double logTFCosnormBase;
     private double naturalTFCosnormBase;
     private double booleanTFCosnormBase;
+    private double logTFSum;
+    private double naturalTFSum;
+    private double booleanTFSum;
     
     public static KmerStatistics createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -121,6 +124,51 @@ public class KmerStatistics {
     @JsonIgnore
     public void incrementBooleanTFCosineNormBase(double tfCosnormBase) {
         this.booleanTFCosnormBase += tfCosnormBase;
+    }
+    
+    @JsonProperty("boolean_tf_sum")
+    public void setBooleanTFSum(double weight) {
+        this.booleanTFSum = weight;
+    }
+    
+    @JsonProperty("boolean_tf_sum")
+    public double getBooleanTFSum() {
+        return this.booleanTFSum;
+    }
+    
+    @JsonIgnore
+    public void incrementBooleanTFSum(double weight) {
+        this.booleanTFSum += weight;
+    }
+    
+    @JsonProperty("natural_tf_sum")
+    public void setNaturalTFSum(double weight) {
+        this.naturalTFSum = weight;
+    }
+    
+    @JsonProperty("natural_tf_sum")
+    public double getNaturalTFSum() {
+        return this.naturalTFSum;
+    }
+    
+    @JsonIgnore
+    public void incrementNaturalTFSum(double weight) {
+        this.naturalTFSum += weight;
+    }
+    
+    @JsonProperty("log_tf_sum")
+    public void setLogTFSum(double weight) {
+        this.logTFSum = weight;
+    }
+    
+    @JsonProperty("log_tf_sum")
+    public double getLogTFSum() {
+        return this.logTFSum;
+    }
+    
+    @JsonIgnore
+    public void incrementLogTFSum(double weight) {
+        this.logTFSum += weight;
     }
     
     @JsonIgnore

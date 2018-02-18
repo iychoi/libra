@@ -18,6 +18,7 @@ package libra.core;
 import libra.common.cmdargs.CommandArgumentsBase;
 import libra.core.common.CoreConfig;
 import libra.core.common.RunMode;
+import libra.core.common.ScoreAlgorithm;
 import libra.core.common.WeightAlgorithm;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
@@ -37,6 +38,13 @@ public class CoreCmdArgs extends CommandArgumentsBase {
 
     public WeightAlgorithm getWeightAlgorithm() {
         return WeightAlgorithm.fromString(this.weightAlgorithm);
+    }
+    
+    @Option(name = "-s", aliases = "--score", usage = "specify score algorithm")
+    protected String scoreAlgorithm = CoreConfig.DEFAULT_SCORE_ALGORITHM.name();
+    
+    public ScoreAlgorithm getScoreAlgorithm() {
+        return ScoreAlgorithm.fromString(this.scoreAlgorithm);
     }
     
     @Option(name = "-m", aliases = "--mode", usage = "specify run mode")
@@ -99,6 +107,7 @@ public class CoreCmdArgs extends CommandArgumentsBase {
         
         config.setReportPath(this.reportfile);
         config.setWeightAlgorithm(getWeightAlgorithm());
+        config.setScoreAlgorithm(getScoreAlgorithm());
         config.setRunMode(getRunMode());
         config.setTaskNum(this.taskNum);
         config.setUseHistogram(this.useHistogram());

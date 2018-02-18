@@ -159,8 +159,10 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
         for(int i=0;i<freqTable.length;i++) {
             int frequency = freqTable[i];
             if(frequency > 0) {
-                this.statisticsParts[i].incrementLogTFWeight(Math.pow(1 + Math.log10(frequency), 2));
-                this.statisticsParts[i].incrementNaturalTFWeight(Math.pow(frequency, 2));
+                this.statisticsParts[i].incrementLogTFWeightSquare(Math.pow(1 + Math.log10(frequency), 2));
+                this.statisticsParts[i].incrementLogTFWeight(1 + Math.log10(frequency));
+                this.statisticsParts[i].incrementNaturalTFWeightSquare(Math.pow(frequency, 2));
+                this.statisticsParts[i].incrementNaturalTFWeightSquare(frequency);
                 this.statisticsParts[i].incrementBooleanTFWeight(1);
             }
         }

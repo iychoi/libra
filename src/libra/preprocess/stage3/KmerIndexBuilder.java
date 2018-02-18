@@ -267,12 +267,13 @@ public class KmerIndexBuilder {
             int idx = 0;
             for(KmerStatisticsPart statisticsPart : table.getStatisticsPart()) {
                 statisticsWeight[idx].incrementBooleanTFWeight(statisticsPart.getBooleanTFWeight());
+                statisticsWeight[idx].incrementLogTFWeightSquare(statisticsPart.getLogTFWeightSquare());
                 statisticsWeight[idx].incrementLogTFWeight(statisticsPart.getLogTFWeight());
+                statisticsWeight[idx].incrementNaturalTFWeightSquare(statisticsPart.getNaturalTFWeightSquare());
                 statisticsWeight[idx].incrementNaturalTFWeight(statisticsPart.getNaturalTFWeight());
                 idx++;
             }
         }
-        
         
         KmerStatisticsTable statisticsTable = new KmerStatisticsTable();
         statisticsTable.setName(fileTable.getName());
@@ -281,11 +282,15 @@ public class KmerIndexBuilder {
             double bool_norm_base = Math.sqrt(statisticsWeight[j].getBooleanTFWeight());
             statistics[j].setBooleanTFCosineNormBase(bool_norm_base);
             
-            double log_norm_base = Math.sqrt(statisticsWeight[j].getLogTFWeight());
+            double log_norm_base = Math.sqrt(statisticsWeight[j].getLogTFWeightSquare());
             statistics[j].setLogTFCosineNormBase(log_norm_base);
             
-            double natural_norm_base = Math.sqrt(statisticsWeight[j].getNaturalTFWeight());
+            double natural_norm_base = Math.sqrt(statisticsWeight[j].getNaturalTFWeightSquare());
             statistics[j].setNaturalTFCosineNormBase(natural_norm_base);
+            
+            statistics[j].setBooleanTFSum(statisticsWeight[j].getBooleanTFWeight());
+            statistics[j].setNaturalTFSum(statisticsWeight[j].getNaturalTFWeight());
+            statistics[j].setLogTFSum(statisticsWeight[j].getLogTFWeight());
             
             statisticsTable.addStatistics(statistics[j]);
         }

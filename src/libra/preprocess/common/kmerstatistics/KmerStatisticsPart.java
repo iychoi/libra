@@ -37,6 +37,8 @@ public class KmerStatisticsPart {
     private static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.kmerstatistics.kmerstatisticspart";
     
     private String name;
+    private double logTFWeightSquare;
+    private double naturalTFWeightSquare;
     private double logTFWeight;
     private double naturalTFWeight;
     private double booleanTFWeight;
@@ -78,6 +80,21 @@ public class KmerStatisticsPart {
         this.name = name;
     }
     
+    @JsonProperty("log_tf_weight_square")
+    public void setLogTFWeightSquare(double weight) {
+        this.logTFWeightSquare = weight;
+    }
+    
+    @JsonProperty("log_tf_weight_square")
+    public double getLogTFWeightSquare() {
+        return this.logTFWeightSquare;
+    }
+    
+    @JsonIgnore
+    public void incrementLogTFWeightSquare(double weight) {
+        this.logTFWeightSquare += weight;
+    }
+    
     @JsonProperty("log_tf_weight")
     public void setLogTFWeight(double weight) {
         this.logTFWeight = weight;
@@ -91,6 +108,21 @@ public class KmerStatisticsPart {
     @JsonIgnore
     public void incrementLogTFWeight(double weight) {
         this.logTFWeight += weight;
+    }
+    
+    @JsonProperty("natural_tf_weight_square")
+    public void setNaturalTFWeightSquare(double weight) {
+        this.naturalTFWeightSquare = weight;
+    }
+    
+    @JsonProperty("natural_tf_weight_square")
+    public double getNaturalTFWeightSquare() {
+        return this.naturalTFWeightSquare;
+    }
+    
+    @JsonIgnore
+    public void incrementNaturalTFWeightSquare(double weight) {
+        this.naturalTFWeightSquare += weight;
     }
     
     @JsonProperty("natural_tf_weight")

@@ -38,6 +38,7 @@ public class CoreConfig {
     
     public static final String DEFAULT_OUTPUT_PATH = "./libra_output";
     public static WeightAlgorithm DEFAULT_WEIGHT_ALGORITHM = WeightAlgorithm.LOGALITHM;
+    public static ScoreAlgorithm DEFAULT_SCORE_ALGORITHM = ScoreAlgorithm.COSINESIMILARITY;
     public static RunMode DEFAULT_RUN_MODE = RunMode.MAP;
     public static final int DEFAULT_TASKNUM = PreprocessorConfig.DEFAULT_TASKNUM; // user system default
     public static final boolean DEFAULT_USE_HISTOGRAM = PreprocessorConfig.DEFAULT_USE_HISTOGRAM;
@@ -53,6 +54,7 @@ public class CoreConfig {
     private String kmerIndexPath;
     private String kmerStatisticsPath;
     private WeightAlgorithm weightAlgorithm = WeightAlgorithm.LOGALITHM;
+    private ScoreAlgorithm scoreAlgorithm = ScoreAlgorithm.COSINESIMILARITY;
     private RunMode runMode = RunMode.MAP;
     private String outputPath = DEFAULT_OUTPUT_PATH;
     
@@ -158,6 +160,16 @@ public class CoreConfig {
     @JsonProperty("weight_algorithm")
     public void setWeightAlgorithm(WeightAlgorithm weightAlgorithm) {
         this.weightAlgorithm = weightAlgorithm;
+    }
+    
+    @JsonProperty("score_algorithm")
+    public ScoreAlgorithm getScoreAlgorithm() {
+        return this.scoreAlgorithm;
+    }
+    
+    @JsonProperty("score_algorithm")
+    public void setScoreAlgorithm(ScoreAlgorithm scoreAlgorithm) {
+        this.scoreAlgorithm = scoreAlgorithm;
     }
     
     @JsonProperty("run_mode")
