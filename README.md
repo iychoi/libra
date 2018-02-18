@@ -1,4 +1,4 @@
-#libra
+libra
 
 [![Build Status](https://travis-ci.org/iychoi/libra.svg?branch=master)](https://travis-ci.org/iychoi/libra)
 
@@ -7,7 +7,7 @@ Compute the Similarity between Metagenomic Samples
 DOWNLOAD BINARY
 ---------------
 Download a pre-built binary (compiled with Java 7, including dependencies):
-- [Libra v1.1 stable](https://github.com/iychoi/libra/releases/download/v1.1/libra-all.jar)
+- [Libra v1.2 stable](https://github.com/iychoi/libra/releases/download/v1.2/libra-all.jar)
 
 For old releases, check out the release page:
 - [Libra Releases](https://github.com/iychoi/libra/releases)
@@ -55,6 +55,7 @@ hadoop jar libra-all.jar core -m MAP -w LOGALITHM -t 8 -o /score_dir /index_dir
 ```
 
 Scoring Options
+- s : scoring algorithm. COSINESIMILARITY (default) | BRAYCURTIS | JENSENSHANNON
 - m : run mode. MAP | REDUCE
 - w : weighting algorithm. LOGALITHM (default) | BOOLEAN | NATURAL
 - t : number of tasks (input splits at MAP mode, reducers at REDUCE mode)
