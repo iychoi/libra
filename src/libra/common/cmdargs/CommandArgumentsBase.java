@@ -27,10 +27,10 @@ public class CommandArgumentsBase {
     
     private static final Log LOG = LogFactory.getLog(CommandArgumentsBase.class);
     
-    @Option(name = "-h", aliases = "--help", usage = "print help message") 
+    @Option(name = "-h", aliases = "--help", usage = "print help") 
     protected boolean help = false;
 
-    @Option(name = "--report", usage = "specify report file to be created")
+    @Option(name = "--report", usage = "specify a report file to be created")
     protected String reportfile;
     
     public boolean isHelp() {

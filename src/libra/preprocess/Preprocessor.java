@@ -100,7 +100,8 @@ public class Preprocessor extends Configured implements Tool {
                     }
                 }
                 
-                if(ppConfig.getFilterAlgorithm() != FilterAlgorithm.NONE) {
+                if(ppConfig.getFilterAlgorithm() != FilterAlgorithm.NONE &&
+                        ppConfig.getFilterAlgorithm() != FilterAlgorithm.NOTUNIQUE) {
                     KmerFilterBuilder kmerFilterBuilder = new KmerFilterBuilder();
                     res = kmerFilterBuilder.runJob(new Configuration(common_conf), roundConfig);
                     if(res != 0) {

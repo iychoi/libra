@@ -43,8 +43,8 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
 
     private PreprocessorRoundConfig ppConfig;
     private FileTable fileTable;
-    private int[] frequencyMinAccept;
-    private int[] frequencyMaxAccept;
+    private int[] allowedFrequencyMin;
+    private int[] allowedFrequencyMax;
     private KmerStatisticsPart[] statisticsParts;
     
     @Override
@@ -56,44 +56,59 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
         
         int sample_size = this.ppConfig.getFileTable().samples();
         // filter
-        this.frequencyMinAccept = new int[sample_size];
-        this.frequencyMaxAccept = new int[sample_size];
+        this.allowedFrequencyMin = new int[sample_size];
+        this.allowedFrequencyMax = new int[sample_size];
         
         FilterAlgorithm filterAlgorithm = this.ppConfig.getFilterAlgorithm();
         
-        if(filterAlgorithm == FilterAlgorithm.NONE) {
-            for(int i=0;i<sample_size;i++) {
-                this.frequencyMinAccept[i] = 1;
-                this.frequencyMaxAccept[i] = Integer.MAX_VALUE;
-            }
-        } else if(filterAlgorithm == FilterAlgorithm.NOTUNIQUE) {
-            for(int i=0;i<sample_size;i++) {
-                this.frequencyMinAccept[i] = 2;
-                this.frequencyMaxAccept[i] = Integer.MAX_VALUE;
-            }
-        } else {
-            // read filter
-            KmerFilterTable kmerFilterTable = KmerFilterTable.createInstance(conf);
-            KmerFilter[] filters = kmerFilterTable.getFilter().toArray(new KmerFilter[0]);
-            
-            switch(this.ppConfig.getFilterAlgorithm()) {
-                case STDDEV:
+        switch(filterAlgorithm) {
+            case NONE:
+                {
+                    for(int i=0;i<sample_size;i++) {
+                        this.allowedFrequencyMin[i] = 1;
+                        this.allowedFrequencyMax[i] = Integer.MAX_VALUE;
+                    }
+                }
+                break;
+            case NOTUNIQUE:
+                {
+                    for(int i=0;i<sample_size;i++) {
+                        this.allowedFrequencyMin[i] = 2;
+                        this.allowedFrequencyMax[i] = Integer.MAX_VALUE;
+                    }
+                }
+                break;
+            case STDDEV:
+                {
+                    // read filter
+                    KmerFilterTable kmerFilterTable = KmerFilterTable.createInstance(conf);
+                    KmerFilter[] filters = kmerFilterTable.getFilter().toArray(new KmerFilter[0]);
+                    
                     for(int i=0;i<sample_size;i++) {
                         double mean = filters[i].getMean();
                         double stddev = filters[i].getStddev();
-                        this.frequencyMinAccept[i] = (int) Math.max(0, Math.ceil(mean - stddev));
-                        this.frequencyMaxAccept[i] = (int) Math.floor(mean + stddev);
+                        this.allowedFrequencyMin[i] = (int) Math.max(0, Math.ceil(mean - stddev));
+                        this.allowedFrequencyMax[i] = (int) Math.floor(mean + stddev);
                     }
-                    break;
-                case STDDEV2:
+                }
+                break;
+            case STDDEV2:
+                {
+                    // read filter
+                    KmerFilterTable kmerFilterTable = KmerFilterTable.createInstance(conf);
+                    KmerFilter[] filters = kmerFilterTable.getFilter().toArray(new KmerFilter[0]);
+                    
                     for(int i=0;i<sample_size;i++) {
                         double mean = filters[i].getMean();
                         double stddev = filters[i].getStddev() * 2;
-                        this.frequencyMinAccept[i] = (int) Math.max(0, Math.ceil(mean - stddev));
-                        this.frequencyMaxAccept[i] = (int) Math.floor(mean + stddev);
+                        this.allowedFrequencyMin[i] = (int) Math.max(0, Math.ceil(mean - stddev));
+                        this.allowedFrequencyMax[i] = (int) Math.floor(mean + stddev);
                     }
-                    break;
-            }
+                }
+                break;
+            default:
+                LOG.info("Unknown filter algorithm specified : " + filterAlgorithm.toString());
+                throw new IOException("Unknown filter algorithm specified : " + filterAlgorithm.toString());
         }
         
         this.statisticsParts = new KmerStatisticsPart[sample_size];
@@ -129,10 +144,10 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
         
         // filter
         for(int i=0;i<freqTable.length;i++) {
-            if(freqTable[i] < this.frequencyMinAccept[i]) {
+            if(freqTable[i] < this.allowedFrequencyMin[i]) {
                 // out of min boundary
                 freqTable[i] = 0;
-            } else if(freqTable[i] > this.frequencyMaxAccept[i]) {
+            } else if(freqTable[i] > this.allowedFrequencyMax[i]) {
                 // out of max boundary
                 freqTable[i] = 0;
             }

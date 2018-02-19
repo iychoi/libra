@@ -21,17 +21,17 @@ import libra.common.helpers.SequenceHelper;
  *
  * @author iychoi
  */
-public class KmerKeySelection {
-    public KmerKeySelection() {
+public class CanonicalKmer {
+    public CanonicalKmer() {
         
     }
     
-    public static enum KmerForm {
+    public static enum KmerStrand {
         FORWARD,
         REVERSE_COMPLEMENT,
     }
     
-    public String selectKey(String kmer) {
+    public String canonicalize(String kmer) {
         String rkmer = SequenceHelper.getReverseComplement(kmer);
             
         String kmerKey = kmer;
@@ -45,57 +45,57 @@ public class KmerKeySelection {
     public static class KmerRecord {
 
         private String sequence;
-        private KmerForm form;
+        private KmerStrand strand;
 
         public KmerRecord(String sequence) {
             this.sequence = sequence;
-            this.form = KmerForm.FORWARD;
+            this.strand = KmerStrand.FORWARD;
         }
         
-        public KmerRecord(String sequence, KmerForm form) {
+        public KmerRecord(String sequence, KmerStrand strand) {
             this.sequence = sequence;
-            this.form = form;
+            this.strand = strand;
         }
 
         public String getSequence() {
             return this.sequence;
         }
 
-        public KmerForm getForm() {
-            return this.form;
+        public KmerStrand getStrand() {
+            return this.strand;
         }
 
         public boolean isForward() {
-            return this.form == KmerForm.FORWARD;
+            return this.strand == KmerStrand.FORWARD;
         }
 
         public boolean isReverseComplement() {
-            return this.form == KmerForm.REVERSE_COMPLEMENT;
+            return this.strand == KmerStrand.REVERSE_COMPLEMENT;
         }
 
         public KmerRecord getReverseComplement() {
-            if (this.form == KmerForm.FORWARD) {
-                return new KmerRecord(SequenceHelper.getReverseComplement(this.sequence), KmerForm.REVERSE_COMPLEMENT);
+            if (this.strand == KmerStrand.FORWARD) {
+                return new KmerRecord(SequenceHelper.getReverseComplement(this.sequence), KmerStrand.REVERSE_COMPLEMENT);
             } else {
-                return new KmerRecord(SequenceHelper.getReverseComplement(this.sequence), KmerForm.FORWARD);
+                return new KmerRecord(SequenceHelper.getReverseComplement(this.sequence), KmerStrand.FORWARD);
             }
         }
         
-        public KmerRecord getOriginalForm() {
-            if (this.form == KmerForm.FORWARD) {
+        public KmerRecord getForward() {
+            if (this.strand == KmerStrand.FORWARD) {
                 return this;
             } else {
                 return getReverseComplement();
             }
         }
 
-        public KmerRecord getSelectedKey() {
+        public KmerRecord getCanonicalKmer() {
             String rcSeq = SequenceHelper.getReverseComplement(this.sequence);
             if (rcSeq.compareTo(this.sequence) < 0) {
-                if (this.form == KmerForm.FORWARD) {
-                    return new KmerRecord(rcSeq, KmerForm.REVERSE_COMPLEMENT);
+                if (this.strand == KmerStrand.FORWARD) {
+                    return new KmerRecord(rcSeq, KmerStrand.REVERSE_COMPLEMENT);
                 } else {
-                    return new KmerRecord(rcSeq, KmerForm.FORWARD);
+                    return new KmerRecord(rcSeq, KmerStrand.FORWARD);
                 }
             } else {
                 return this;

@@ -132,7 +132,8 @@ public class KmerIndexBuilder {
         }
         
         // filter
-        if(ppConfig.getFilterAlgorithm() != FilterAlgorithm.NONE) {
+        if(ppConfig.getFilterAlgorithm() != FilterAlgorithm.NONE &&
+                ppConfig.getFilterAlgorithm() != FilterAlgorithm.NOTUNIQUE) {
             // read filter
             String filterTableFileName = KmerFilterHelper.makeKmerFilterTableFileName(ppConfig.getFileTable().getName());
             Path filterTablePath = new Path(ppConfig.getKmerFilterPath(), filterTableFileName);

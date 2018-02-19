@@ -16,7 +16,7 @@
 package libra.preprocess.stage2;
 
 import java.io.IOException;
-import libra.common.algorithms.KmerKeySelection.KmerRecord;
+import libra.common.algorithms.CanonicalKmer.KmerRecord;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.sequence.KmerLines;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
@@ -90,7 +90,7 @@ public class KmerFilterBuilderMapper extends Mapper<LongWritable, KmerLines, Com
                     }
                     
                     KmerRecord kmerRecord = new KmerRecord(kmer);
-                    KmerRecord keyRecord = kmerRecord.getSelectedKey();
+                    KmerRecord keyRecord = kmerRecord.getCanonicalKmer();
 
                     int[] arr = new int[2];
                     arr[0] = fileID;
