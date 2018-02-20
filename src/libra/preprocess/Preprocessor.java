@@ -22,7 +22,8 @@ import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.helpers.FileTableHelper;
 import libra.preprocess.common.filetable.FileTable;
-import libra.preprocess.common.filetable.SampleGrouper;
+import libra.preprocess.common.samplegroup.SampleGroup;
+import libra.preprocess.common.samplegroup.SampleGrouper;
 import libra.preprocess.stage1.KmerHistogramBuilder;
 import libra.preprocess.stage2.KmerFilterBuilder;
 import libra.preprocess.stage3.KmerIndexBuilder;
@@ -69,23 +70,31 @@ public class Preprocessor extends Configured implements Tool {
         
         // group samples
         SampleGrouper grouper = new SampleGrouper(ppConfig.getGroupSize(), ppConfig.getMaxGroupNum());
-        FileTable[] groups = grouper.group(inputFiles, ppConfig.getKmerSize(), common_conf);
+        SampleGroup[] groups = grouper.group(inputFiles, common_conf);
+        
+        // make filetables
+        FileTable[] tables = new FileTable[groups.length];
+        for(int i=0;i<groups.length;i++) {
+            SampleGroup group = groups[i];
+            
+            tables[i] = new FileTable(group, ppConfig.getKmerSize());
+        }
         
         int res = 0;
         try {
-            for(int i=0;i<groups.length;i++) {
+            for(int i=0;i<tables.length;i++) {
                 // save file table
-                FileTable table = groups[i];
+                FileTable table = tables[i];
                 String fileTableFileName = FileTableHelper.makeFileTableFileName(table.getName());
                 Path fileTableFile = new Path(ppConfig.getFileTablePath(), fileTableFileName);
                 FileSystem outputFileSystem = fileTableFile.getFileSystem(common_conf);
                 table.saveTo(outputFileSystem, fileTableFile);
             }
             
-            for(int i=0;i<groups.length;i++) {
-                FileTable table = groups[i];
+            for(int i=0;i<tables.length;i++) {
+                FileTable table = tables[i];
                 
-                LOG.info(String.format("Processing sample files : group %d / %d, %d files", i+1, groups.length, table.samples()));
+                LOG.info(String.format("Processing sample files : group %d / %d, %d files", i+1, tables.length, table.samples()));
                 
                 PreprocessorRoundConfig roundConfig = new PreprocessorRoundConfig(ppConfig);
                 roundConfig.setFileTable(table);

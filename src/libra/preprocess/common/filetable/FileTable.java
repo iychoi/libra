@@ -22,6 +22,8 @@ import java.util.Collection;
 import java.util.Hashtable;
 import java.util.List;
 import libra.common.json.JsonSerializer;
+import libra.preprocess.common.samplegroup.SampleGroup;
+import libra.preprocess.common.samplegroup.SampleInfo;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -71,6 +73,16 @@ public class FileTable {
     public FileTable(String name, int kmerSize) {
         this.name = name;
         this.kmerSize = kmerSize;
+    }
+    
+    public FileTable(SampleGroup group, int kmerSize) {
+        this.name = group.getName();
+        this.kmerSize = kmerSize;
+        
+        Collection<SampleInfo> samples = group.getSamples();
+        for(SampleInfo sample : samples) {
+            this.samples.add(sample.getPath());
+        }
     }
     
     @JsonProperty("name")

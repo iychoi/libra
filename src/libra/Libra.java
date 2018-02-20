@@ -18,6 +18,7 @@ package libra;
 import java.util.ArrayList;
 import java.util.List;
 import libra.core.Core;
+import libra.group.Group;
 import libra.preprocess.Preprocessor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -30,9 +31,6 @@ public class Libra {
 
     private static final Log LOG = LogFactory.getLog(Libra.class);
     
-    private static int RUN_MODE_PREPROCESS = 0x00;
-    private static int RUN_MODE_CORE = 0x01;
-    
     private static boolean isHelpParam(String[] args) {
         if(args.length < 1 || 
                 args[0].equalsIgnoreCase("-h") ||
@@ -42,28 +40,25 @@ public class Libra {
         return false;
     }
     
-    private static int checkRunMode(String[] args) {
-        int runMode = 0;
+    private static RunMode checkRunMode(String[] args) {
         for(String arg : args) {
-            if(arg.equalsIgnoreCase("preprocess")) {
-                runMode = RUN_MODE_PREPROCESS;
-            } else if(arg.equalsIgnoreCase("core")) {
-                runMode = RUN_MODE_CORE;
+            if(RunMode.isRunMode(arg)) {
+                return RunMode.fromString(arg);
             }
         }
         
-        return runMode;
+        return RunMode.PREPROCESS;
     }
     
     private static String[] removeRunMode(String[] args) {
-        List<String> param = new ArrayList<String>();
+        List<String> params = new ArrayList<String>();
         for(String arg : args) {
-            if(!arg.equalsIgnoreCase("preprocess") && !arg.equalsIgnoreCase("core")) {
-                param.add(arg);
+            if(!RunMode.isRunMode(arg)) {
+                params.add(arg);
             }
         }
         
-        return param.toArray(new String[0]);
+        return params.toArray(new String[0]);
     }
     
     public static void main(String[] args) throws Exception {
@@ -72,13 +67,15 @@ public class Libra {
             return;
         } 
         
-        int runMode = checkRunMode(args);
+        RunMode runMode = checkRunMode(args);
         String[] params = removeRunMode(args);
         
-        if(runMode == RUN_MODE_PREPROCESS) {
+        if(runMode == RunMode.PREPROCESS) {
             Preprocessor.main(params);
-        } else if(runMode == RUN_MODE_CORE) {
+        } else if(runMode == RunMode.CORE) {
             Core.main(params);
+        } else if(runMode == RunMode.GROUP) {
+            Group.main(params);
         }
     }
 
@@ -92,5 +89,6 @@ public class Libra {
         System.out.println("Commands :");
         System.out.println("> preprocess");
         System.out.println("> core");
+        System.out.println("> group");
     }
 }
