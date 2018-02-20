@@ -25,9 +25,12 @@ import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.common.kmermatch.KmerMatchResult;
 import libra.core.common.CoreConfig;
 import libra.core.common.ScoreAlgorithm;
+import libra.core.common.Weight;
 import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecord;
 import libra.core.common.WeightAlgorithm;
+import libra.core.common.kmersimilarity.AbstractScore;
 import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecordGroup;
+import libra.core.common.kmersimilarity.ScoreFactory;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
@@ -49,8 +52,6 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityMapper.class);
     
-    private static final double log2 = Math.log(2);
-    
     private CoreConfig cConfig;
     private FileTable[] fileTables;
     private String[][] samplesInFileTable;
@@ -59,7 +60,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
     private double[] scoreAccumulated;
     private WeightAlgorithm weightAlgorithm;
     private ScoreAlgorithm scoreAlgorithm;
-    private double[] base;
+    private AbstractScore scoreFunction;
     
     Hashtable<String, Integer> fileTableIDConvTable = new Hashtable<String, Integer>();
     
@@ -93,8 +94,10 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
             this.scoreAlgorithm = CoreConfig.DEFAULT_SCORE_ALGORITHM;
         }
         
-        this.base = new double[valuesLen];
+        this.scoreFunction = ScoreFactory.getScore(this.scoreAlgorithm);
+        
         int idx = 0;
+        KmerStatistics[] statisticsArray = new KmerStatistics[valuesLen];
         for(FileTable fileTable : this.cConfig.getFileTable()) {
             String statisticsTableFilename = KmerStatisticsHelper.makeKmerStatisticsTableFileName(fileTable.getName());
             Path statisticsTablePath = new Path(this.cConfig.getKmerStatisticsPath(), statisticsTableFilename);
@@ -107,85 +110,12 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
                     throw new IOException(String.format("File order is not correct - %s ==> %s", sequenceFile, statistics.getName()));
                 }
                 
-                switch(this.scoreAlgorithm) {
-                    case COSINESIMILARITY:
-                        {
-                            switch(this.weightAlgorithm) {
-                                case LOGALITHM:
-                                    this.base[idx] = statistics.getLogTFCosineNormBase();
-                                    break;
-                                case NATURAL:
-                                    this.base[idx] = statistics.getNaturalTFCosineNormBase();
-                                    break;
-                                case BOOLEAN:
-                                    this.base[idx] = statistics.getBooleanTFCosineNormBase();
-                                    break;
-                                default:
-                                    LOG.info("Unknown algorithm specified : " + this.weightAlgorithm.toString());
-                                    throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
-                            }
-                        }
-                        break;
-                    case BRAYCURTIS:
-                        {
-                            switch(this.weightAlgorithm) {
-                                case LOGALITHM:
-                                    this.base[idx] = statistics.getLogTFSum();
-                                    break;
-                                case NATURAL:
-                                    this.base[idx] = statistics.getNaturalTFSum();
-                                    break;
-                                case BOOLEAN:
-                                    this.base[idx] = statistics.getBooleanTFSum();
-                                    break;
-                                default:
-                                    LOG.info("Unknown algorithm specified : " + this.weightAlgorithm.toString());
-                                    throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
-                            }
-                        }
-                        break;
-                    case JENSENSHANNON:
-                        {
-                            switch(this.weightAlgorithm) {
-                                case LOGALITHM:
-                                    this.base[idx] = statistics.getLogTFSum();
-                                    break;
-                                case NATURAL:
-                                    this.base[idx] = statistics.getNaturalTFSum();
-                                    break;
-                                case BOOLEAN:
-                                    this.base[idx] = statistics.getBooleanTFSum();
-                                    break;
-                                default:
-                                    LOG.info("Unknown algorithm specified : " + this.weightAlgorithm.toString());
-                                    throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
-                            }
-                        }
-                        break;
-                    default:
-                        LOG.info("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
-                        throw new IOException("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
-                }
-
+                statisticsArray[idx] = statistics;
                 idx++;
             }
         }
-    }
-    
-    private double getTFWeight(int freq) throws IOException {
-        switch(this.weightAlgorithm) {
-            case LOGALITHM:
-                return 1 + Math.log10(freq);
-            case NATURAL:
-                return freq;
-            case BOOLEAN:
-                if(freq > 0) {
-                    return 1;
-                }
-                return 0;
-            default:
-                throw new IOException("Unknown algorithm specified : " + this.weightAlgorithm.toString());
-        }
+        
+        this.scoreFunction.setParam(valuesLen, this.weightAlgorithm, statisticsArray);
     }
     
     @Override
@@ -229,12 +159,12 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
                 int freq = arr[j*2 + 1];
             
                 int file_id = convertFileIDToGlobalFileID(fileTableID, file_id_in_table);
-                double weight = getTFWeight(freq);
+                double weight = Weight.getTFWeight(this.weightAlgorithm, freq);
                 score_array[file_id] = weight;
             }
         }
-
-        accumulateScore(score_array);
+        
+        this.scoreFunction.contributeScore(valuesLen, this.scoreAccumulated, score_array);
     }
     
     private int convertFileTableNameToFileTableID(String fileTableName) {
@@ -256,78 +186,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         String sampleName = this.samplesInFileTable[file_table_id][file_id_in_table];
         return this.fileMapping.getIDFromSequenceFile(sampleName);
     }
-    
-    private void accumulateScore(double[] score_array) throws IOException {
-        switch(this.scoreAlgorithm) {
-            case COSINESIMILARITY:
-                accumulateScoreCosineSimilarity(score_array);
-                break;
-            case BRAYCURTIS:
-                accumulateScoreBrayCurtis(score_array);
-                break;
-            case JENSENSHANNON:
-                accumulateScoreJensenShannon(score_array);
-                break;
-            default:
-                LOG.info("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
-                throw new IOException("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
-        }
-    }
-    
-    private void accumulateScoreCosineSimilarity(double[] score_array) throws IOException {
-        int valuesLen = this.fileMapping.getSize();
-        int nonZeroFields = 0;
-        for(int i=0;i<valuesLen;i++) {
-            if(score_array[i] != 0) {
-                nonZeroFields++;
-            }
-        }
-        
-        int[] nonZeroScoresIdx = new int[nonZeroFields];
-        double[] nonZeroScoresVal = new double[nonZeroFields];
-        int idx = 0;
-        for(int i=0;i<valuesLen;i++) {
-            if(score_array[i] != 0) {
-                nonZeroScoresIdx[idx] = i;
-                nonZeroScoresVal[idx] = score_array[i] / this.base[i];
-                idx++;
-            }
-        }
-        
-        for(int i=0;i<nonZeroFields;i++) {
-            for(int j=0;j<nonZeroFields;j++) {
-                this.scoreAccumulated[nonZeroScoresIdx[i]*valuesLen + nonZeroScoresIdx[j]] += nonZeroScoresVal[i] * nonZeroScoresVal[j];
-            }
-        }
-    }
-    
-    private void accumulateScoreBrayCurtis(double[] score_array) throws IOException {
-        int valuesLen = this.fileMapping.getSize();
-        for(int i=0;i<valuesLen;i++) {
-            for(int j=0;j<valuesLen;j++) {
-                double base_two = this.base[i] + this.base[j];
-                this.scoreAccumulated[i*valuesLen + j] += Math.abs(score_array[i] - score_array[j]) / base_two;
-            }
-        }
-    }
-    
-    private void accumulateScoreJensenShannon(double[] score_array) throws IOException {
-        int valuesLen = this.fileMapping.getSize();
-        double[] score_array_new = new double[valuesLen];
-        for(int i=0;i<valuesLen;i++) {
-            score_array_new[i] = score_array[i] / this.base[i];
-        }
-        
-        for(int i=0;i<valuesLen;i++) {
-            for(int j=0;j<valuesLen;j++) {
-                double avg = (score_array_new[i] + score_array_new[j]) / 2;
-                if(avg != 0) {
-                    this.scoreAccumulated[i*valuesLen + j] += ((score_array_new[i] * Math.log(score_array_new[i] / avg)) + (score_array_new[j] * Math.log(score_array_new[j] / avg))) / log2;
-                }
-            }
-        }
-    }
-    
+
     @Override
     protected void cleanup(Context context) throws IOException, InterruptedException {
         int valuesLen = this.fileMapping.getSize();
@@ -335,22 +194,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         for(int i=0;i<valuesLen;i++) {
             KmerSimilarityResultPartRecordGroup group = new KmerSimilarityResultPartRecordGroup();
             for(int j=0;j<valuesLen;j++) {
-                double score = 0;
-                switch(this.scoreAlgorithm) {
-                    case COSINESIMILARITY:
-                        score = this.scoreAccumulated[i*valuesLen + j];
-                        break;
-                    case BRAYCURTIS:
-                        score = this.scoreAccumulated[i*valuesLen + j];
-                        break;
-                    case JENSENSHANNON:
-                        score = this.scoreAccumulated[i*valuesLen + j] / 2;
-                        break;
-                    default:
-                        LOG.info("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
-                        throw new IOException("Unknown algorithm specified : " + this.scoreAlgorithm.toString());
-                }
-                
+                double score = this.scoreAccumulated[i*valuesLen + j];
                 if(score != 0) {
                     KmerSimilarityResultPartRecord rec = new KmerSimilarityResultPartRecord();
                     rec.setFile1ID(i);

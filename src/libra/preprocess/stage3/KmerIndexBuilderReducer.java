@@ -18,6 +18,8 @@ package libra.preprocess.stage3;
 import java.io.IOException;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
+import libra.core.common.Weight;
+import libra.core.common.WeightAlgorithm;
 import libra.preprocess.common.FilterAlgorithm;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.filetable.FileTable;
@@ -174,11 +176,15 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
         for(int i=0;i<freqTable.length;i++) {
             int frequency = freqTable[i];
             if(frequency > 0) {
-                this.statisticsParts[i].incrementLogTFWeightSquare(Math.pow(1 + Math.log10(frequency), 2));
-                this.statisticsParts[i].incrementLogTFWeight(1 + Math.log10(frequency));
-                this.statisticsParts[i].incrementNaturalTFWeightSquare(Math.pow(frequency, 2));
-                this.statisticsParts[i].incrementNaturalTFWeightSquare(frequency);
-                this.statisticsParts[i].incrementBooleanTFWeight(1);
+                double logTFWeight = Weight.getTFWeight(WeightAlgorithm.LOGALITHM, frequency);
+                double naturalTFWeight = Weight.getTFWeight(WeightAlgorithm.NATURAL, frequency);
+                double booleanTFWeight = Weight.getTFWeight(WeightAlgorithm.BOOLEAN, frequency);
+                
+                this.statisticsParts[i].incrementLogTFWeightSquare(Math.pow(logTFWeight, 2));
+                this.statisticsParts[i].incrementLogTFWeight(logTFWeight);
+                this.statisticsParts[i].incrementNaturalTFWeightSquare(Math.pow(naturalTFWeight, 2));
+                this.statisticsParts[i].incrementNaturalTFWeightSquare(naturalTFWeight);
+                this.statisticsParts[i].incrementBooleanTFWeight(booleanTFWeight);
             }
         }
         
