@@ -78,6 +78,7 @@ public class JensenShannon extends AbstractScore {
         }
     }
     
+    @Override
     public void contributeScore(int size, double[] score_matrix, double[] score_array) {
         double[] score_array_new = new double[size];
         for(int i=0;i<size;i++) {
@@ -87,12 +88,22 @@ public class JensenShannon extends AbstractScore {
         for(int i=0;i<size;i++) {
             for(int j=0;j<size;j++) {
                 double avg = (score_array_new[i] + score_array_new[j]) / 2;
+                double p1 = 0;
+                double p2 = 0;
                 
-                if(avg != 0) {
-                    double p1 = score_array_new[i] * Math.log(score_array_new[i] / avg);
-                    double p2 = score_array_new[j] * Math.log(score_array_new[j] / avg);
-                    score_matrix[i*size + j] += ((p1 + p2) / log2)/2;
+                if(avg == 0) {
+                    continue;
                 }
+                
+                if(score_array_new[i] != 0) {
+                    p1 = score_array_new[i] * Math.log(score_array_new[i] / avg);
+                }
+                
+                if(score_array_new[j] != 0) {
+                    p2 = score_array_new[j] * Math.log(score_array_new[j] / avg);
+                }
+
+                score_matrix[i*size + j] += ((p1 + p2) / log2)/2;
             }
         }
     }

@@ -264,7 +264,7 @@ public class KmerSimilarityMap {
         for(int i=0;i<accumulatedScore.length;i++) {
             int x = i/n;
             int y = i%n;
-            double score = Math.min(accumulatedScore[i], 1.0);
+            double score = accumulatedScore[i];
             
             String k = x + "\t" + y;
             String v = Double.toString(score);

@@ -72,6 +72,7 @@ public class BrayCurtis extends AbstractScore {
         }
     }
     
+    @Override
     public void contributeScore(int size, double[] score_matrix, double[] score_array) {
         for(int i=0;i<size;i++) {
             for(int j=0;j<size;j++) {
