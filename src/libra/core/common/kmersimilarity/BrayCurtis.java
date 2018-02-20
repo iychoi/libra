@@ -77,11 +77,30 @@ public class BrayCurtis extends AbstractScore {
         for(int i=0;i<size;i++) {
             for(int j=0;j<size;j++) {
                 double sum_total = this.param_array[i] + this.param_array[j];
-                double sum = score_array[i] + score_array[j];
                 double diff = Math.abs(score_array[i] - score_array[j]);
                 
-                score_matrix[i*size + j] += (sum - diff) / sum_total;
+                score_matrix[i*size + j] += diff / sum_total;
             }
         }
+    }
+    
+    @Override
+    public double accumulateScore(double score1, double score2) {
+        return score1 + score2;
+    }
+
+    @Override
+    public double finalizeScore(double score) {
+        // compute similarity from dissimilarity
+        double similarity = 1 - score;
+        if(similarity < 0) {
+            similarity = 0;
+        }
+        
+        if(similarity > 1) {
+            similarity = 1;
+        }
+        
+        return similarity;
     }
 }

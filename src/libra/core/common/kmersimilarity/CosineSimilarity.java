@@ -98,4 +98,22 @@ public class CosineSimilarity extends AbstractScore {
             }
         }
     }
+    
+    @Override
+    public double accumulateScore(double score1, double score2) {
+        return score1 + score2;
+    }
+
+    @Override
+    public double finalizeScore(double score) {
+        if(score < 0) {
+            score = 0;
+        }
+        
+        if(score > 1) {
+            score = 1;
+        }
+        
+        return score;
+    }
 }

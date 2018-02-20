@@ -51,7 +51,6 @@ public class JensenShannon extends AbstractScore {
             this.param_array = new double[size];
         }
         
-        /*
         switch(algorithm) {
             case LOGALITHM:
                 for(int i=0;i<size;i++) {
@@ -71,10 +70,6 @@ public class JensenShannon extends AbstractScore {
             default:
                 LOG.info("Unknown algorithm specified : " + algorithm.toString());
                 throw new IOException("Unknown algorithm specified : " + algorithm.toString());
-        }
-        */
-        for(int i=0;i<size;i++) {
-            this.param_array[i] = 1;
         }
     }
     
@@ -106,5 +101,25 @@ public class JensenShannon extends AbstractScore {
                 score_matrix[i*size + j] += ((p1 + p2) / log2)/2;
             }
         }
+    }
+    
+    @Override
+    public double accumulateScore(double score1, double score2) {
+        return score1 + score2;
+    }
+    
+    @Override
+    public double finalizeScore(double score) {
+        // compute similarity from dissimilarity
+        double similarity = 1 - score;
+        if(similarity < 0) {
+            similarity = 0;
+        }
+        
+        if(similarity > 1) {
+            similarity = 1;
+        }
+        
+        return similarity;
     }
 }

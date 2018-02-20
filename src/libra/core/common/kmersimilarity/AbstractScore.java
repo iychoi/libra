@@ -27,4 +27,6 @@ public abstract class AbstractScore {
     public abstract void setParam(int size, double[] param_array);
     public abstract void setParam(int size, WeightAlgorithm algorithm, KmerStatistics[] statistics) throws IOException;
     public abstract void contributeScore(int size, double[] score_matrix, double[] score_array);
+    public abstract double accumulateScore(double score1, double score2);
+    public abstract double finalizeScore(double score);
 }

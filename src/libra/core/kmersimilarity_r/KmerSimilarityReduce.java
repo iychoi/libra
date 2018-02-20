@@ -27,8 +27,10 @@ import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.core.common.CoreConfig;
 import libra.core.common.CoreConfigException;
 import libra.core.common.helpers.KmerSimilarityHelper;
+import libra.core.common.kmersimilarity.AbstractScore;
 import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecord;
 import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecordGroup;
+import libra.core.common.kmersimilarity.ScoreFactory;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import libra.preprocess.common.kmerindex.KmerIndexTable;
@@ -175,7 +177,7 @@ public class KmerSimilarityReduce {
             fileMapping.saveTo(fs, fileMappingTablePath);
             
             // combine results
-            combineResults(fileMapping, new Path(cConfig.getOutputPath()), conf);
+            combineResults(fileMapping, new Path(cConfig.getOutputPath()), ScoreFactory.getScore(cConfig.getScoreAlgorithm()), conf);
         }
         
         report.addJob(job);
@@ -217,7 +219,7 @@ public class KmerSimilarityReduce {
         }
     }
     
-    private void combineResults(KmerMatchFileMapping fileMapping, Path outputPath, Configuration conf) throws IOException {
+    private void combineResults(KmerMatchFileMapping fileMapping, Path outputPath, AbstractScore scoreFunction, Configuration conf) throws IOException {
         int valuesLen = fileMapping.getSize();
         
         double[] accumulatedScore = new double[valuesLen * valuesLen];
@@ -246,7 +248,7 @@ public class KmerSimilarityReduce {
                     int file2ID = scoreRec.getFile2ID();
                     double score = scoreRec.getScore();
 
-                    accumulatedScore[file1ID*valuesLen + file2ID] += score;
+                    accumulatedScore[file1ID*valuesLen + file2ID] = scoreFunction.accumulateScore(accumulatedScore[file1ID*valuesLen + file2ID], score);
                 }
             }
             
@@ -263,7 +265,7 @@ public class KmerSimilarityReduce {
         for(int i=0;i<accumulatedScore.length;i++) {
             int x = i/n;
             int y = i%n;
-            double score = accumulatedScore[i];
+            double score = scoreFunction.finalizeScore(accumulatedScore[i]);
             
             String k = x + "\t" + y;
             String v = Double.toString(score);
