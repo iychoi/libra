@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.kmersimilarity_r;
+package libra.distancematrix.kmersimilarity_r;
 
 import java.io.IOException;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.kmermatch.KmerMatchFileMapping;
-import libra.core.common.CoreConfig;
+import libra.distancematrix.common.DistanceMatrixConfig;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -33,14 +33,14 @@ public class KmerSimilarityCombiner extends Reducer<CompressedSequenceWritable, 
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityCombiner.class);
     
-    private CoreConfig cConfig;
+    private DistanceMatrixConfig dmConfig;
     private KmerMatchFileMapping fileMapping;
     
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
         
-        this.cConfig = CoreConfig.createInstance(conf);
+        this.dmConfig = DistanceMatrixConfig.createInstance(conf);
         this.fileMapping = KmerMatchFileMapping.createInstance(conf);
     }
     

@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common.kmersimilarity;
+package libra.distancematrix.common.kmersimilarity;
 
 import java.io.IOException;
-import libra.core.common.ScoreAlgorithm;
+import libra.distancematrix.common.ScoreAlgorithm;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 

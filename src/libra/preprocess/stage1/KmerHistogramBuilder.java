@@ -64,7 +64,7 @@ public class KmerHistogramBuilder {
         // check config
         validatePreprocessorConfig(ppConfig);
         
-        Job job = Job.getInstance(conf, "Libra Preprocessor - Building Kmer Histogram");
+        Job job = Job.getInstance(conf, "Libra - Building Kmer Histogram");
         conf = job.getConfiguration();
         
         // set user configuration

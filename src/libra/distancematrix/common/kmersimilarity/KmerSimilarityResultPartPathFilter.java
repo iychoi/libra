@@ -13,28 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common;
+package libra.distancematrix.common.kmersimilarity;
+
+import libra.distancematrix.common.helpers.KmerSimilarityHelper;
+import org.apache.hadoop.fs.Path;
+import org.apache.hadoop.fs.PathFilter;
 
 /**
  *
  * @author iychoi
  */
-public class CoreConfigException extends Exception {
-    static final long serialVersionUID = 7818375828146090155L;
+public class KmerSimilarityResultPartPathFilter implements PathFilter {
 
-    public CoreConfigException() {
-        super();
-    }
-
-    public CoreConfigException(String string) {
-        super(string);
-    }
-
-    public CoreConfigException(String string, Throwable thrwbl) {
-        super(string, thrwbl);
-    }
-
-    public CoreConfigException(Throwable thrwbl) {
-        super(thrwbl);
+    @Override
+    public boolean accept(Path path) {
+        return KmerSimilarityHelper.isKmerSimilarityResultPartFile(path);
     }
 }

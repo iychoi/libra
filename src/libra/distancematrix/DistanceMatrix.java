@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core;
+package libra.distancematrix;
 
 import libra.common.cmdargs.CommandArgumentsParser;
-import libra.core.common.CoreConfig;
-import libra.core.common.RunMode;
-import libra.core.kmersimilarity_m.KmerSimilarityMap;
-import libra.core.kmersimilarity_r.KmerSimilarityReduce;
+import libra.distancematrix.common.DistanceMatrixConfig;
+import libra.distancematrix.common.RunMode;
+import libra.distancematrix.kmersimilarity_m.KmerSimilarityMap;
+import libra.distancematrix.kmersimilarity_r.KmerSimilarityReduce;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.FileTableHelper;
 import org.apache.commons.logging.Log;
@@ -35,19 +35,19 @@ import org.apache.hadoop.util.ToolRunner;
  *
  * @author iychoi
  */
-public class Core extends Configured implements Tool {
-    private static final Log LOG = LogFactory.getLog(Core.class);
+public class DistanceMatrix extends Configured implements Tool {
+    private static final Log LOG = LogFactory.getLog(DistanceMatrix.class);
     
     public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new Configuration(), new Core(), args);
+        int res = ToolRunner.run(new Configuration(), new DistanceMatrix(), args);
         System.exit(res);
     }
     
     @Override
     public int run(String[] args) throws Exception {
         Configuration common_conf = this.getConf();
-        CommandArgumentsParser<CoreCmdArgs> parser = new CommandArgumentsParser<CoreCmdArgs>();
-        CoreCmdArgs cmdParams = new CoreCmdArgs();
+        CommandArgumentsParser<DistanceMatrixCmdArgs> parser = new CommandArgumentsParser<DistanceMatrixCmdArgs>();
+        DistanceMatrixCmdArgs cmdParams = new DistanceMatrixCmdArgs();
         if(!parser.parse(args, cmdParams)) {
             LOG.error("Failed to parse command line arguments!");
             return 1;
@@ -58,30 +58,30 @@ public class Core extends Configured implements Tool {
             return 1;
         }
         
-        CoreConfig cConfig = cmdParams.getCoreConfig();
+        DistanceMatrixConfig dmConfig = cmdParams.getDistanceMatrixConfig();
         
         // find file tables
-        Path fileTablePath = new Path(cConfig.getFileTablePath());
+        Path fileTablePath = new Path(dmConfig.getFileTablePath());
         Path[] fileTableFiles = FileTableHelper.getFileTableFilePath(common_conf, fileTablePath);
         
         // load file tables
         for(Path fileTableFile : fileTableFiles) {
             FileSystem fs = fileTableFile.getFileSystem(common_conf);
             FileTable fileTable = FileTable.createInstance(fs, fileTableFile);
-            cConfig.addFileTable(fileTable);
+            dmConfig.addFileTable(fileTable);
         }
         
         int res = 0;
         try {
-            if(cConfig.getRunMode() == RunMode.MAP) {
+            if(dmConfig.getRunMode() == RunMode.MAP) {
                 KmerSimilarityMap kmerSimilarityMap = new KmerSimilarityMap();
-                res = kmerSimilarityMap.runJob(new Configuration(common_conf), cConfig);
+                res = kmerSimilarityMap.runJob(new Configuration(common_conf), dmConfig);
                 if(res != 0) {
                     throw new Exception("KmerSimilarityMap Failed : " + res);
                 }
-            } else if(cConfig.getRunMode() == RunMode.REDUCE) {
+            } else if(dmConfig.getRunMode() == RunMode.REDUCE) {
                 KmerSimilarityReduce kmerSimilarityReduce = new KmerSimilarityReduce();
-                res = kmerSimilarityReduce.runJob(new Configuration(common_conf), cConfig);
+                res = kmerSimilarityReduce.runJob(new Configuration(common_conf), dmConfig);
                 if(res != 0) {
                     throw new Exception("KmerSimilarityReduce Failed : " + res);
                 }
@@ -99,9 +99,9 @@ public class Core extends Configured implements Tool {
     private static void printHelp() {
         System.out.println("============================================================");
         System.out.println("Libra : Massive Comparative Analytic Tools for Metagenomics");
-        System.out.println("Similarity Computer");
+        System.out.println("Distance Matrix Computation");
         System.out.println("============================================================");
         System.out.println("Usage :");
-        System.out.println("> core <arguments ...>");
+        System.out.println("> distancematrix <arguments ...>");
     }
 }

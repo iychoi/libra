@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common.kmersimilarity;
+package libra.distancematrix.common.kmersimilarity;
 
 import java.io.IOException;
-import libra.core.common.WeightAlgorithm;
+import libra.distancematrix.common.WeightAlgorithm;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,13 +25,12 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author iychoi
  */
-public class JensenShannon extends AbstractScore {
-    private static final Log LOG = LogFactory.getLog(JensenShannon.class);
-    private static final double log2 = Math.log(2);
+public class CosineSimilarity extends AbstractScore {
+    private static final Log LOG = LogFactory.getLog(CosineSimilarity.class);
     
     private double[] param_array;
     
-    public JensenShannon() {
+    public CosineSimilarity() {
     }
     
     @Override
@@ -52,19 +51,19 @@ public class JensenShannon extends AbstractScore {
         }
         
         switch(algorithm) {
-            case LOGALITHM:
+            case LOGARITHM:
                 for(int i=0;i<size;i++) {
-                    this.param_array[i] = statistics[i].getLogTFSum();
+                    this.param_array[i] = statistics[i].getLogTFCosineNormBase();
                 }
                 break;
             case NATURAL:
                 for(int i=0;i<size;i++) {
-                    this.param_array[i] = statistics[i].getNaturalTFSum();
+                    this.param_array[i] = statistics[i].getNaturalTFCosineNormBase();
                 }
                 break;
             case BOOLEAN:
                 for(int i=0;i<size;i++) {
-                    this.param_array[i] = statistics[i].getBooleanTFSum();
+                    this.param_array[i] = statistics[i].getBooleanTFCosineNormBase();
                 }
                 break;
             default:
@@ -75,30 +74,27 @@ public class JensenShannon extends AbstractScore {
     
     @Override
     public void contributeScore(int size, double[] score_matrix, double[] score_array) {
-        double[] score_array_new = new double[size];
+        int nonZeroFields = 0;
         for(int i=0;i<size;i++) {
-            score_array_new[i] = score_array[i] / this.param_array[i];
+            if(score_array[i] != 0) {
+                nonZeroFields++;
+            }
         }
         
+        int[] nonZeroScoresIdx = new int[nonZeroFields];
+        double[] nonZeroScoresVal = new double[nonZeroFields];
+        int idx = 0;
         for(int i=0;i<size;i++) {
-            for(int j=0;j<size;j++) {
-                double avg = (score_array_new[i] + score_array_new[j]) / 2;
-                double p1 = 0;
-                double p2 = 0;
-                
-                if(avg == 0) {
-                    continue;
-                }
-                
-                if(score_array_new[i] != 0) {
-                    p1 = score_array_new[i] * Math.log(score_array_new[i] / avg);
-                }
-                
-                if(score_array_new[j] != 0) {
-                    p2 = score_array_new[j] * Math.log(score_array_new[j] / avg);
-                }
-
-                score_matrix[i*size + j] += ((p1 + p2) / log2)/2;
+            if(score_array[i] != 0) {
+                nonZeroScoresIdx[idx] = i;
+                nonZeroScoresVal[idx] = score_array[i] / this.param_array[i];
+                idx++;
+            }
+        }
+        
+        for(int i=0;i<nonZeroFields;i++) {
+            for(int j=0;j<nonZeroFields;j++) {
+                score_matrix[nonZeroScoresIdx[i]*size + nonZeroScoresIdx[j]] += nonZeroScoresVal[i] * nonZeroScoresVal[j];
             }
         }
     }
@@ -107,19 +103,17 @@ public class JensenShannon extends AbstractScore {
     public double accumulateScore(double score1, double score2) {
         return score1 + score2;
     }
-    
+
     @Override
     public double finalizeScore(double score) {
-        // compute similarity from dissimilarity
-        double similarity = 1 - score;
-        if(similarity < 0) {
-            similarity = 0;
+        if(score < 0) {
+            score = 0;
         }
         
-        if(similarity > 1) {
-            similarity = 1;
+        if(score > 1) {
+            score = 1;
         }
         
-        return similarity;
+        return score;
     }
 }

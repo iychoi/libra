@@ -13,14 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common;
+package libra.distancematrix.common;
 
 /**
  *
  * @author iychoi
  */
-public class CoreConstants {
-    public final static String KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME = "file_mapping_table.json";
-    public final static String KMER_SIMILARITY_RESULT_FILENAME_PREFIX = "result";
-    public final static String KMER_SIMILARITY_RESULT_FILENAME_EXTENSION = "score";
+public class DistanceMatrixConfigException extends Exception {
+    static final long serialVersionUID = 7818375828146090155L;
+
+    public DistanceMatrixConfigException() {
+        super();
+    }
+
+    public DistanceMatrixConfigException(String string) {
+        super(string);
+    }
+
+    public DistanceMatrixConfigException(String string, Throwable thrwbl) {
+        super(string, thrwbl);
+    }
+
+    public DistanceMatrixConfigException(Throwable thrwbl) {
+        super(thrwbl);
+    }
 }

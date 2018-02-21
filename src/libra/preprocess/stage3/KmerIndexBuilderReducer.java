@@ -18,8 +18,8 @@ package libra.preprocess.stage3;
 import java.io.IOException;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
-import libra.core.common.Weight;
-import libra.core.common.WeightAlgorithm;
+import libra.distancematrix.common.Weight;
+import libra.distancematrix.common.WeightAlgorithm;
 import libra.preprocess.common.FilterAlgorithm;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.filetable.FileTable;
@@ -176,7 +176,7 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
         for(int i=0;i<freqTable.length;i++) {
             int frequency = freqTable[i];
             if(frequency > 0) {
-                double logTFWeight = Weight.getTFWeight(WeightAlgorithm.LOGALITHM, frequency);
+                double logTFWeight = Weight.getTFWeight(WeightAlgorithm.LOGARITHM, frequency);
                 double naturalTFWeight = Weight.getTFWeight(WeightAlgorithm.NATURAL, frequency);
                 double booleanTFWeight = Weight.getTFWeight(WeightAlgorithm.BOOLEAN, frequency);
                 

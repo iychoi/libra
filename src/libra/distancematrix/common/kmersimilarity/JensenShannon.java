@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common.kmersimilarity;
+package libra.distancematrix.common.kmersimilarity;
 
 import java.io.IOException;
-import libra.core.common.WeightAlgorithm;
+import libra.distancematrix.common.WeightAlgorithm;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,12 +25,13 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author iychoi
  */
-public class BrayCurtis extends AbstractScore {
-    private static final Log LOG = LogFactory.getLog(BrayCurtis.class);
+public class JensenShannon extends AbstractScore {
+    private static final Log LOG = LogFactory.getLog(JensenShannon.class);
+    private static final double log2 = Math.log(2);
     
     private double[] param_array;
     
-    public BrayCurtis() {
+    public JensenShannon() {
     }
     
     @Override
@@ -51,7 +52,7 @@ public class BrayCurtis extends AbstractScore {
         }
         
         switch(algorithm) {
-            case LOGALITHM:
+            case LOGARITHM:
                 for(int i=0;i<size;i++) {
                     this.param_array[i] = statistics[i].getLogTFSum();
                 }
@@ -74,12 +75,30 @@ public class BrayCurtis extends AbstractScore {
     
     @Override
     public void contributeScore(int size, double[] score_matrix, double[] score_array) {
+        double[] score_array_new = new double[size];
+        for(int i=0;i<size;i++) {
+            score_array_new[i] = score_array[i] / this.param_array[i];
+        }
+        
         for(int i=0;i<size;i++) {
             for(int j=0;j<size;j++) {
-                double sum_total = this.param_array[i] + this.param_array[j];
-                double diff = Math.abs(score_array[i] - score_array[j]);
+                double avg = (score_array_new[i] + score_array_new[j]) / 2;
+                double p1 = 0;
+                double p2 = 0;
                 
-                score_matrix[i*size + j] += diff / sum_total;
+                if(avg == 0) {
+                    continue;
+                }
+                
+                if(score_array_new[i] != 0) {
+                    p1 = score_array_new[i] * Math.log(score_array_new[i] / avg);
+                }
+                
+                if(score_array_new[j] != 0) {
+                    p2 = score_array_new[j] * Math.log(score_array_new[j] / avg);
+                }
+
+                score_matrix[i*size + j] += ((p1 + p2) / log2)/2;
             }
         }
     }
@@ -88,7 +107,7 @@ public class BrayCurtis extends AbstractScore {
     public double accumulateScore(double score1, double score2) {
         return score1 + score2;
     }
-
+    
     @Override
     public double finalizeScore(double score) {
         // compute similarity from dissimilarity

@@ -92,7 +92,7 @@ public class KmerIndexBuilder {
         // check config
         validatePreprocessorConfig(ppConfig);
         
-        Job job = Job.getInstance(conf, "Libra Preprocessor - Building Kmer Index");
+        Job job = Job.getInstance(conf, "Libra - Building Kmer Index");
         conf = job.getConfiguration();
 
         // set user configuration

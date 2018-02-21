@@ -13,14 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.kmersimilarity_r;
+package libra.distancematrix.kmersimilarity_r;
 
 import java.io.IOException;
 import java.util.Collection;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.kmermatch.KmerMatchFileMapping;
-import libra.core.common.CoreConfig;
+import libra.distancematrix.common.DistanceMatrixConfig;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import org.apache.commons.logging.Log;
@@ -37,7 +37,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Int
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityMapper.class);
     
-    private CoreConfig cConfig;
+    private DistanceMatrixConfig dmConfig;
     private FileTable fileTable;
     private String[] samplesInFileTable;
     private KmerMatchFileMapping fileMapping;
@@ -47,10 +47,10 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Int
     protected void setup(Context context) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
         
-        this.cConfig = CoreConfig.createInstance(conf);
+        this.dmConfig = DistanceMatrixConfig.createInstance(conf);
         FileSplit inputSplit = (FileSplit)context.getInputSplit();
         String fileTableName = KmerIndexHelper.getFileTableName(inputSplit.getPath().getParent().getName());
-        for(FileTable table : this.cConfig.getFileTable()) {
+        for(FileTable table : this.dmConfig.getFileTable()) {
             if(table.getName().equals(fileTableName)) {
                 this.fileTable = table;
                 break;

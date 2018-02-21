@@ -17,7 +17,7 @@ package libra;
  */
 import java.util.ArrayList;
 import java.util.List;
-import libra.core.Core;
+import libra.distancematrix.DistanceMatrix;
 import libra.group.Group;
 import libra.preprocess.Preprocessor;
 import org.apache.commons.logging.Log;
@@ -72,8 +72,8 @@ public class Libra {
         
         if(runMode == RunMode.PREPROCESS) {
             Preprocessor.main(params);
-        } else if(runMode == RunMode.CORE) {
-            Core.main(params);
+        } else if(runMode == RunMode.DISTANCEMATRIX) {
+            DistanceMatrix.main(params);
         } else if(runMode == RunMode.GROUP) {
             Group.main(params);
         }
@@ -88,7 +88,7 @@ public class Libra {
         System.out.println();
         System.out.println("Commands :");
         System.out.println("> preprocess");
-        System.out.println("> core");
+        System.out.println("> distancematrix");
         System.out.println("> group");
     }
 }

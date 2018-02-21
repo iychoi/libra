@@ -21,7 +21,7 @@ package libra;
  */
 public enum RunMode {
     PREPROCESS,
-    CORE,
+    DISTANCEMATRIX,
     GROUP;
     
     public static RunMode fromString(String alg) {
@@ -30,6 +30,16 @@ public enum RunMode {
             return wa;
         } catch (Exception ex) {
             // fall
+        }
+        
+        if("indexing".equalsIgnoreCase(alg.trim())) {
+            return PREPROCESS;
+        } else if("core".equalsIgnoreCase(alg.trim())) {
+            return DISTANCEMATRIX;
+        } else if("score".equalsIgnoreCase(alg.trim())) {
+            return DISTANCEMATRIX;
+        } else if("distance".equalsIgnoreCase(alg.trim())) {
+            return DISTANCEMATRIX;
         }
         
         return PREPROCESS;

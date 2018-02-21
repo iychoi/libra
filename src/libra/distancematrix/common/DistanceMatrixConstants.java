@@ -1,5 +1,5 @@
 /*
- * Copyright 2017 iychoi.
+ * Copyright 2016 iychoi.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,30 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common;
+package libra.distancematrix.common;
 
 /**
  *
  * @author iychoi
  */
-public enum RunMode {
-    REDUCE,
-    MAP;
-    
-    public static RunMode fromString(String m) {
-        try {
-            RunMode mode = RunMode.valueOf(m.trim().toUpperCase());
-            return mode;
-        } catch (Exception ex) {
-            // fall
-        }
-        
-        if("r".equalsIgnoreCase(m.trim())) {
-            return REDUCE;
-        } else if("m".equalsIgnoreCase(m.trim())) {
-            return MAP;
-        }
-        
-        return MAP;
-    }
+public class DistanceMatrixConstants {
+    public final static String KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME = "file_mapping_table.json";
+    public final static String KMER_SIMILARITY_RESULT_FILENAME_PREFIX = "result";
+    public final static String KMER_SIMILARITY_RESULT_FILENAME_EXTENSION = "score";
 }

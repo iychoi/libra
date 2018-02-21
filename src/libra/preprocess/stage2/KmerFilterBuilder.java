@@ -82,7 +82,7 @@ public class KmerFilterBuilder {
         // check config
         validatePreprocessorConfig(ppConfig);
         
-        Job job = Job.getInstance(conf, "Libra Preprocessor - Building Kmer Filter");
+        Job job = Job.getInstance(conf, "Libra - Building Kmer Filter");
         conf = job.getConfiguration();
 
         // set user configuration

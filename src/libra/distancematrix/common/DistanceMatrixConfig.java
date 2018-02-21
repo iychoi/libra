@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common;
+package libra.distancematrix.common;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,16 +34,16 @@ import org.codehaus.jackson.annotate.JsonProperty;
  *
  * @author iychoi
  */
-public class CoreConfig {
+public class DistanceMatrixConfig {
     
     public static final String DEFAULT_OUTPUT_PATH = "./libra_output";
-    public static WeightAlgorithm DEFAULT_WEIGHT_ALGORITHM = WeightAlgorithm.LOGALITHM;
+    public static WeightAlgorithm DEFAULT_WEIGHT_ALGORITHM = WeightAlgorithm.LOGARITHM;
     public static ScoreAlgorithm DEFAULT_SCORE_ALGORITHM = ScoreAlgorithm.COSINESIMILARITY;
     public static RunMode DEFAULT_RUN_MODE = RunMode.MAP;
     public static final int DEFAULT_TASKNUM = PreprocessorConfig.DEFAULT_TASKNUM; // user system default
     public static final boolean DEFAULT_USE_HISTOGRAM = PreprocessorConfig.DEFAULT_USE_HISTOGRAM;
     
-    private static final String HADOOP_CONFIG_KEY = "libra.core.common.coreconfig";
+    private static final String HADOOP_CONFIG_KEY = "libra.distancematrix.common.distancematrixconfig";
     
     private String reportFilePath;
     
@@ -53,34 +53,34 @@ public class CoreConfig {
     private String kmerHistogramPath;
     private String kmerIndexPath;
     private String kmerStatisticsPath;
-    private WeightAlgorithm weightAlgorithm = WeightAlgorithm.LOGALITHM;
+    private WeightAlgorithm weightAlgorithm = WeightAlgorithm.LOGARITHM;
     private ScoreAlgorithm scoreAlgorithm = ScoreAlgorithm.COSINESIMILARITY;
     private RunMode runMode = RunMode.MAP;
     private String outputPath = DEFAULT_OUTPUT_PATH;
     
     private List<FileTable> fileTables = new ArrayList<FileTable>();
     
-    public static CoreConfig createInstance(File file) throws IOException {
+    public static DistanceMatrixConfig createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (CoreConfig) serializer.fromJsonFile(file, CoreConfig.class);
+        return (DistanceMatrixConfig) serializer.fromJsonFile(file, DistanceMatrixConfig.class);
     }
     
-    public static CoreConfig createInstance(String json) throws IOException {
+    public static DistanceMatrixConfig createInstance(String json) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (CoreConfig) serializer.fromJson(json, CoreConfig.class);
+        return (DistanceMatrixConfig) serializer.fromJson(json, DistanceMatrixConfig.class);
     }
     
-    public static CoreConfig createInstance(Configuration conf) throws IOException {
+    public static DistanceMatrixConfig createInstance(Configuration conf) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (CoreConfig) serializer.fromJsonConfiguration(conf, HADOOP_CONFIG_KEY, CoreConfig.class);
+        return (DistanceMatrixConfig) serializer.fromJsonConfiguration(conf, HADOOP_CONFIG_KEY, DistanceMatrixConfig.class);
     }
     
-    public static CoreConfig createInstance(FileSystem fs, Path file) throws IOException {
+    public static DistanceMatrixConfig createInstance(FileSystem fs, Path file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (CoreConfig) serializer.fromJsonFile(fs, file, CoreConfig.class);
+        return (DistanceMatrixConfig) serializer.fromJsonFile(fs, file, DistanceMatrixConfig.class);
     }
     
-    public CoreConfig() {
+    public DistanceMatrixConfig() {
         
     }
 

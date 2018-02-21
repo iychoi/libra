@@ -13,13 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core;
+package libra.distancematrix;
 
 import libra.common.cmdargs.CommandArgumentsBase;
-import libra.core.common.CoreConfig;
-import libra.core.common.RunMode;
-import libra.core.common.ScoreAlgorithm;
-import libra.core.common.WeightAlgorithm;
+import libra.distancematrix.common.DistanceMatrixConfig;
+import libra.distancematrix.common.RunMode;
+import libra.distancematrix.common.ScoreAlgorithm;
+import libra.distancematrix.common.WeightAlgorithm;
 import org.kohsuke.args4j.Argument;
 import org.kohsuke.args4j.Option;
 
@@ -27,35 +27,35 @@ import org.kohsuke.args4j.Option;
  *
  * @author iychoi
  */
-public class CoreCmdArgs extends CommandArgumentsBase {
+public class DistanceMatrixCmdArgs extends CommandArgumentsBase {
     
-    public CoreCmdArgs() {
+    public DistanceMatrixCmdArgs() {
         
     }
     
     @Option(name = "-w", aliases = "--weight", usage = "specify weight algorithm")
-    protected String weightAlgorithm = CoreConfig.DEFAULT_WEIGHT_ALGORITHM.name();
+    protected String weightAlgorithm = DistanceMatrixConfig.DEFAULT_WEIGHT_ALGORITHM.name();
 
     public WeightAlgorithm getWeightAlgorithm() {
         return WeightAlgorithm.fromString(this.weightAlgorithm);
     }
     
     @Option(name = "-s", aliases = "--score", usage = "specify score algorithm")
-    protected String scoreAlgorithm = CoreConfig.DEFAULT_SCORE_ALGORITHM.name();
+    protected String scoreAlgorithm = DistanceMatrixConfig.DEFAULT_SCORE_ALGORITHM.name();
     
     public ScoreAlgorithm getScoreAlgorithm() {
         return ScoreAlgorithm.fromString(this.scoreAlgorithm);
     }
     
     @Option(name = "-m", aliases = "--mode", usage = "specify run mode")
-    protected String runMode = CoreConfig.DEFAULT_RUN_MODE.name();
+    protected String runMode = DistanceMatrixConfig.DEFAULT_RUN_MODE.name();
 
     public RunMode getRunMode() {
         return RunMode.fromString(this.runMode);
     }
     
     @Option(name = "-t", aliases = "--tasks", usage = "specify number of tasks")
-    protected int taskNum = CoreConfig.DEFAULT_TASKNUM;
+    protected int taskNum = DistanceMatrixConfig.DEFAULT_TASKNUM;
     
     public int getTaskNum() {
         return this.taskNum;
@@ -69,7 +69,7 @@ public class CoreCmdArgs extends CommandArgumentsBase {
     }
     
     @Option(name = "-o", usage = "specify output path")
-    private String outputPath = CoreConfig.DEFAULT_OUTPUT_PATH;
+    private String outputPath = DistanceMatrixConfig.DEFAULT_OUTPUT_PATH;
         
     public String getOutputPath() {
         return this.outputPath;
@@ -102,8 +102,8 @@ public class CoreCmdArgs extends CommandArgumentsBase {
         return true;
     }
     
-    public CoreConfig getCoreConfig() {
-        CoreConfig config = new CoreConfig();
+    public DistanceMatrixConfig getDistanceMatrixConfig() {
+        DistanceMatrixConfig config = new DistanceMatrixConfig();
         
         config.setReportPath(this.reportfile);
         config.setWeightAlgorithm(getWeightAlgorithm());

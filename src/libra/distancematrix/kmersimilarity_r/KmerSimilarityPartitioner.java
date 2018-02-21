@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.kmersimilarity_r;
+package libra.distancematrix.kmersimilarity_r;
 
 
 import libra.common.hadoop.io.datatypes.IntArrayWritable;

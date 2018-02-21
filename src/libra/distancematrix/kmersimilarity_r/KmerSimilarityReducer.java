@@ -13,20 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.kmersimilarity_r;
+package libra.distancematrix.kmersimilarity_r;
 
 import java.io.IOException;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.kmermatch.KmerMatchFileMapping;
-import libra.core.common.CoreConfig;
-import libra.core.common.ScoreAlgorithm;
-import libra.core.common.Weight;
-import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecord;
-import libra.core.common.WeightAlgorithm;
-import libra.core.common.kmersimilarity.AbstractScore;
-import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecordGroup;
-import libra.core.common.kmersimilarity.ScoreFactory;
+import libra.distancematrix.common.DistanceMatrixConfig;
+import libra.distancematrix.common.ScoreAlgorithm;
+import libra.distancematrix.common.Weight;
+import libra.distancematrix.common.kmersimilarity.KmerSimilarityResultPartRecord;
+import libra.distancematrix.common.WeightAlgorithm;
+import libra.distancematrix.common.kmersimilarity.AbstractScore;
+import libra.distancematrix.common.kmersimilarity.KmerSimilarityResultPartRecordGroup;
+import libra.distancematrix.common.kmersimilarity.ScoreFactory;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
@@ -47,7 +47,7 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, I
     
     private static final Log LOG = LogFactory.getLog(KmerSimilarityReducer.class);
     
-    private CoreConfig cConfig;
+    private DistanceMatrixConfig dmConfig;
     private KmerMatchFileMapping fileMapping;
     
     private double[] scoreAccumulated;
@@ -58,7 +58,7 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, I
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
         Configuration conf = context.getConfiguration();
-        this.cConfig = CoreConfig.createInstance(conf);
+        this.dmConfig = DistanceMatrixConfig.createInstance(conf);
         
         this.fileMapping = KmerMatchFileMapping.createInstance(conf);
         
@@ -68,23 +68,23 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, I
             this.scoreAccumulated[i] = 0;
         }
         
-        this.weightAlgorithm = this.cConfig.getWeightAlgorithm();
+        this.weightAlgorithm = this.dmConfig.getWeightAlgorithm();
         if(this.weightAlgorithm == null) {
-            this.weightAlgorithm = CoreConfig.DEFAULT_WEIGHT_ALGORITHM;
+            this.weightAlgorithm = DistanceMatrixConfig.DEFAULT_WEIGHT_ALGORITHM;
         }
         
-        this.scoreAlgorithm = this.cConfig.getScoreAlgorithm();
+        this.scoreAlgorithm = this.dmConfig.getScoreAlgorithm();
         if(this.scoreAlgorithm == null) {
-            this.scoreAlgorithm = CoreConfig.DEFAULT_SCORE_ALGORITHM;
+            this.scoreAlgorithm = DistanceMatrixConfig.DEFAULT_SCORE_ALGORITHM;
         }
         
         this.scoreFunction = ScoreFactory.getScore(this.scoreAlgorithm);
         
         int idx = 0;
         KmerStatistics[] statisticsArray = new KmerStatistics[valuesLen];
-        for(FileTable fileTable : this.cConfig.getFileTable()) {
+        for(FileTable fileTable : this.dmConfig.getFileTable()) {
             String statisticsTableFilename = KmerStatisticsHelper.makeKmerStatisticsTableFileName(fileTable.getName());
-            Path statisticsTablePath = new Path(this.cConfig.getKmerStatisticsPath(), statisticsTableFilename);
+            Path statisticsTablePath = new Path(this.dmConfig.getKmerStatisticsPath(), statisticsTableFilename);
             FileSystem fs = statisticsTablePath.getFileSystem(conf);
 
             KmerStatisticsTable statisticsTable = KmerStatisticsTable.createInstance(fs, statisticsTablePath);

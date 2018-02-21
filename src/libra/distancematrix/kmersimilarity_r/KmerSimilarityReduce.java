@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.kmersimilarity_m;
+package libra.distancematrix.kmersimilarity_r;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
+import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
 import libra.common.helpers.MapReduceHelper;
 import libra.common.kmermatch.KmerMatchFileMapping;
-import libra.common.kmermatch.KmerMatchInputFormat;
-import libra.common.kmermatch.KmerMatchInputFormatConfig;
-import libra.core.common.CoreConfig;
-import libra.core.common.CoreConfigException;
-import libra.core.common.ScoreAlgorithm;
-import libra.core.common.helpers.KmerSimilarityHelper;
-import libra.core.common.kmersimilarity.AbstractScore;
-import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecord;
-import libra.core.common.kmersimilarity.KmerSimilarityResultPartRecordGroup;
-import libra.core.common.kmersimilarity.ScoreFactory;
+import libra.distancematrix.common.DistanceMatrixConfig;
+import libra.distancematrix.common.DistanceMatrixConfigException;
+import libra.distancematrix.common.helpers.KmerSimilarityHelper;
+import libra.distancematrix.common.kmersimilarity.AbstractScore;
+import libra.distancematrix.common.kmersimilarity.KmerSimilarityResultPartRecord;
+import libra.distancematrix.common.kmersimilarity.KmerSimilarityResultPartRecordGroup;
+import libra.distancematrix.common.kmersimilarity.ScoreFactory;
 import libra.preprocess.common.filetable.FileTable;
-import libra.preprocess.common.helpers.FileTableHelper;
+import libra.preprocess.common.helpers.KmerIndexHelper;
+import libra.preprocess.common.kmerindex.KmerIndexTable;
+import libra.preprocess.common.kmerindex.KmerIndexTableRecord;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -47,6 +47,7 @@ import org.apache.hadoop.io.LongWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.LineRecordReader;
 import org.apache.hadoop.mapreduce.Job;
+import org.apache.hadoop.mapreduce.lib.input.SequenceFileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
 import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 
@@ -54,44 +55,42 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
  *
  * @author iychoi
  */
-public class KmerSimilarityMap {
-    private static final Log LOG = LogFactory.getLog(KmerSimilarityMap.class);
+public class KmerSimilarityReduce {
+    private static final Log LOG = LogFactory.getLog(KmerSimilarityReduce.class);
     
-    private static final int DEFAULT_INPUT_SPLITS = 100;
-    
-    public KmerSimilarityMap() {
+    public KmerSimilarityReduce() {
         
     }
     
-    private void validateCoreConfig(CoreConfig cConfig) throws CoreConfigException {
-        if(cConfig.getKmerIndexPath() == null) {
-            throw new CoreConfigException("cannot find input kmer index path");
+    private void validateDistanceMatrixConfig(DistanceMatrixConfig dmConfig) throws DistanceMatrixConfigException {
+        if(dmConfig.getKmerIndexPath() == null) {
+            throw new DistanceMatrixConfigException("cannot find input kmer index path");
         }
         
-        if(cConfig.getFileTable() == null || cConfig.getFileTable().size() <= 0) {
-            throw new CoreConfigException("cannot find input path");
+        if(dmConfig.getFileTable() == null || dmConfig.getFileTable().size() <= 0) {
+            throw new DistanceMatrixConfigException("cannot find input path");
         }
         
-        if(cConfig.getUseHistogram()) {
-            if(cConfig.getKmerHistogramPath() == null) {
-                throw new CoreConfigException("cannot find kmer histogram path");
+        if(dmConfig.getUseHistogram()) {
+            if(dmConfig.getKmerHistogramPath() == null) {
+                throw new DistanceMatrixConfigException("cannot find kmer histogram path");
             }
         }
         
-        if(cConfig.getKmerStatisticsPath() == null) {
-            throw new CoreConfigException("cannot find kmer statistics path");
+        if(dmConfig.getKmerStatisticsPath() == null) {
+            throw new DistanceMatrixConfigException("cannot find kmer statistics path");
         }
         
-        if(cConfig.getOutputPath() == null) {
-            throw new CoreConfigException("cannot find output path");
+        if(dmConfig.getOutputPath() == null) {
+            throw new DistanceMatrixConfigException("cannot find output path");
         }
     }
     
-    public int runJob(Configuration conf, CoreConfig cConfig) throws Exception {
+    public int runJob(Configuration conf, DistanceMatrixConfig cConfig) throws Exception {
         // check config
-        validateCoreConfig(cConfig);
+        validateDistanceMatrixConfig(cConfig);
         
-        Job job = Job.getInstance(conf, "Libra Core - Computing similarity");
+        Job job = Job.getInstance(conf, "Libra - Computing distance matrix");
         conf = job.getConfiguration();
         
         // set user configuration
@@ -99,30 +98,49 @@ public class KmerSimilarityMap {
         
         Report report = new Report();
         
-        job.setJarByClass(KmerSimilarityMap.class);
+        job.setJarByClass(KmerSimilarityReduce.class);
         
         // Mapper
         job.setMapperClass(KmerSimilarityMapper.class);
-        job.setInputFormatClass(KmerMatchInputFormat.class);
-        job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(Text.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
+        job.setMapOutputKeyClass(CompressedSequenceWritable.class);
+        job.setMapOutputValueClass(IntArrayWritable.class);
+        
+        // Combiner
+        job.setCombinerClass(KmerSimilarityCombiner.class);
+        
+        // Partitioner
+        job.setPartitionerClass(KmerSimilarityPartitioner.class);
+
+        // Reducer
+        job.setReducerClass(KmerSimilarityReducer.class);
         
         // Specify key / value
         job.setOutputKeyClass(Text.class);
         job.setOutputValueClass(Text.class);
 
         // Inputs
-        List<Path> inputFileTableFiles = new ArrayList<Path>();
+        List<Path> inputKmerIndexFiles = new ArrayList<Path>();
+        List<Path> inputKmerIndexDataFiles = new ArrayList<Path>();
         for(FileTable fileTable : cConfig.getFileTable()) {
-            String fileTableFileName = FileTableHelper.makeFileTableFileName(fileTable.getName());
-            Path fileTableFilePath = new Path(cConfig.getFileTablePath(), fileTableFileName);
-            inputFileTableFiles.add(fileTableFilePath);
+            String kmerIndexTableFileName = KmerIndexHelper.makeKmerIndexTableFileName(fileTable.getName());
+            Path kmerIndexTableFilePath = new Path(cConfig.getKmerIndexPath(), kmerIndexTableFileName);
+            inputKmerIndexFiles.add(kmerIndexTableFilePath);
+
+            // add data
+            FileSystem fs = kmerIndexTableFilePath.getFileSystem(conf);
+            KmerIndexTable kmerIndexTable = KmerIndexTable.createInstance(fs, kmerIndexTableFilePath);
+            for(KmerIndexTableRecord record : kmerIndexTable.getRecord()) {
+                String indexDataFile = record.getIndexDataFile();
+                Path kmerIndexDataFilePath = new Path(cConfig.getKmerIndexPath(), indexDataFile);
+                Path kmerIndexDataFilePath_DATA = new Path(kmerIndexDataFilePath, "data");
+                inputKmerIndexDataFiles.add(kmerIndexDataFilePath_DATA);
+            }
         }
         
-        KmerMatchInputFormat.addInputPaths(job, FileSystemHelper.makeCommaSeparated(inputFileTableFiles.toArray(new Path[0])));
-
-        LOG.info("Input file table files : " + inputFileTableFiles.size());
-        for(Path inputFile : inputFileTableFiles) {
+        SequenceFileInputFormat.addInputPaths(job, FileSystemHelper.makeCommaSeparated(inputKmerIndexDataFiles.toArray(new Path[0])));
+        LOG.info("Input kmer index files : " + inputKmerIndexFiles.size());
+        for(Path inputFile : inputKmerIndexFiles) {
             LOG.info("> " + inputFile.toString());
         }
         
@@ -134,37 +152,17 @@ public class KmerSimilarityMap {
         }
         fileMapping.saveTo(conf);
         
-        int kmerSize = 0;
-        Iterator<FileTable> iterator = cConfig.getFileTable().iterator();
-        if(iterator.hasNext()) {
-            FileTable tbl = iterator.next();
-            kmerSize = tbl.getKmerSize();
-        }
-        
-        int tasks = DEFAULT_INPUT_SPLITS;
-        if(cConfig.getTaskNum() > 0) {
-            tasks = cConfig.getTaskNum();
-        }
-        
-        KmerMatchInputFormatConfig matchInputFormatConfig = new KmerMatchInputFormatConfig();
-        matchInputFormatConfig.setKmerSize(kmerSize);
-        matchInputFormatConfig.setPartitionNum(tasks);
-        matchInputFormatConfig.setFileTablePath(cConfig.getFileTablePath());
-        matchInputFormatConfig.setKmerIndexPath(cConfig.getKmerIndexPath());
-        if(cConfig.getUseHistogram()) {
-            matchInputFormatConfig.setUseHistogram(true);
-            matchInputFormatConfig.setKmerHistogramPath(cConfig.getKmerHistogramPath());
-        } else {
-            matchInputFormatConfig.setUseHistogram(false);
-        }
-        
-        KmerMatchInputFormat.setInputFormatConfig(job, matchInputFormatConfig);
-        
         FileOutputFormat.setOutputPath(job, new Path(cConfig.getOutputPath()));
         job.setOutputFormatClass(TextOutputFormat.class);
 
         // Reducer
-        job.setNumReduceTasks(0);
+        // Use many reducers
+        int reducers = conf.getInt("mapred.reduce.tasks", 1);
+        if(cConfig.getTaskNum() > 0) {
+            reducers = cConfig.getTaskNum();
+        }
+        job.setNumReduceTasks(reducers);
+        LOG.info("# of Reducers : " + reducers);
         
         // Execute job and return status
         boolean result = job.waitForCompletion(true);

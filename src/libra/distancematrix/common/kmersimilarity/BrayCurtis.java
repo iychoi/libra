@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common.kmersimilarity;
+package libra.distancematrix.common.kmersimilarity;
 
 import java.io.IOException;
-import libra.core.common.WeightAlgorithm;
+import libra.distancematrix.common.WeightAlgorithm;
 import libra.preprocess.common.kmerstatistics.KmerStatistics;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -25,12 +25,12 @@ import org.apache.commons.logging.LogFactory;
  *
  * @author iychoi
  */
-public class CosineSimilarity extends AbstractScore {
-    private static final Log LOG = LogFactory.getLog(CosineSimilarity.class);
+public class BrayCurtis extends AbstractScore {
+    private static final Log LOG = LogFactory.getLog(BrayCurtis.class);
     
     private double[] param_array;
     
-    public CosineSimilarity() {
+    public BrayCurtis() {
     }
     
     @Override
@@ -51,19 +51,19 @@ public class CosineSimilarity extends AbstractScore {
         }
         
         switch(algorithm) {
-            case LOGALITHM:
+            case LOGARITHM:
                 for(int i=0;i<size;i++) {
-                    this.param_array[i] = statistics[i].getLogTFCosineNormBase();
+                    this.param_array[i] = statistics[i].getLogTFSum();
                 }
                 break;
             case NATURAL:
                 for(int i=0;i<size;i++) {
-                    this.param_array[i] = statistics[i].getNaturalTFCosineNormBase();
+                    this.param_array[i] = statistics[i].getNaturalTFSum();
                 }
                 break;
             case BOOLEAN:
                 for(int i=0;i<size;i++) {
-                    this.param_array[i] = statistics[i].getBooleanTFCosineNormBase();
+                    this.param_array[i] = statistics[i].getBooleanTFSum();
                 }
                 break;
             default:
@@ -74,27 +74,12 @@ public class CosineSimilarity extends AbstractScore {
     
     @Override
     public void contributeScore(int size, double[] score_matrix, double[] score_array) {
-        int nonZeroFields = 0;
         for(int i=0;i<size;i++) {
-            if(score_array[i] != 0) {
-                nonZeroFields++;
-            }
-        }
-        
-        int[] nonZeroScoresIdx = new int[nonZeroFields];
-        double[] nonZeroScoresVal = new double[nonZeroFields];
-        int idx = 0;
-        for(int i=0;i<size;i++) {
-            if(score_array[i] != 0) {
-                nonZeroScoresIdx[idx] = i;
-                nonZeroScoresVal[idx] = score_array[i] / this.param_array[i];
-                idx++;
-            }
-        }
-        
-        for(int i=0;i<nonZeroFields;i++) {
-            for(int j=0;j<nonZeroFields;j++) {
-                score_matrix[nonZeroScoresIdx[i]*size + nonZeroScoresIdx[j]] += nonZeroScoresVal[i] * nonZeroScoresVal[j];
+            for(int j=0;j<size;j++) {
+                double sum_total = this.param_array[i] + this.param_array[j];
+                double diff = Math.abs(score_array[i] - score_array[j]);
+                
+                score_matrix[i*size + j] += diff / sum_total;
             }
         }
     }
@@ -106,14 +91,16 @@ public class CosineSimilarity extends AbstractScore {
 
     @Override
     public double finalizeScore(double score) {
-        if(score < 0) {
-            score = 0;
+        // compute similarity from dissimilarity
+        double similarity = 1 - score;
+        if(similarity < 0) {
+            similarity = 0;
         }
         
-        if(score > 1) {
-            score = 1;
+        if(similarity > 1) {
+            similarity = 1;
         }
         
-        return score;
+        return similarity;
     }
 }

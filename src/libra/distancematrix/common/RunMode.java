@@ -13,33 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common;
+package libra.distancematrix.common;
 
 /**
  *
  * @author iychoi
  */
-public enum WeightAlgorithm {
-    LOGALITHM,
-    NATURAL,
-    BOOLEAN;
+public enum RunMode {
+    REDUCE,
+    MAP;
     
-    public static WeightAlgorithm fromString(String alg) {
+    public static RunMode fromString(String m) {
         try {
-            WeightAlgorithm wa = WeightAlgorithm.valueOf(alg.trim().toUpperCase());
-            return wa;
+            RunMode mode = RunMode.valueOf(m.trim().toUpperCase());
+            return mode;
         } catch (Exception ex) {
             // fall
         }
         
-        if("log".equalsIgnoreCase(alg.trim())) {
-            return LOGALITHM;
-        } else if("bool".equalsIgnoreCase(alg.trim())) {
-            return BOOLEAN;
-        } else if("nat".equalsIgnoreCase(alg.trim())) {
-            return NATURAL;
+        if("r".equalsIgnoreCase(m.trim())) {
+            return REDUCE;
+        } else if("m".equalsIgnoreCase(m.trim())) {
+            return MAP;
         }
         
-        return LOGALITHM;
+        return MAP;
     }
 }

@@ -13,15 +13,15 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.core.common.helpers;
+package libra.distancematrix.common.helpers;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import libra.core.common.CoreConstants;
-import libra.core.common.kmersimilarity.KmerSimilarityResultPartPathFilter;
+import libra.distancematrix.common.DistanceMatrixConstants;
+import libra.distancematrix.common.kmersimilarity.KmerSimilarityResultPartPathFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -32,7 +32,7 @@ import org.apache.hadoop.fs.Path;
  * @author iychoi
  */
 public class KmerSimilarityHelper {
-    private final static String KMER_SIMILARITY_RESULT_PART_PATH_EXP = ".+\\." + CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION + "\\.\\d+$";
+    private final static String KMER_SIMILARITY_RESULT_PART_PATH_EXP = ".+\\." + DistanceMatrixConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION + "\\.\\d+$";
     private final static Pattern KMER_SIMILARITY_RESULT_PART_PATH_PATTERN = Pattern.compile(KMER_SIMILARITY_RESULT_PART_PATH_EXP);
     
     public static boolean isKmerSimilarityFileMappingTableFile(Path path) {
@@ -40,7 +40,7 @@ public class KmerSimilarityHelper {
     }
     
     public static boolean isKmerSimilarityFileMappingTableFile(String path) {
-        if(path.compareToIgnoreCase(CoreConstants.KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME) == 0) {
+        if(path.compareToIgnoreCase(DistanceMatrixConstants.KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME) == 0) {
             return true;
         }
         return false;
@@ -59,15 +59,15 @@ public class KmerSimilarityHelper {
     }
     
     public static String makeKmerSimilarityFileMappingTableFileName() {
-        return CoreConstants.KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME;
+        return DistanceMatrixConstants.KMER_SIMILARITY_FILE_MAPPING_TABLE_FILENAME;
     }
     
     public static String makeKmerSimilarityResultPartFileName(int mapreduceID) {
-        return CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_PREFIX + "." + CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION + "." + mapreduceID;
+        return DistanceMatrixConstants.KMER_SIMILARITY_RESULT_FILENAME_PREFIX + "." + DistanceMatrixConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION + "." + mapreduceID;
     }
     
     public static String makeKmerSimilarityResultFileName() {
-        return CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_PREFIX + "." + CoreConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION;
+        return DistanceMatrixConstants.KMER_SIMILARITY_RESULT_FILENAME_PREFIX + "." + DistanceMatrixConstants.KMER_SIMILARITY_RESULT_FILENAME_EXTENSION;
     }
     
     public static Path[] getKmerSimilarityResultPartFilePath(Configuration conf, Path inputPath) throws IOException {
