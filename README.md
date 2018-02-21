@@ -51,12 +51,12 @@ Preprocessing Options
 
 Scoring
 ```
-hadoop jar libra-all.jar core -m MAP -w LOGALITHM -t 8 -o /score_dir /index_dir
+hadoop jar libra-all.jar core -m MAP -w LOGARITHM -t 8 -o /score_dir /index_dir
 ```
 
 Scoring Options
 - s : scoring algorithm. COSINESIMILARITY (default) | BRAYCURTIS | JENSENSHANNON
 - m : run mode. MAP | REDUCE
-- w : weighting algorithm. LOGALITHM (default) | BOOLEAN | NATURAL
+- w : weighting algorithm. LOGARITHM (default) | BOOLEAN | NATURAL
 - t : number of tasks (input splits at MAP mode, reducers at REDUCE mode)
 - o : output directory
