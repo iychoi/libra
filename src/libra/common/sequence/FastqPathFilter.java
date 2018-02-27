@@ -29,7 +29,7 @@ public class FastqPathFilter implements PathFilter {
     
     @Override
     public boolean accept(Path path) {
-        String ext = PathHelper.getExtensionWithoutCompressed(path.getName());
+        String ext = PathHelper.getExtensionOfDecompressedFile(path.getName());
         if(ext != null) {
             ext = ext.toLowerCase();
         }

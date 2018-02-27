@@ -21,7 +21,7 @@ package libra.common.helpers;
  */
 public class PathHelper {
     
-    private static final String[] COMPRESSED_EXT = {"gz"};
+    private static final String[] COMPRESSED_EXT = {"gz", "bz2"};
     
     public static String getParent(String path) {
         // check root
@@ -59,7 +59,7 @@ public class PathHelper {
         return sb.toString();
     }
     
-    public static String getExtensionWithoutCompressed(String name) {
+    public static String getExtensionOfDecompressedFile(String name) {
         String myname = name;
         int idx = myname.lastIndexOf(".");
         if(idx > 0) {
