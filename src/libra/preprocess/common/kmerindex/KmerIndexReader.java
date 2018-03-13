@@ -74,30 +74,37 @@ public class KmerIndexReader extends AKmerIndexReader {
         this.indexDataReaders = new IndexCloseableMapFileReader[this.tableRecords.length];
         
         this.currentIndexDataID = 0;
+        boolean bFound = false;
         if(beginKey != null) {
-            boolean bFound = false;
             for(int i=0;i<this.tableRecords.length;i++) {
+                this.currentIndexDataID = i;
                 if(this.tableRecords[i].getLastKmer().compareToIgnoreCase(beginKey.getSequence()) >= 0) {
                     //found
-                    this.currentIndexDataID = i;
                     bFound = true;
                     break;
                 }
             }
             
-            if(!bFound) {
-                throw new IOException("Could not find start point from kmer index");
-            }
+            //if(!bFound) {
+            //    throw new IOException(String.format("Could not find start point from kmer index - %s in %s", beginKey.getSequence(), kmerIndexTablePath.toString()));
+            //}
+        } else {
+            bFound = true;
         }
         
-        Path indexDataFile = new Path(this.kmerIndexTablePath.getParent(), this.tableRecords[this.currentIndexDataID].getIndexDataFile());
-        this.indexDataReaders[this.currentIndexDataID] = new IndexCloseableMapFileReader(fs, indexDataFile.toString(), conf);
-        if(beginKey != null) {
-            this.eof = false;
-            seek(beginKey);
-        } else {
-            this.eof = false;
-            fillBuffer();
+        if(bFound) {
+            Path indexDataFile = new Path(this.kmerIndexTablePath.getParent(), this.tableRecords[this.currentIndexDataID].getIndexDataFile());
+            this.indexDataReaders[this.currentIndexDataID] = new IndexCloseableMapFileReader(fs, indexDataFile.toString(), conf);
+            if(beginKey != null) {
+                this.eof = false;
+                seek(beginKey);
+            } else {
+                this.eof = false;
+                fillBuffer();
+            }
+        } else{
+            this.eof = true;
+            this.indexDataReaders[this.currentIndexDataID] = null;
         }
     }
     
