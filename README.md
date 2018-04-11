@@ -7,7 +7,7 @@ Compute the Similarity between Metagenomic Samples
 DOWNLOAD BINARY
 ---------------
 Download a pre-built binary (compiled with Java 7, including dependencies):
-- [Libra v1.2 stable](https://github.com/iychoi/libra/releases/download/v1.2/libra-all.jar)
+- [Libra v1.2.3 stable](https://github.com/iychoi/libra/releases/download/v1.2.3/libra-all.jar)
 
 For old releases, check out the release page:
 - [Libra Releases](https://github.com/iychoi/libra/releases)
