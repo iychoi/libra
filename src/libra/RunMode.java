@@ -22,7 +22,13 @@ package libra;
 public enum RunMode {
     PREPROCESS,
     DISTANCEMATRIX,
-    GROUP;
+    GROUP,
+    MERGE;
+    
+    private static String PREPROCESS_MATCH_STRINGS[] = {"indexing", "index"};
+    private static String DISTANCE_MATRIX_MATCH_STRINGS[] = {"core", "score", "distance", "matrix"};
+    private static String GROUP_MATCH_STRINGS[] = {"groups"};
+    private static String MERGE_MATCH_STRINGS[] = {"merge_index"};
     
     public static RunMode fromString(String alg) {
         try {
@@ -32,26 +38,34 @@ public enum RunMode {
             // fall
         }
         
-        if("indexing".equalsIgnoreCase(alg.trim())) {
-            return PREPROCESS;
-        } else if("core".equalsIgnoreCase(alg.trim())) {
-            return DISTANCEMATRIX;
-        } else if("score".equalsIgnoreCase(alg.trim())) {
-            return DISTANCEMATRIX;
-        } else if("distance".equalsIgnoreCase(alg.trim())) {
-            return DISTANCEMATRIX;
+        // preprocess match strings
+        for(String match : PREPROCESS_MATCH_STRINGS) {
+            if(match.equalsIgnoreCase(alg.trim())) {
+                return PREPROCESS;
+            }
         }
         
-        return PREPROCESS;
-    }
-    
-    public static boolean isRunMode(String alg) {
-        try {
-            RunMode wa = RunMode.valueOf(alg.trim().toUpperCase());
-            return true;
-        } catch (Exception ex) {
-            // fall
-            return false;
+        // distance matrix match strings
+        for(String match : DISTANCE_MATRIX_MATCH_STRINGS) {
+            if(match.equalsIgnoreCase(alg.trim())) {
+                return DISTANCEMATRIX;
+            }
         }
+        
+        // group match strings
+        for(String match : GROUP_MATCH_STRINGS) {
+            if(match.equalsIgnoreCase(alg.trim())) {
+                return GROUP;
+            }
+        }
+        
+        // merge match strings
+        for(String match : MERGE_MATCH_STRINGS) {
+            if(match.equalsIgnoreCase(alg.trim())) {
+                return MERGE;
+            }
+        }
+        
+        return null;
     }
 }

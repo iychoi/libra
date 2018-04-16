@@ -15,8 +15,6 @@ package libra;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-import java.util.ArrayList;
-import java.util.List;
 import libra.distancematrix.DistanceMatrix;
 import libra.group.Group;
 import libra.preprocess.Preprocessor;
@@ -40,42 +38,50 @@ public class Libra {
         return false;
     }
     
-    private static RunMode checkRunMode(String[] args) {
-        for(String arg : args) {
-            if(RunMode.isRunMode(arg)) {
-                return RunMode.fromString(arg);
-            }
-        }
-        
-        return RunMode.PREPROCESS;
-    }
-    
-    private static String[] removeRunMode(String[] args) {
-        List<String> params = new ArrayList<String>();
-        for(String arg : args) {
-            if(!RunMode.isRunMode(arg)) {
-                params.add(arg);
-            }
-        }
-        
-        return params.toArray(new String[0]);
-    }
-    
     public static void main(String[] args) throws Exception {
         if(isHelpParam(args)) {
             printHelp();
             return;
         } 
         
-        RunMode runMode = checkRunMode(args);
-        String[] params = removeRunMode(args);
+        // detect run mode and take it out from arguments
+        RunMode runMode = null;
+        String[] params = new String[args.length-1];
+        int indexParam = 0;
         
-        if(runMode == RunMode.PREPROCESS) {
-            Preprocessor.main(params);
-        } else if(runMode == RunMode.DISTANCEMATRIX) {
-            DistanceMatrix.main(params);
-        } else if(runMode == RunMode.GROUP) {
-            Group.main(params);
+        for(int i=0;i<args.length;i++) {
+            String arg = args[i];
+            if(runMode == null) {
+                RunMode mode = RunMode.fromString(arg);
+                if(mode != null) {
+                    runMode = mode;
+                    continue;
+                }
+            }
+            
+            params[indexParam] = arg;
+            indexParam++;
+        }
+        
+        if(null == runMode) {
+            System.out.println("Command is not given");
+        } else {
+            switch (runMode) {
+                case PREPROCESS:
+                    Preprocessor.main(params);
+                    break;
+                case DISTANCEMATRIX:
+                    DistanceMatrix.main(params);
+                    break;
+                case GROUP:
+                    Group.main(params);
+                    break;
+                case MERGE:
+                    //TODO
+                    break;
+                default:
+                    break;
+            }
         }
     }
 
