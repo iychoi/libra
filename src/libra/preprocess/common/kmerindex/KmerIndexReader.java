@@ -73,13 +73,13 @@ public class KmerIndexReader extends AKmerIndexReader {
         this.tableRecords = this.indexTable.getRecord().toArray(new KmerIndexTableRecord[0]);
         this.indexDataReaders = new IndexCloseableMapFileReader[this.tableRecords.length];
         
-        this.currentIndexDataID = 0;
         boolean bFound = false;
+        this.currentIndexDataID = -1;
         if(beginKey != null) {
             for(int i=0;i<this.tableRecords.length;i++) {
-                this.currentIndexDataID = i;
                 if(this.tableRecords[i].getLastKmer().compareToIgnoreCase(beginKey.getSequence()) >= 0) {
                     //found
+                    this.currentIndexDataID = i;
                     bFound = true;
                     break;
                 }
@@ -89,22 +89,24 @@ public class KmerIndexReader extends AKmerIndexReader {
             //    throw new IOException(String.format("Could not find start point from kmer index - %s in %s", beginKey.getSequence(), kmerIndexTablePath.toString()));
             //}
         } else {
+            if(this.tableRecords.length > 0) {
+                this.currentIndexDataID = 0;
+            }
             bFound = true;
         }
         
         if(bFound) {
             Path indexDataFile = new Path(this.kmerIndexTablePath.getParent(), this.tableRecords[this.currentIndexDataID].getIndexDataFile());
             this.indexDataReaders[this.currentIndexDataID] = new IndexCloseableMapFileReader(fs, indexDataFile.toString(), conf);
+            
+            this.eof = false;
             if(beginKey != null) {
-                this.eof = false;
                 seek(beginKey);
             } else {
-                this.eof = false;
                 fillBuffer();
             }
         } else{
             this.eof = true;
-            this.indexDataReaders[this.currentIndexDataID] = null;
         }
     }
     
