@@ -60,7 +60,7 @@ public class Group extends Configured implements Tool {
         GroupConfig gConfig = cmdParams.getGroupConfig();
         
         // find input files
-        Path[] inputFiles = FileSystemHelper.getAllSequenceFilePath(common_conf, gConfig.getSequencePath());
+        Path[] inputFiles = FileSystemHelper.getAllSamplePaths(common_conf, gConfig.getSamplePaths());
         
         // group samples
         SampleGrouper grouper = new SampleGrouper(gConfig.getGroupSize(), gConfig.getMaxGroupNum());

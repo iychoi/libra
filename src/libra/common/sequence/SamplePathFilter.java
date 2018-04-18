@@ -24,11 +24,11 @@ import org.apache.hadoop.fs.PathFilter;
  *
  * @author iychoi
  */
-public class SequencePathFilter implements PathFilter {
+public class SamplePathFilter implements PathFilter {
 
     private List<PathFilter> filters;
     
-    public SequencePathFilter() {
+    public SamplePathFilter() {
         this.filters = new ArrayList<PathFilter>();
         
         setFilters();

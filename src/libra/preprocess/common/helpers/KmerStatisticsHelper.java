@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import libra.common.helpers.PathHelper;
 import libra.preprocess.common.PreprocessorConstants;
 import libra.preprocess.common.kmerstatistics.KmerStatisticsPartTablePathFilter;
 import org.apache.hadoop.conf.Configuration;
@@ -47,6 +48,10 @@ public class KmerStatisticsHelper {
         return filename + "." + PreprocessorConstants.KMER_STATISTICS_TABLE_FILENAME_EXTENSION + "." + taskID;
     }
     
+    public static String makeKmerStatisticsDirPath(String rootPath) {
+        return PathHelper.concatPath(rootPath, PreprocessorConstants.KMER_STATISITCS_DIRNAME);
+    }
+    
     public static boolean isKmerStatisticsTableFile(Path path) {
         return isKmerStatisticsTableFile(path.getName());
     }
@@ -71,7 +76,7 @@ public class KmerStatisticsHelper {
         return false;
     }
     
-    public static Path[] getKmerStatisticsPartTableFilePath(Configuration conf, Path inputPath) throws IOException {
+    public static Path[] getKmerStatisticsPartTableFilePaths(Configuration conf, Path inputPath) throws IOException {
         List<Path> inputFiles = new ArrayList<Path>();
         KmerStatisticsPartTablePathFilter filter = new KmerStatisticsPartTablePathFilter();
         

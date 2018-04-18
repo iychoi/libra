@@ -128,7 +128,7 @@ public class KmerSimilarityMap {
         KmerMatchFileMapping fileMapping = new KmerMatchFileMapping();
         for(FileTable fileTable : dmConfig.getFileTable()) {
             for(String sample : fileTable.getSamples()) {
-                fileMapping.addSequenceFile(sample);
+                fileMapping.addSampleFile(sample);
             }
         }
         fileMapping.saveTo(conf);

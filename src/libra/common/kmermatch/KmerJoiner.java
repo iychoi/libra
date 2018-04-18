@@ -49,7 +49,7 @@ public class KmerJoiner {
     private BigInteger partitionSize;
     private CompressedSequenceWritable progressKey;
     private boolean eof;
-    private BigInteger beginSequence;
+    private BigInteger beginKey;
     
     private CompressedSequenceWritable[] stepKeys;
     private IntArrayWritable[] stepVals;
@@ -78,7 +78,7 @@ public class KmerJoiner {
         this.partitionSize = partition.getPartitionSize();
         this.progressKey = null;
         this.eof = false;
-        this.beginSequence = this.partition.getPartitionBegin();
+        this.beginKey = this.partition.getPartitionBegin();
         this.stepKeys = new CompressedSequenceWritable[this.readers.length];
         this.stepVals = new IntArrayWritable[this.readers.length];
         this.stepStarted = false;
@@ -193,7 +193,7 @@ public class KmerJoiner {
             }
         } else {
             BigInteger seq = SequenceHelper.convertToBigInteger(this.progressKey.getSequence());
-            BigInteger prog = seq.subtract(this.beginSequence);
+            BigInteger prog = seq.subtract(this.beginKey);
             int comp = this.partitionSize.compareTo(prog);
             if (comp <= 0) {
                 return 1.0f;

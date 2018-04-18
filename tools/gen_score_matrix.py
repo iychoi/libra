@@ -10,7 +10,7 @@ def getFileTable(path):
     with open(path, 'r') as f:
         for line in f:
             j = json.loads(line)
-            tbl = j["sequence_files"]
+            tbl = j["sample_files"]
 
     return tbl
 

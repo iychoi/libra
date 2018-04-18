@@ -65,7 +65,7 @@ public class KmerIndexBuilder {
     }
     
     private void validatePreprocessorConfig(PreprocessorRoundConfig ppConfig) throws PreprocessorConfigException {
-        if(ppConfig.getSequencePath().size() <= 0) {
+        if(ppConfig.getSamplePath().size() <= 0) {
             throw new PreprocessorConfigException("cannot find input sample path");
         }
         
@@ -227,7 +227,7 @@ public class KmerIndexBuilder {
         
         LOG.info("Creating an index file : " + kmerIndexTableFilePath.toString());
         
-        Path[] indexDataFiles = KmerIndexHelper.getKmerIndexDataFilePath(conf, indexPath);
+        Path[] indexDataFiles = KmerIndexHelper.getKmerIndexDataFilePaths(conf, indexPath);
         KmerIndexTable indexTable = new KmerIndexTable(fileTable.getName());
         for(Path indexDataFile : indexDataFiles) {
             if(KmerIndexHelper.isSameKmerIndex(kmerIndexTableFilePath, indexDataFile)) {
@@ -261,7 +261,7 @@ public class KmerIndexBuilder {
             statistics[i] = new KmerStatistics(sample_name);
         }
         
-        Path[] kmerStatisticsTablePartFiles = KmerStatisticsHelper.getKmerStatisticsPartTableFilePath(conf, statisticsPath);
+        Path[] kmerStatisticsTablePartFiles = KmerStatisticsHelper.getKmerStatisticsPartTableFilePaths(conf, statisticsPath);
         for(Path statisticsTablePartFile : kmerStatisticsTablePartFiles) {
             FileSystem fs = statisticsTablePartFile.getFileSystem(conf);
             KmerStatisticsPartTable table = KmerStatisticsPartTable.createInstance(fs, statisticsTablePartFile);

@@ -17,6 +17,7 @@ package libra.preprocess.common.helpers;
 
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import libra.common.helpers.PathHelper;
 import libra.preprocess.common.PreprocessorConstants;
 import org.apache.hadoop.fs.Path;
 
@@ -30,6 +31,10 @@ public class KmerHistogramHelper {
     
     public static String makeKmerHistogramFileName(String sampleFileName) {
         return sampleFileName + "." + PreprocessorConstants.KMER_HISTOGRAM_FILENAME_EXTENSION;
+    }
+    
+    public static String makeKmerHistogramDirPath(String rootPath) {
+        return PathHelper.concatPath(rootPath, PreprocessorConstants.KMER_HISTOGRAM_DIRNAME);
     }
     
     public static boolean isKmerHistogramFile(Path path) {

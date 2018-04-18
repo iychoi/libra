@@ -21,7 +21,7 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import libra.common.sequence.SequencePathFilter;
+import libra.common.sequence.SamplePathFilter;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
@@ -112,21 +112,21 @@ public class FileSystemHelper {
         return pathStrings;
     }
     
-    public static Path[] getAllSequenceFilePath(Configuration conf, String inputPathsCommaSeparated) throws IOException {
-        return getAllSequenceFilePath(conf, makePathFromString(conf, splitCommaSeparated(inputPathsCommaSeparated)));
+    public static Path[] getAllSamplePaths(Configuration conf, String inputPathsCommaSeparated) throws IOException {
+        return FileSystemHelper.getAllSamplePaths(conf, makePathFromString(conf, splitCommaSeparated(inputPathsCommaSeparated)));
     }
     
-    public static Path[] getAllSequenceFilePath(Configuration conf, String[] inputPaths) throws IOException {
-        return getAllSequenceFilePath(conf, makePathFromString(conf, inputPaths));
+    public static Path[] getAllSamplePaths(Configuration conf, String[] inputPaths) throws IOException {
+        return FileSystemHelper.getAllSamplePaths(conf, makePathFromString(conf, inputPaths));
     }
     
-    public static Path[] getAllSequenceFilePath(Configuration conf, Collection<String> inputPaths) throws IOException {
-        return getAllSequenceFilePath(conf, makePathFromString(conf, inputPaths));
+    public static Path[] getAllSamplePaths(Configuration conf, Collection<String> inputPaths) throws IOException {
+        return FileSystemHelper.getAllSamplePaths(conf, makePathFromString(conf, inputPaths));
     }
     
-    public static Path[] getAllSequenceFilePath(Configuration conf, Path[] inputPaths) throws IOException {
+    public static Path[] getAllSamplePaths(Configuration conf, Path[] inputPaths) throws IOException {
         List<Path> inputFiles = new ArrayList<Path>();
-        SequencePathFilter filter = new SequencePathFilter();
+        SamplePathFilter filter = new SamplePathFilter();
         
         for(Path path : inputPaths) {
             FileSystem fs = path.getFileSystem(conf);

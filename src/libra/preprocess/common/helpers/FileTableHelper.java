@@ -20,6 +20,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import libra.common.helpers.PathHelper;
 import libra.preprocess.common.PreprocessorConstants;
 import libra.preprocess.common.filetable.FileTablePathFilter;
 import org.apache.hadoop.conf.Configuration;
@@ -39,6 +40,10 @@ public class FileTableHelper {
         return sampleFileName + "." + PreprocessorConstants.FILE_TABLE_FILENAME_EXTENSION;
     }
     
+    public static String makeFileTableDirPath(String rootPath) {
+        return PathHelper.concatPath(rootPath, PreprocessorConstants.FILE_TABLE_DIRNAME);
+    }
+    
     public static boolean isFileTableFile(Path path) {
         return isFileTableFile(path.getName());
     }
@@ -51,7 +56,7 @@ public class FileTableHelper {
         return false;
     }
     
-    public static Path[] getFileTableFilePath(Configuration conf, Path inputPath) throws IOException {
+    public static Path[] getFileTableFilePaths(Configuration conf, Path inputPath) throws IOException {
         List<Path> inputFiles = new ArrayList<Path>();
         FileTablePathFilter filter = new FileTablePathFilter();
         

@@ -23,6 +23,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import libra.common.helpers.PathHelper;
 import libra.preprocess.common.PreprocessorConstants;
 import libra.preprocess.common.kmerindex.KmerIndexDataPathFilter;
 import org.apache.commons.logging.Log;
@@ -55,6 +56,10 @@ public class KmerIndexHelper {
     
     public static String makeKmerIndexDataFileName(String filename, int mapreduceID) {
         return filename + "." + PreprocessorConstants.KMER_INDEX_DATA_FILENAME_EXTENSION + "." + mapreduceID;
+    }
+    
+    public static String makeKmerIndexDirPath(String rootPath) {
+        return PathHelper.concatPath(rootPath, PreprocessorConstants.KMER_INDEX_DIRNAME);
     }
     
     public static boolean isKmerIndexTableFile(Path path) {
@@ -141,7 +146,7 @@ public class KmerIndexHelper {
         return -1;
     }
     
-    public static Path[] getKmerIndexDataFilePath(Configuration conf, Path inputPath) throws IOException {
+    public static Path[] getKmerIndexDataFilePaths(Configuration conf, Path inputPath) throws IOException {
         List<Path> inputFiles = new ArrayList<Path>();
         KmerIndexDataPathFilter filter = new KmerIndexDataPathFilter();
         
@@ -171,7 +176,7 @@ public class KmerIndexHelper {
     public static Path[][] groupKmerIndices(Path[] inputIndexPaths) {
         List<Path[]> groups = new ArrayList<Path[]>();
         
-        List<Path> sortedInputIndexPaths = sortPath(inputIndexPaths);
+        List<Path> sortedInputIndexPaths = sortPaths(inputIndexPaths);
         List<Path> group = new ArrayList<Path>();
         for(Path path: sortedInputIndexPaths) {
             if(group.isEmpty()) {
@@ -196,7 +201,7 @@ public class KmerIndexHelper {
         return groups.toArray(new Path[0][0]);
     }
     
-    private static List<Path> sortPath(Path[] paths) {
+    private static List<Path> sortPaths(Path[] paths) {
         List<Path> pathList = new ArrayList<Path>();
         pathList.addAll(Arrays.asList(paths));
         

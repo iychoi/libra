@@ -66,7 +66,7 @@ public class Preprocessor extends Configured implements Tool {
         PreprocessorConfig ppConfig = cmdParams.getPreprocessorConfig();
         
         // find input files
-        Path[] inputFiles = FileSystemHelper.getAllSequenceFilePath(common_conf, ppConfig.getSequencePath());
+        Path[] inputFiles = FileSystemHelper.getAllSamplePaths(common_conf, ppConfig.getSamplePath());
         
         // group samples
         SampleGrouper grouper = new SampleGrouper(ppConfig.getGroupSize(), ppConfig.getMaxGroupNum());

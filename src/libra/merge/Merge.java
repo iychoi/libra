@@ -62,7 +62,7 @@ public class DistanceMatrix extends Configured implements Tool {
         
         // find file tables
         Path fileTablePath = new Path(dmConfig.getFileTablePath());
-        Path[] fileTableFiles = FileTableHelper.getFileTableFilePaths(common_conf, fileTablePath);
+        Path[] fileTableFiles = FileTableHelper.getFileTableFilePath(common_conf, fileTablePath);
         
         // load file tables
         for(Path fileTableFile : fileTableFiles) {

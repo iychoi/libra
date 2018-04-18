@@ -62,7 +62,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
     private ScoreAlgorithm scoreAlgorithm;
     private AbstractScore scoreFunction;
     
-    private Hashtable<String, Integer> fileTableIDConvTable = new Hashtable<String, Integer>();
+    Hashtable<String, Integer> fileTableIDConvTable = new Hashtable<String, Integer>();
     
     @Override
     protected void setup(Context context) throws IOException, InterruptedException {
@@ -105,7 +105,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
 
             KmerStatisticsTable statisticsTable = KmerStatisticsTable.createInstance(fs, statisticsTablePath);
             for(KmerStatistics statistics : statisticsTable.getStatistics()) {
-                String sequenceFile = this.fileMapping.getSampleFileFromID(idx);
+                String sequenceFile = this.fileMapping.getSequenceFileFromID(idx);
                 if(!sequenceFile.equals(statistics.getName())) {
                     throw new IOException(String.format("File order is not correct - %s ==> %s", sequenceFile, statistics.getName()));
                 }
@@ -184,7 +184,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
     
     private int convertFileIDToGlobalFileID(int file_table_id, int file_id_in_table) throws IOException {
         String sampleName = this.samplesInFileTable[file_table_id][file_id_in_table];
-        return this.fileMapping.getIDFromSampleFile(sampleName);
+        return this.fileMapping.getIDFromSequenceFile(sampleName);
     }
 
     @Override

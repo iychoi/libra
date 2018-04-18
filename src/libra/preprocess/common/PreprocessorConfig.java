@@ -20,8 +20,12 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import libra.common.helpers.PathHelper;
 import libra.common.json.JsonSerializer;
+import libra.preprocess.common.helpers.FileTableHelper;
+import libra.preprocess.common.helpers.KmerFilterHelper;
+import libra.preprocess.common.helpers.KmerHistogramHelper;
+import libra.preprocess.common.helpers.KmerIndexHelper;
+import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -37,16 +41,11 @@ public class PreprocessorConfig {
     public static final int DEFAULT_KMERSIZE = 20;
     public static final long DEFAULT_GROUPSIZE = (long)(1024 * 1024 * 1024) * 10; // 10GB
     public static final int DEFAULT_MAX_GROUPNUM = 20;
-    public static final int DEFAULT_TASKNUM = 0; // user system default
+    public static final int DEFAULT_TASKNUM = 0; // use system default
     public static final boolean DEFAULT_USE_HISTOGRAM = true;
     public static final boolean DEFAULT_SKIP_HISTOGRAM = false;
     public static final String DEFAULT_OUTPUT_ROOT_PATH = "./libra_preprocess_output";
-    public static final String DEFAULT_FILE_TABLE_PATH = "filetable";
-    public static final String DEFAULT_KMER_FILTER_PATH = "filter";
-    public static final String DEFAULT_KMER_HISTOGRAM_PATH = "histogram";
-    public static final String DEFAULT_KMER_INDEX_PATH = "kmerindex";
-    public static final String DEFAULT_KMER_STATISITCS_PATH = "statistics";
-    public static FilterAlgorithm DEFAULT_FILTER_ALGORITHM = FilterAlgorithm.NOTUNIQUE;
+    public static final FilterAlgorithm DEFAULT_FILTER_ALGORITHM = FilterAlgorithm.NOTUNIQUE;
     
     protected static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.preprocessorconfig";
     
@@ -59,12 +58,12 @@ public class PreprocessorConfig {
     private boolean useHistogram = DEFAULT_USE_HISTOGRAM;
     private boolean skipHistogram = DEFAULT_SKIP_HISTOGRAM;
     private FilterAlgorithm filterAlgorithm = FilterAlgorithm.NOTUNIQUE;
-    private List<String> sequencePaths = new ArrayList<String>();
-    private String fileTablePath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_FILE_TABLE_PATH;
-    private String kmerFilterPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_FILTER_PATH;
-    private String kmerHistogramPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_HISTOGRAM_PATH;
-    private String kmerIndexPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_INDEX_PATH;
-    private String kmerStatisticsPath = DEFAULT_OUTPUT_ROOT_PATH + "/" + DEFAULT_KMER_STATISITCS_PATH;
+    private List<String> samplePaths = new ArrayList<String>();
+    private String fileTablePath = FileTableHelper.makeFileTableDirPath(DEFAULT_OUTPUT_ROOT_PATH);
+    private String kmerFilterPath = KmerFilterHelper.makeKmerFilterDirPath(DEFAULT_OUTPUT_ROOT_PATH);
+    private String kmerHistogramPath = KmerHistogramHelper.makeKmerHistogramDirPath(DEFAULT_OUTPUT_ROOT_PATH);
+    private String kmerIndexPath = KmerIndexHelper.makeKmerIndexDirPath(DEFAULT_OUTPUT_ROOT_PATH);
+    private String kmerStatisticsPath = KmerStatisticsHelper.makeKmerStatisticsDirPath(DEFAULT_OUTPUT_ROOT_PATH);
     
     public static PreprocessorConfig createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -99,8 +98,7 @@ public class PreprocessorConfig {
         this.useHistogram = config.useHistogram;
         this.skipHistogram = config.skipHistogram;
         this.filterAlgorithm = config.filterAlgorithm;
-        this.sequencePaths = new ArrayList<String>();
-        this.sequencePaths.addAll(config.sequencePaths);
+        this.samplePaths.addAll(config.samplePaths);
         this.fileTablePath = config.fileTablePath;
         this.kmerFilterPath = config.kmerFilterPath;
         this.kmerHistogramPath = config.kmerHistogramPath;
@@ -178,33 +176,33 @@ public class PreprocessorConfig {
         this.filterAlgorithm = filterAlgorithm;
     }
 
-    @JsonProperty("sequence_path")
-    public Collection<String> getSequencePath() {
-        return this.sequencePaths;
+    @JsonProperty("sample_path")
+    public Collection<String> getSamplePath() {
+        return this.samplePaths;
     }
     
-    @JsonProperty("sequence_path")
-    public void addSequencePath(Collection<String> sequencePaths) {
-        this.sequencePaths.addAll(sequencePaths);
-    }
-    
-    @JsonIgnore
-    public void addSequencePath(String sequencePath) {
-        this.sequencePaths.add(sequencePath);
+    @JsonProperty("sample_path")
+    public void addSamplePath(Collection<String> samplePaths) {
+        this.samplePaths.addAll(samplePaths);
     }
     
     @JsonIgnore
-    public void clearSequencePath() {
-        this.sequencePaths.clear();
+    public void addSamplePath(String samplePath) {
+        this.samplePaths.add(samplePath);
+    }
+    
+    @JsonIgnore
+    public void clearSamplePath() {
+        this.samplePaths.clear();
     }
 
     @JsonIgnore
-    public void setOutputRootPath(String outputRootPath) {
-        this.fileTablePath = PathHelper.concatPath(outputRootPath, DEFAULT_FILE_TABLE_PATH);
-        this.kmerHistogramPath = PathHelper.concatPath(outputRootPath, DEFAULT_KMER_HISTOGRAM_PATH);
-        this.kmerFilterPath = PathHelper.concatPath(outputRootPath, DEFAULT_KMER_FILTER_PATH);
-        this.kmerIndexPath = PathHelper.concatPath(outputRootPath, DEFAULT_KMER_INDEX_PATH);
-        this.kmerStatisticsPath = PathHelper.concatPath(outputRootPath, DEFAULT_KMER_STATISITCS_PATH);
+    public void setOutputPath(String outputPath) {
+        this.fileTablePath = FileTableHelper.makeFileTableDirPath(outputPath);
+        this.kmerFilterPath = KmerFilterHelper.makeKmerFilterDirPath(outputPath);
+        this.kmerHistogramPath = KmerHistogramHelper.makeKmerHistogramDirPath(outputPath);
+        this.kmerIndexPath = KmerIndexHelper.makeKmerIndexDirPath(outputPath);
+        this.kmerStatisticsPath = KmerStatisticsHelper.makeKmerStatisticsDirPath(outputPath);
     }
     
     @JsonProperty("file_table_path")
@@ -212,19 +210,9 @@ public class PreprocessorConfig {
         return this.fileTablePath;
     }
     
-    @JsonProperty("file_table_path")
-    public void setFileTablePath(String fileTablePath) {
-        this.fileTablePath = fileTablePath;
-    }
-    
     @JsonProperty("kmer_filter_path")
     public String getKmerFilterPath() {
         return this.kmerFilterPath;
-    }
-    
-    @JsonProperty("kmer_filter_path")
-    public void setKmerFilterPath(String kmerFilterPath) {
-        this.kmerFilterPath = kmerFilterPath;
     }
     
     @JsonProperty("kmer_histogram_path")
@@ -232,19 +220,9 @@ public class PreprocessorConfig {
         return this.kmerHistogramPath;
     }
     
-    @JsonProperty("kmer_histogram_path")
-    public void setKmerHistogramPath(String histogramPath) {
-        this.kmerHistogramPath = histogramPath;
-    }
-    
     @JsonProperty("kmer_index_path")
     public String getKmerIndexPath() {
         return this.kmerIndexPath;
-    }
-    
-    @JsonProperty("kmer_index_path")
-    public void setKmerIndexPath(String kmerIndexPath) {
-        this.kmerIndexPath = kmerIndexPath;
     }
     
     @JsonProperty("kmer_statistics_path")
@@ -252,11 +230,6 @@ public class PreprocessorConfig {
         return this.kmerStatisticsPath;
     }
     
-    @JsonProperty("kmer_statistics_path")
-    public void setKmerStatisticsPath(String kmerStatisticsPath) {
-        this.kmerStatisticsPath = kmerStatisticsPath;
-    }
-
     @JsonProperty("report_path")
     public void setReportPath(String reportFilePath) {
         this.reportFilePath = reportFilePath;

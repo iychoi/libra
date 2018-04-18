@@ -23,7 +23,6 @@ import java.util.List;
 import libra.common.helpers.PathHelper;
 import libra.common.json.JsonSerializer;
 import libra.preprocess.common.PreprocessorConfig;
-import libra.preprocess.common.PreprocessorConstants;
 import libra.preprocess.common.filetable.FileTable;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
@@ -41,7 +40,7 @@ public class DistanceMatrixConfig {
     public static WeightAlgorithm DEFAULT_WEIGHT_ALGORITHM = WeightAlgorithm.LOGARITHM;
     public static ScoreAlgorithm DEFAULT_SCORE_ALGORITHM = ScoreAlgorithm.COSINESIMILARITY;
     public static RunMode DEFAULT_RUN_MODE = RunMode.MAP;
-    public static final int DEFAULT_TASKNUM = PreprocessorConfig.DEFAULT_TASKNUM; // use system default
+    public static final int DEFAULT_TASKNUM = PreprocessorConfig.DEFAULT_TASKNUM; // user system default
     public static final boolean DEFAULT_USE_HISTOGRAM = PreprocessorConfig.DEFAULT_USE_HISTOGRAM;
     
     private static final String HADOOP_CONFIG_KEY = "libra.distancematrix.common.distancematrixconfig";
@@ -87,10 +86,10 @@ public class DistanceMatrixConfig {
 
     @JsonIgnore
     public void setPreprocessRootPath(String preprocessRootPath) {
-        this.fileTablePath = PathHelper.concatPath(preprocessRootPath, PreprocessorConstants.FILE_TABLE_DIRNAME);
-        this.kmerHistogramPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConstants.KMER_HISTOGRAM_DIRNAME);
-        this.kmerIndexPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConstants.KMER_INDEX_DIRNAME);
-        this.kmerStatisticsPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConstants.KMER_STATISITCS_DIRNAME);
+        this.fileTablePath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_FILE_TABLE_PATH);
+        this.kmerHistogramPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_KMER_HISTOGRAM_PATH);
+        this.kmerIndexPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_KMER_INDEX_PATH);
+        this.kmerStatisticsPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_KMER_STATISITCS_PATH);
     }
     
     @JsonProperty("task_num")

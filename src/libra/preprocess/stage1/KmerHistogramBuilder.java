@@ -43,7 +43,7 @@ public class KmerHistogramBuilder {
     }
     
     private void validatePreprocessorConfig(PreprocessorRoundConfig ppConfig) throws PreprocessorConfigException {
-        if(ppConfig.getSequencePath().size() <= 0) {
+        if(ppConfig.getSamplePath().size() <= 0) {
             throw new PreprocessorConfigException("cannot find input sample path");
         }
         

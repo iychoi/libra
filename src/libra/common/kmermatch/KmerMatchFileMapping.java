@@ -69,37 +69,37 @@ public class KmerMatchFileMapping {
         this.objList = new ArrayList<String>();
     }
     
-    @JsonProperty("sequence_files")
-    public Collection<String> getSequenceFiles() {
+    @JsonProperty("sample_files")
+    public Collection<String> getSampleFiles() {
         return this.objList;
     }
     
-    @JsonProperty("sequence_files")
-    public void addSequenceFile(Collection<String> sequenceFiles) {
-        for(String sequenceFile : sequenceFiles) {
-            addSequenceFile(sequenceFile);
+    @JsonProperty("sample_files")
+    public void addSampleFile(Collection<String> sampleFiles) {
+        for(String sampleFile : sampleFiles) {
+            addSampleFile(sampleFile);
         }
     }
     
     @JsonIgnore
-    public void addSequenceFile(String input) {
-        this.idTable.put(input, this.objList.size());
-        this.objList.add(input);
+    public void addSampleFile(String sampleFile) {
+        this.idTable.put(sampleFile, this.objList.size());
+        this.objList.add(sampleFile);
     }
     
     @JsonIgnore
-    public int getIDFromSequenceFile(String input) throws IOException {
-        if(this.idTable.get(input) == null) {
-            throw new IOException("could not find id from " + input);
+    public int getIDFromSampleFile(String sampleFile) throws IOException {
+        if(this.idTable.get(sampleFile) == null) {
+            throw new IOException("could not find id from " + sampleFile);
         } else {
-            return this.idTable.get(input);
+            return this.idTable.get(sampleFile);
         }
     }
     
     @JsonIgnore
-    public String getSequenceFileFromID(int id) throws IOException {
+    public String getSampleFileFromID(int id) throws IOException {
         if(this.objList.size() <= id) {
-            throw new IOException("could not find filename from " + id);
+            throw new IOException("could not find a sample file from " + id);
         } else {
             return this.objList.get(id);
         }

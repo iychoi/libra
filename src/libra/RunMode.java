@@ -25,10 +25,10 @@ public enum RunMode {
     GROUP,
     MERGE;
     
-    private static String PREPROCESS_MATCH_STRINGS[] = {"indexing", "index"};
-    private static String DISTANCE_MATRIX_MATCH_STRINGS[] = {"core", "score", "distance", "matrix"};
-    private static String GROUP_MATCH_STRINGS[] = {"groups"};
-    private static String MERGE_MATCH_STRINGS[] = {"merge_index"};
+    private final static String PREPROCESS_MATCH_STRINGS[] = {"indexing", "index"};
+    private final static String DISTANCE_MATRIX_MATCH_STRINGS[] = {"core", "score", "distance", "matrix"};
+    private final static String GROUP_MATCH_STRINGS[] = {"groups"};
+    private final static String MERGE_MATCH_STRINGS[] = {"merge_index"};
     
     public static RunMode fromString(String alg) {
         try {
@@ -37,6 +37,8 @@ public enum RunMode {
         } catch (Exception ex) {
             // fall
         }
+        
+        // compare to a list of match strings and return a run mode
         
         // preprocess match strings
         for(String match : PREPROCESS_MATCH_STRINGS) {

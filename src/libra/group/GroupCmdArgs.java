@@ -105,7 +105,7 @@ public class GroupCmdArgs extends CommandArgumentsBase {
         
         config.setGroupSize(this.groupSize);
         config.setMaxGroupNum(this.maxGroupNum);
-        config.addSequencePath(this.inputPaths);
+        config.addSamplePath(this.inputPaths);
         return config;
     }
 }

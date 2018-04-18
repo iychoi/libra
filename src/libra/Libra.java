@@ -17,6 +17,7 @@ package libra;
  */
 import libra.distancematrix.DistanceMatrix;
 import libra.group.Group;
+import libra.merge.Merge;
 import libra.preprocess.Preprocessor;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -44,7 +45,8 @@ public class Libra {
             return;
         } 
         
-        // detect run mode and take it out from arguments
+        // detect run mode and 
+        // take it out from arguments to make further parsing simple
         RunMode runMode = null;
         String[] params = new String[args.length-1];
         int indexParam = 0;
@@ -63,6 +65,7 @@ public class Libra {
             indexParam++;
         }
         
+        // call a stage specified
         if(null == runMode) {
             System.out.println("Command is not given");
         } else {
@@ -77,7 +80,7 @@ public class Libra {
                     Group.main(params);
                     break;
                 case MERGE:
-                    //TODO
+                    Merge.main(params);
                     break;
                 default:
                     break;
@@ -96,5 +99,6 @@ public class Libra {
         System.out.println("> preprocess");
         System.out.println("> distancematrix");
         System.out.println("> group");
+        System.out.println("> merge");
     }
 }

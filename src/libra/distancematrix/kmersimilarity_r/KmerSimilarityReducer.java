@@ -89,9 +89,9 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, I
 
             KmerStatisticsTable statisticsTable = KmerStatisticsTable.createInstance(fs, statisticsTablePath);
             for(KmerStatistics statistics : statisticsTable.getStatistics()) {
-                String sequenceFile = this.fileMapping.getSequenceFileFromID(idx);
-                if(!sequenceFile.equals(statistics.getName())) {
-                    throw new IOException(String.format("File order is not correct - %s ==> %s", sequenceFile, statistics.getName()));
+                String sampleFile = this.fileMapping.getSampleFileFromID(idx);
+                if(!sampleFile.equals(statistics.getName())) {
+                    throw new IOException(String.format("File order is not correct - %s ==> %s", sampleFile, statistics.getName()));
                 }
                 
                 statisticsArray[idx] = statistics;

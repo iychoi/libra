@@ -81,7 +81,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Int
     
     private int convertFileIDToGlobalFileID(int file_id_in_table) throws IOException {
         String sampleName = this.samplesInFileTable[file_id_in_table];
-        return this.fileMapping.getIDFromSequenceFile(sampleName);
+        return this.fileMapping.getIDFromSampleFile(sampleName);
     }
     
     @Override

@@ -55,7 +55,7 @@ public class KmerFilterBuilder {
     }
     
     private void validatePreprocessorConfig(PreprocessorRoundConfig ppConfig) throws PreprocessorConfigException {
-        if(ppConfig.getSequencePath().size() <= 0) {
+        if(ppConfig.getSamplePath().size() <= 0) {
             throw new PreprocessorConfigException("cannot find input sample path");
         }
         
@@ -175,7 +175,7 @@ public class KmerFilterBuilder {
             filter[i] = new KmerFilter(sample_name);
         }
         
-        Path[] kmerFilterTablePartFiles = KmerFilterHelper.getKmerFilterPartTableFilePath(conf, filterPath);
+        Path[] kmerFilterTablePartFiles = KmerFilterHelper.getKmerFilterPartTableFilePaths(conf, filterPath);
         for(Path filterTablePartFile : kmerFilterTablePartFiles) {
             FileSystem fs = filterTablePartFile.getFileSystem(conf);
             KmerFilterPartTable table = KmerFilterPartTable.createInstance(fs, filterTablePartFile);

@@ -41,7 +41,7 @@ public class GroupConfig {
     
     private long groupSize = DEFAULT_GROUPSIZE;
     private int maxGroupNum = DEFAULT_MAX_GROUPNUM;
-    private List<String> sequencePaths = new ArrayList<String>();
+    private List<String> samplePaths = new ArrayList<String>();
     
     public static GroupConfig createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -70,8 +70,8 @@ public class GroupConfig {
     public GroupConfig(GroupConfig config) {
         this.groupSize = config.groupSize;
         this.maxGroupNum = config.maxGroupNum;
-        this.sequencePaths = new ArrayList<String>();
-        this.sequencePaths.addAll(config.sequencePaths);
+        this.samplePaths = new ArrayList<String>();
+        this.samplePaths.addAll(config.samplePaths);
     }
 
     @JsonProperty("group_size")
@@ -94,24 +94,24 @@ public class GroupConfig {
         this.maxGroupNum = maxGroupNum;
     }
     
-    @JsonProperty("sequence_path")
-    public Collection<String> getSequencePath() {
-        return this.sequencePaths;
+    @JsonProperty("sample_paths")
+    public Collection<String> getSamplePaths() {
+        return this.samplePaths;
     }
     
-    @JsonProperty("sequence_path")
-    public void addSequencePath(Collection<String> sequencePaths) {
-        this.sequencePaths.addAll(sequencePaths);
-    }
-    
-    @JsonIgnore
-    public void addSequencePath(String sequencePath) {
-        this.sequencePaths.add(sequencePath);
+    @JsonProperty("sample_paths")
+    public void addSamplePath(Collection<String> samplePaths) {
+        this.samplePaths.addAll(samplePaths);
     }
     
     @JsonIgnore
-    public void clearSequencePath() {
-        this.sequencePaths.clear();
+    public void addSamplePath(String samplePath) {
+        this.samplePaths.add(samplePath);
+    }
+    
+    @JsonIgnore
+    public void clearSamplePath() {
+        this.samplePaths.clear();
     }
 
     @JsonIgnore
