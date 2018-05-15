@@ -40,6 +40,7 @@ public class SampleGroup {
     private static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.samplegroup.samplegroup";
     
     private String name;
+    private long totalSampleSize = 0;
     private List<SampleInfo> samples = new ArrayList<SampleInfo>();
     
     public static SampleGroup createInstance(File file) throws IOException {
@@ -80,8 +81,13 @@ public class SampleGroup {
     }
     
     @JsonIgnore
-    public int samples() {
+    public int numSamples() {
         return this.samples.size();
+    }
+    
+    @JsonIgnore
+    public long totalSampleSize() {
+        return this.totalSampleSize;
     }
     
     @JsonProperty("samples")
@@ -90,18 +96,22 @@ public class SampleGroup {
     }
     
     @JsonProperty("samples")
-    public void addSample(Collection<SampleInfo> samples) {
-        this.samples.addAll(samples);
+    public void addSamples(Collection<SampleInfo> samples) {
+        for(SampleInfo sampleInfo : samples) {
+            addSample(sampleInfo);
+        }
     }
     
     @JsonIgnore
     public void addSample(SampleInfo sample) {
         this.samples.add(sample);
+        this.totalSampleSize += sample.getSize();
     }
     
     @JsonIgnore
-    public void clearSample() {
+    public void clearSamples() {
         this.samples.clear();
+        this.totalSampleSize = 0;
     }
     
     @JsonIgnore

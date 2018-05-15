@@ -18,6 +18,8 @@ package libra.preprocess.common.samplegroup;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
 import java.util.List;
 import libra.common.helpers.CryptoHelper;
 import libra.common.helpers.FileSystemHelper;
@@ -50,61 +52,111 @@ public class SampleGrouper {
         return group(paths, conf);
     }
     
-    public SampleGroup[] group(Path[] samples, Configuration conf) throws IOException {
-        List<SampleGroup> groups = new ArrayList<SampleGroup>();
+    private List<SampleInfo> getSampleInfoArray(Path[] samples, Configuration conf) throws IOException {
+        List<SampleInfo> sampleInfoArray = new ArrayList<SampleInfo>();
         
-        long size = 0;
-        SampleGroup group = new SampleGroup();
-        
-        // use group size to group
         for(Path path : samples) {
             FileSystem fs = path.getFileSystem(conf);
             FileStatus status = fs.getFileStatus(path);
             if(status != null && status.isFile()) {
-                size += status.getLen();
                 SampleInfo sample = new SampleInfo(status);
-                group.addSample(sample);
-                
-                if(size >= this.groupSize) {
-                    size = 0;
-                    groups.add(group);
-                    group = new SampleGroup();
-                }
+                sampleInfoArray.add(sample);
             }
         }
         
-        if(group.samples() > 0) {
+        Collections.sort(sampleInfoArray, new SampleInfoComparator());
+        return sampleInfoArray;
+    }
+    
+    private List<SampleGroup> groupBySize(List<SampleInfo> sampleInfoArray, long maxSize) {
+        List<SampleGroup> groups = new ArrayList<SampleGroup>();
+        
+        long totalSize = 0;
+        SampleGroup group = new SampleGroup();
+
+        for(SampleInfo sampleInfo : sampleInfoArray) {
+            group.addSample(sampleInfo);
+            totalSize += sampleInfo.getSize();
+            
+            if(totalSize >= this.groupSize * 0.9) {
+                // if over 90% is filled
+                totalSize = 0;
+                groups.add(group);
+                group = new SampleGroup();
+            }
+        }
+        
+        if(group.numSamples() > 0) {
             groups.add(group);
         }
         
-        // if number of groups exceeds max group num
-        if(groups.size() > this.maxGroupNum) {
-            // fold
-            int factor = groups.size() / this.maxGroupNum;
-            if(groups.size() % this.maxGroupNum != 0) {
-                factor++;
+        return groups;
+    }
+    
+    private List<SampleGroup> mergeGroups(List<SampleGroup> groups, int maxGroupNum) {
+        SampleGroup[] mergedGroups = new SampleGroup[maxGroupNum];
+        List<SampleGroup> remainings = new ArrayList<SampleGroup>();
+        
+        int groupIndex = 0;
+        for(SampleGroup group : groups) {
+            if(groupIndex < maxGroupNum) {
+                mergedGroups[groupIndex] = new SampleGroup();
+                mergedGroups[groupIndex].addSamples(group.getSamples());
+            } else {
+                remainings.add(group);
             }
             
-            List<SampleGroup> new_groups = new ArrayList<SampleGroup>();
-            SampleGroup new_tbl = new SampleGroup();
-            int count = 0;
-            
-            for(SampleGroup g : groups) {
-                new_tbl.addSample(g.getSamples());
-                count++;
-                
-                if(count >= factor) {
-                    count = 0;
-                    new_groups.add(new_tbl);
-                    new_tbl = new SampleGroup();
+            groupIndex++;
+        }
+        
+        // remaining...
+        List<SampleInfo> remainingSamples = new ArrayList<SampleInfo>();
+        for(SampleGroup group : remainings) {
+            remainingSamples.addAll(group.getSamples());
+        }
+        Collections.sort(remainingSamples, new SampleInfoComparator());
+
+        // put the largest sample remaining to the smallest group
+        for(SampleInfo sampleInfo : remainingSamples) {
+            // find the smallest group
+            int groupSmallestIndex = -1;
+            long groupSmallestSize = -1;
+            for(int i=0;i<maxGroupNum;i++) {
+                if(groupSmallestIndex < 0) {
+                    groupSmallestIndex = i;
+                    groupSmallestSize = mergedGroups[i].totalSampleSize();
+                } else {
+                    if(groupSmallestSize > mergedGroups[i].totalSampleSize()) {
+                        // update smallest
+                        groupSmallestIndex = i;
+                        groupSmallestSize = mergedGroups[i].totalSampleSize();
+                    }
                 }
             }
-            
-            if(new_tbl.samples() > 0) {
-                new_groups.add(new_tbl);
+
+            // put
+            if(groupSmallestIndex >= 0) {
+                mergedGroups[groupSmallestIndex].addSample(sampleInfo);
             }
-            
-            groups = new_groups;
+        }
+        
+        List<SampleGroup> newGroups = new ArrayList<SampleGroup>();
+        for(SampleGroup group: mergedGroups) {
+            newGroups.add(group);
+        }
+        return newGroups;
+    }
+    
+    public SampleGroup[] group(Path[] samples, Configuration conf) throws IOException {
+        List<SampleInfo> sampleInfoArray = getSampleInfoArray(samples, conf);
+        
+        // group by size
+        List<SampleGroup> groups = groupBySize(sampleInfoArray, this.groupSize);
+        
+        // if number of groups exceeds max group num
+        if(groups.size() > this.maxGroupNum) {
+            // merge
+            groups = mergeGroups(groups, this.maxGroupNum);
         }
         
         for(SampleGroup g : groups) {

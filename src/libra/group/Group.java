@@ -62,7 +62,7 @@ public class Group extends Configured implements Tool {
         // find input files
         Path[] inputFiles = FileSystemHelper.getAllSamplePaths(common_conf, gConfig.getSamplePaths());
         
-        // group samples
+        // group numSamples
         SampleGrouper grouper = new SampleGrouper(gConfig.getGroupSize(), gConfig.getMaxGroupNum());
         SampleGroup[] groups = grouper.group(inputFiles, common_conf);
         
@@ -72,7 +72,7 @@ public class Group extends Configured implements Tool {
             
             for(int i=0;i<groups.length;i++) {
                 SampleGroup group = groups[i];
-                LOG.info(String.format("Group %d : %d files", i+1, group.samples()));
+                LOG.info(String.format("Group %d : %d files, total %d", i+1, group.numSamples(), group.totalSampleSize()));
                 Collection<SampleInfo> samples = group.getSamples();
                 for(SampleInfo sample : samples) {
                     LOG.info(String.format("G%d> %s, size=%d", i+1, sample.getPath(), sample.getSize()));
