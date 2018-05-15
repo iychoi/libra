@@ -82,7 +82,7 @@ public class KmerSimilarityReducer extends Reducer<CompressedSequenceWritable, I
         
         int idx = 0;
         KmerStatistics[] statisticsArray = new KmerStatistics[valuesLen];
-        for(FileTable fileTable : this.dmConfig.getFileTable()) {
+        for(FileTable fileTable : this.dmConfig.getFileTables()) {
             String statisticsTableFilename = KmerStatisticsHelper.makeKmerStatisticsTableFileName(fileTable.getName());
             Path statisticsTablePath = new Path(this.dmConfig.getKmerStatisticsPath(), statisticsTableFilename);
             FileSystem fs = statisticsTablePath.getFileSystem(conf);

@@ -13,17 +13,20 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.distancematrix.common;
+package libra.merge.common;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import libra.common.helpers.PathHelper;
 import libra.common.json.JsonSerializer;
 import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.filetable.FileTable;
+import libra.preprocess.common.helpers.FileTableHelper;
+import libra.preprocess.common.helpers.KmerHistogramHelper;
+import libra.preprocess.common.helpers.KmerIndexHelper;
+import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -34,16 +37,13 @@ import org.codehaus.jackson.annotate.JsonProperty;
  *
  * @author iychoi
  */
-public class DistanceMatrixConfig {
+public class MergeConfig {
     
-    public static final String DEFAULT_OUTPUT_PATH = "./libra_output";
-    public static WeightAlgorithm DEFAULT_WEIGHT_ALGORITHM = WeightAlgorithm.LOGARITHM;
-    public static ScoreAlgorithm DEFAULT_SCORE_ALGORITHM = ScoreAlgorithm.COSINESIMILARITY;
-    public static RunMode DEFAULT_RUN_MODE = RunMode.MAP;
-    public static final int DEFAULT_TASKNUM = PreprocessorConfig.DEFAULT_TASKNUM; // user system default
+    public static final String DEFAULT_OUTPUT_PATH = "./libra_merge_output";
+    public static final int DEFAULT_TASKNUM = PreprocessorConfig.DEFAULT_TASKNUM; // use system default
     public static final boolean DEFAULT_USE_HISTOGRAM = PreprocessorConfig.DEFAULT_USE_HISTOGRAM;
     
-    private static final String HADOOP_CONFIG_KEY = "libra.distancematrix.common.distancematrixconfig";
+    private static final String HADOOP_CONFIG_KEY = "libra.merge.common.mergeconfig";
     
     private String reportFilePath;
     
@@ -53,43 +53,40 @@ public class DistanceMatrixConfig {
     private String kmerHistogramPath;
     private String kmerIndexPath;
     private String kmerStatisticsPath;
-    private WeightAlgorithm weightAlgorithm = WeightAlgorithm.LOGARITHM;
-    private ScoreAlgorithm scoreAlgorithm = ScoreAlgorithm.COSINESIMILARITY;
-    private RunMode runMode = RunMode.MAP;
     private String outputPath = DEFAULT_OUTPUT_PATH;
     
     private List<FileTable> fileTables = new ArrayList<FileTable>();
     
-    public static DistanceMatrixConfig createInstance(File file) throws IOException {
+    public static MergeConfig createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (DistanceMatrixConfig) serializer.fromJsonFile(file, DistanceMatrixConfig.class);
+        return (MergeConfig) serializer.fromJsonFile(file, MergeConfig.class);
     }
     
-    public static DistanceMatrixConfig createInstance(String json) throws IOException {
+    public static MergeConfig createInstance(String json) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (DistanceMatrixConfig) serializer.fromJson(json, DistanceMatrixConfig.class);
+        return (MergeConfig) serializer.fromJson(json, MergeConfig.class);
     }
     
-    public static DistanceMatrixConfig createInstance(Configuration conf) throws IOException {
+    public static MergeConfig createInstance(Configuration conf) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (DistanceMatrixConfig) serializer.fromJsonConfiguration(conf, HADOOP_CONFIG_KEY, DistanceMatrixConfig.class);
+        return (MergeConfig) serializer.fromJsonConfiguration(conf, HADOOP_CONFIG_KEY, MergeConfig.class);
     }
     
-    public static DistanceMatrixConfig createInstance(FileSystem fs, Path file) throws IOException {
+    public static MergeConfig createInstance(FileSystem fs, Path file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
-        return (DistanceMatrixConfig) serializer.fromJsonFile(fs, file, DistanceMatrixConfig.class);
+        return (MergeConfig) serializer.fromJsonFile(fs, file, MergeConfig.class);
     }
     
-    public DistanceMatrixConfig() {
+    public MergeConfig() {
         
     }
 
     @JsonIgnore
     public void setPreprocessRootPath(String preprocessRootPath) {
-        this.fileTablePath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_FILE_TABLE_PATH);
-        this.kmerHistogramPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_KMER_HISTOGRAM_PATH);
-        this.kmerIndexPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_KMER_INDEX_PATH);
-        this.kmerStatisticsPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConfig.DEFAULT_KMER_STATISITCS_PATH);
+        this.fileTablePath = FileTableHelper.makeFileTableDirPath(preprocessRootPath);
+        this.kmerHistogramPath = KmerHistogramHelper.makeKmerHistogramDirPath(preprocessRootPath);
+        this.kmerIndexPath = KmerIndexHelper.makeKmerIndexDirPath(preprocessRootPath);
+        this.kmerStatisticsPath = KmerStatisticsHelper.makeKmerStatisticsDirPath(preprocessRootPath);
     }
     
     @JsonProperty("task_num")
@@ -152,36 +149,6 @@ public class DistanceMatrixConfig {
         this.kmerStatisticsPath = kmerStatisticsPath;
     }
     
-    @JsonProperty("weight_algorithm")
-    public WeightAlgorithm getWeightAlgorithm() {
-        return this.weightAlgorithm;
-    }
-    
-    @JsonProperty("weight_algorithm")
-    public void setWeightAlgorithm(WeightAlgorithm weightAlgorithm) {
-        this.weightAlgorithm = weightAlgorithm;
-    }
-    
-    @JsonProperty("score_algorithm")
-    public ScoreAlgorithm getScoreAlgorithm() {
-        return this.scoreAlgorithm;
-    }
-    
-    @JsonProperty("score_algorithm")
-    public void setScoreAlgorithm(ScoreAlgorithm scoreAlgorithm) {
-        this.scoreAlgorithm = scoreAlgorithm;
-    }
-    
-    @JsonProperty("run_mode")
-    public RunMode getRunMode() {
-        return this.runMode;
-    }
-    
-    @JsonProperty("run_mode")
-    public void setRunMode(RunMode runMode) {
-        this.runMode = runMode;
-    }
-    
     @JsonProperty("output_path")
     public void setOutputPath(String outputPath) {
         this.outputPath = outputPath;
@@ -203,12 +170,12 @@ public class DistanceMatrixConfig {
     }
     
     @JsonProperty("file_table")
-    public Collection<FileTable> getFileTable() {
+    public Collection<FileTable> getFileTables() {
         return this.fileTables;
     }
     
     @JsonProperty("file_table")
-    public void addFileTable(Collection<FileTable> fileTable) {
+    public void addFileTables(Collection<FileTable> fileTable) {
         this.fileTables.addAll(fileTable);
     }
     

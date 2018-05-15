@@ -67,7 +67,7 @@ public class KmerSimilarityReduce {
             throw new DistanceMatrixConfigException("cannot find input kmer index path");
         }
         
-        if(dmConfig.getFileTable() == null || dmConfig.getFileTable().size() <= 0) {
+        if(dmConfig.getFileTables() == null || dmConfig.getFileTables().size() <= 0) {
             throw new DistanceMatrixConfigException("cannot find input path");
         }
         
@@ -122,7 +122,7 @@ public class KmerSimilarityReduce {
         // Inputs
         List<Path> inputKmerIndexFiles = new ArrayList<Path>();
         List<Path> inputKmerIndexDataFiles = new ArrayList<Path>();
-        for(FileTable fileTable : cConfig.getFileTable()) {
+        for(FileTable fileTable : cConfig.getFileTables()) {
             String kmerIndexTableFileName = KmerIndexHelper.makeKmerIndexTableFileName(fileTable.getName());
             Path kmerIndexTableFilePath = new Path(cConfig.getKmerIndexPath(), kmerIndexTableFileName);
             inputKmerIndexFiles.add(kmerIndexTableFilePath);
@@ -145,7 +145,7 @@ public class KmerSimilarityReduce {
         }
         
         KmerMatchFileMapping fileMapping = new KmerMatchFileMapping();
-        for(FileTable fileTable : cConfig.getFileTable()) {
+        for(FileTable fileTable : cConfig.getFileTables()) {
             for(String sample : fileTable.getSamples()) {
                 fileMapping.addSampleFile(sample);
             }

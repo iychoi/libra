@@ -13,28 +13,28 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.distancematrix.common;
+package libra.merge.common;
 
 /**
  *
  * @author iychoi
  */
-public class DistanceMatrixConfigException extends Exception {
+public class MergeConfigException extends Exception {
     static final long serialVersionUID = 7818375828146090155L;
 
-    public DistanceMatrixConfigException() {
+    public MergeConfigException() {
         super();
     }
 
-    public DistanceMatrixConfigException(String string) {
+    public MergeConfigException(String string) {
         super(string);
     }
 
-    public DistanceMatrixConfigException(String string, Throwable thrwbl) {
+    public MergeConfigException(String string, Throwable thrwbl) {
         super(string, thrwbl);
     }
 
-    public DistanceMatrixConfigException(Throwable thrwbl) {
+    public MergeConfigException(Throwable thrwbl) {
         super(thrwbl);
     }
 }

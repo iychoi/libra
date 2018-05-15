@@ -13,13 +13,11 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.distancematrix;
+package libra.merge;
 
 import libra.common.cmdargs.CommandArgumentsParser;
-import libra.distancematrix.common.DistanceMatrixConfig;
-import libra.distancematrix.common.RunMode;
-import libra.distancematrix.kmersimilarity_m.KmerSimilarityMap;
-import libra.distancematrix.kmersimilarity_r.KmerSimilarityReduce;
+import libra.merge.common.MergeConfig;
+import libra.merge.merge.MergeMap;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.FileTableHelper;
 import org.apache.commons.logging.Log;
@@ -35,19 +33,19 @@ import org.apache.hadoop.util.ToolRunner;
  *
  * @author iychoi
  */
-public class DistanceMatrix extends Configured implements Tool {
-    private static final Log LOG = LogFactory.getLog(DistanceMatrix.class);
+public class Merge extends Configured implements Tool {
+    private static final Log LOG = LogFactory.getLog(Merge.class);
     
     public static void main(String[] args) throws Exception {
-        int res = ToolRunner.run(new Configuration(), new DistanceMatrix(), args);
+        int res = ToolRunner.run(new Configuration(), new Merge(), args);
         System.exit(res);
     }
     
     @Override
     public int run(String[] args) throws Exception {
         Configuration common_conf = this.getConf();
-        CommandArgumentsParser<DistanceMatrixCmdArgs> parser = new CommandArgumentsParser<DistanceMatrixCmdArgs>();
-        DistanceMatrixCmdArgs cmdParams = new DistanceMatrixCmdArgs();
+        CommandArgumentsParser<MergeCmdArgs> parser = new CommandArgumentsParser<MergeCmdArgs>();
+        MergeCmdArgs cmdParams = new MergeCmdArgs();
         if(!parser.parse(args, cmdParams)) {
             LOG.error("Failed to parse command line arguments!");
             return 1;
@@ -58,33 +56,25 @@ public class DistanceMatrix extends Configured implements Tool {
             return 1;
         }
         
-        DistanceMatrixConfig dmConfig = cmdParams.getDistanceMatrixConfig();
+        MergeConfig mConfig = cmdParams.getMergeConfig();
         
         // find file tables
-        Path fileTablePath = new Path(dmConfig.getFileTablePath());
-        Path[] fileTableFiles = FileTableHelper.getFileTableFilePath(common_conf, fileTablePath);
+        Path fileTablePath = new Path(mConfig.getFileTablePath());
+        Path[] fileTableFiles = FileTableHelper.getFileTableFilePaths(common_conf, fileTablePath);
         
         // load file tables
         for(Path fileTableFile : fileTableFiles) {
             FileSystem fs = fileTableFile.getFileSystem(common_conf);
             FileTable fileTable = FileTable.createInstance(fs, fileTableFile);
-            dmConfig.addFileTable(fileTable);
+            mConfig.addFileTable(fileTable);
         }
         
         int res = 0;
         try {
-            if(dmConfig.getRunMode() == RunMode.MAP) {
-                KmerSimilarityMap kmerSimilarityMap = new KmerSimilarityMap();
-                res = kmerSimilarityMap.runJob(new Configuration(common_conf), dmConfig);
-                if(res != 0) {
-                    throw new Exception("KmerSimilarityMap Failed : " + res);
-                }
-            } else if(dmConfig.getRunMode() == RunMode.REDUCE) {
-                KmerSimilarityReduce kmerSimilarityReduce = new KmerSimilarityReduce();
-                res = kmerSimilarityReduce.runJob(new Configuration(common_conf), dmConfig);
-                if(res != 0) {
-                    throw new Exception("KmerSimilarityReduce Failed : " + res);
-                }
+            MergeMap mergeMap = new MergeMap();
+            res = mergeMap.runJob(new Configuration(common_conf), mConfig);
+            if(res != 0) {
+                throw new Exception("MergeMap Failed : " + res);
             }
         } catch (Exception e) {
             LOG.error(e);
@@ -99,9 +89,9 @@ public class DistanceMatrix extends Configured implements Tool {
     private static void printHelp() {
         System.out.println("============================================================");
         System.out.println("Libra : Massive Comparative Analytic Tools for Metagenomics");
-        System.out.println("Distance Matrix Computation");
+        System.out.println("Merge Preprocessed Results");
         System.out.println("============================================================");
         System.out.println("Usage :");
-        System.out.println("> distancematrix <arguments ...>");
+        System.out.println("> merge <arguments ...>");
     }
 }

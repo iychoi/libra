@@ -13,25 +13,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.distancematrix.kmersimilarity_m;
+package libra.merge.merge;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
 import libra.common.helpers.MapReduceHelper;
 import libra.common.kmermatch.KmerMatchFileMapping;
 import libra.common.kmermatch.KmerMatchInputFormat;
 import libra.common.kmermatch.KmerMatchInputFormatConfig;
-import libra.distancematrix.common.DistanceMatrixConfig;
-import libra.distancematrix.common.DistanceMatrixConfigException;
 import libra.distancematrix.common.helpers.KmerSimilarityHelper;
 import libra.distancematrix.common.kmersimilarity.AbstractScore;
 import libra.distancematrix.common.kmersimilarity.KmerSimilarityResultPartRecord;
 import libra.distancematrix.common.kmersimilarity.KmerSimilarityResultPartRecordGroup;
-import libra.distancematrix.common.kmersimilarity.ScoreFactory;
+import libra.merge.common.MergeConfig;
+import libra.merge.common.MergeConfigException;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.FileTableHelper;
 import org.apache.commons.logging.Log;
@@ -47,74 +48,74 @@ import org.apache.hadoop.io.Text;
 import org.apache.hadoop.mapred.LineRecordReader;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
-import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
+import org.apache.hadoop.mapreduce.lib.output.MapFileOutputFormat;
 
 /**
  *
  * @author iychoi
  */
-public class KmerSimilarityMap {
-    private static final Log LOG = LogFactory.getLog(KmerSimilarityMap.class);
+public class MergeMap {
+    private static final Log LOG = LogFactory.getLog(MergeMap.class);
     
     private static final int DEFAULT_INPUT_SPLITS = 100;
     
-    public KmerSimilarityMap() {
+    public MergeMap() {
         
     }
     
-    private void validateDistanceMatrixConfig(DistanceMatrixConfig dmConfig) throws DistanceMatrixConfigException {
-        if(dmConfig.getKmerIndexPath() == null) {
-            throw new DistanceMatrixConfigException("cannot find input kmer index path");
+    private void validateMergeConfig(MergeConfig mConfig) throws MergeConfigException {
+        if(mConfig.getKmerIndexPath() == null) {
+            throw new MergeConfigException("cannot find input kmer index path");
         }
         
-        if(dmConfig.getFileTable() == null || dmConfig.getFileTable().size() <= 0) {
-            throw new DistanceMatrixConfigException("cannot find input path");
+        if(mConfig.getFileTables() == null || mConfig.getFileTables().size() <= 0) {
+            throw new MergeConfigException("cannot find input path");
         }
         
-        if(dmConfig.getUseHistogram()) {
-            if(dmConfig.getKmerHistogramPath() == null) {
-                throw new DistanceMatrixConfigException("cannot find kmer histogram path");
+        if(mConfig.getUseHistogram()) {
+            if(mConfig.getKmerHistogramPath() == null) {
+                throw new MergeConfigException("cannot find kmer histogram path");
             }
         }
         
-        if(dmConfig.getKmerStatisticsPath() == null) {
-            throw new DistanceMatrixConfigException("cannot find kmer statistics path");
+        if(mConfig.getKmerStatisticsPath() == null) {
+            throw new MergeConfigException("cannot find kmer statistics path");
         }
         
-        if(dmConfig.getOutputPath() == null) {
-            throw new DistanceMatrixConfigException("cannot find output path");
+        if(mConfig.getOutputPath() == null) {
+            throw new MergeConfigException("cannot find output path");
         }
     }
     
-    public int runJob(Configuration conf, DistanceMatrixConfig dmConfig) throws Exception {
+    public int runJob(Configuration conf, MergeConfig mConfig) throws Exception {
         // check config
-        validateDistanceMatrixConfig(dmConfig);
+        validateMergeConfig(mConfig);
         
-        Job job = Job.getInstance(conf, "Libra - Computing distance matrix");
+        Job job = Job.getInstance(conf, "Libra - Mergeing preprocessed results");
         conf = job.getConfiguration();
         
         // set user configuration
-        dmConfig.saveTo(conf);
+        mConfig.saveTo(conf);
         
         Report report = new Report();
         
-        job.setJarByClass(KmerSimilarityMap.class);
+        job.setJarByClass(MergeMap.class);
         
         // Mapper
-        job.setMapperClass(KmerSimilarityMapper.class);
+        job.setMapperClass(MergeMapper.class);
         job.setInputFormatClass(KmerMatchInputFormat.class);
-        job.setMapOutputKeyClass(Text.class);
-        job.setMapOutputValueClass(Text.class);
+        job.setMapOutputKeyClass(CompressedSequenceWritable.class);
+        job.setMapOutputValueClass(IntArrayWritable.class);
         
         // Specify key / value
-        job.setOutputKeyClass(Text.class);
-        job.setOutputValueClass(Text.class);
+        job.setOutputKeyClass(CompressedSequenceWritable.class);
+        job.setOutputValueClass(IntArrayWritable.class);
 
         // Inputs
         List<Path> inputFileTableFiles = new ArrayList<Path>();
-        for(FileTable fileTable : dmConfig.getFileTable()) {
+        for(FileTable fileTable : mConfig.getFileTables()) {
             String fileTableFileName = FileTableHelper.makeFileTableFileName(fileTable.getName());
-            Path fileTableFilePath = new Path(dmConfig.getFileTablePath(), fileTableFileName);
+            Path fileTableFilePath = new Path(mConfig.getFileTablePath(), fileTableFileName);
             inputFileTableFiles.add(fileTableFilePath);
         }
         
@@ -126,41 +127,43 @@ public class KmerSimilarityMap {
         }
         
         KmerMatchFileMapping fileMapping = new KmerMatchFileMapping();
-        for(FileTable fileTable : dmConfig.getFileTable()) {
+        for(FileTable fileTable : mConfig.getFileTables()) {
             for(String sample : fileTable.getSamples()) {
-                fileMapping.addSequenceFile(sample);
+                fileMapping.addSampleFile(sample);
             }
         }
         fileMapping.saveTo(conf);
         
         int kmerSize = 0;
-        Iterator<FileTable> iterator = dmConfig.getFileTable().iterator();
+        Iterator<FileTable> iterator = mConfig.getFileTables().iterator();
         if(iterator.hasNext()) {
             FileTable tbl = iterator.next();
             kmerSize = tbl.getKmerSize();
         }
         
         int tasks = DEFAULT_INPUT_SPLITS;
-        if(dmConfig.getTaskNum() > 0) {
-            tasks = dmConfig.getTaskNum();
+        if(mConfig.getTaskNum() > 0) {
+            tasks = mConfig.getTaskNum();
         }
         
         KmerMatchInputFormatConfig matchInputFormatConfig = new KmerMatchInputFormatConfig();
         matchInputFormatConfig.setKmerSize(kmerSize);
         matchInputFormatConfig.setPartitionNum(tasks);
-        matchInputFormatConfig.setFileTablePath(dmConfig.getFileTablePath());
-        matchInputFormatConfig.setKmerIndexPath(dmConfig.getKmerIndexPath());
-        if(dmConfig.getUseHistogram()) {
+        matchInputFormatConfig.setFileTablePath(mConfig.getFileTablePath());
+        matchInputFormatConfig.setKmerIndexPath(mConfig.getKmerIndexPath());
+        if(mConfig.getUseHistogram()) {
             matchInputFormatConfig.setUseHistogram(true);
-            matchInputFormatConfig.setKmerHistogramPath(dmConfig.getKmerHistogramPath());
+            matchInputFormatConfig.setKmerHistogramPath(mConfig.getKmerHistogramPath());
         } else {
             matchInputFormatConfig.setUseHistogram(false);
         }
         
         KmerMatchInputFormat.setInputFormatConfig(job, matchInputFormatConfig);
         
-        FileOutputFormat.setOutputPath(job, new Path(dmConfig.getOutputPath()));
-        job.setOutputFormatClass(TextOutputFormat.class);
+        // output
+        String tempOutputPath = mConfig.getOutputPath() + "_temp";
+        FileOutputFormat.setOutputPath(job, new Path(tempOutputPath));
+        job.setOutputFormatClass(MapFileOutputFormat.class);
 
         // Reducer
         job.setNumReduceTasks(0);
@@ -170,22 +173,32 @@ public class KmerSimilarityMap {
 
         // commit results
         if(result) {
-            commit(new Path(dmConfig.getOutputPath()), conf);
+            //commit(mConfig.getFileTables(), new Path(tempOutputPath), new Path(mConfig.getOutputPath()), conf);
             
+            // create index of index
+            //createIndexTable(new Path(ppConfig.getKmerIndexPath()), ppConfig.getFileTables(), conf);
+            
+            // create statistics of index
+            //createStatistics(new Path(ppConfig.getKmerStatisticsPath()), ppConfig.getFileTables(), conf);
+            
+            
+            //commit(new Path(mConfig.getOutputPath()), conf);
+            /*
             // create a file mapping table file
-            Path fileMappingTablePath = new Path(dmConfig.getOutputPath(), KmerSimilarityHelper.makeKmerSimilarityFileMappingTableFileName());
+            Path fileMappingTablePath = new Path(mConfig.getOutputPath(), KmerSimilarityHelper.makeKmerSimilarityFileMappingTableFileName());
             FileSystem fs = fileMappingTablePath.getFileSystem(conf);
             fileMapping.saveTo(fs, fileMappingTablePath);
             
             // combine results
-            combineResults(fileMapping, new Path(dmConfig.getOutputPath()), ScoreFactory.getScore(dmConfig.getScoreAlgorithm()), conf);
+            combineResults(fileMapping, new Path(mConfig.getOutputPath()), ScoreFactory.getScore(mConfig.getScoreAlgorithm()), conf);
+            */
         }
         
         report.addJob(job);
         
         // report
-        if(dmConfig.getReportPath() != null && !dmConfig.getReportPath().isEmpty()) {
-            report.writeTo(dmConfig.getReportPath());
+        if(mConfig.getReportPath() != null && !mConfig.getReportPath().isEmpty()) {
+            report.writeTo(mConfig.getReportPath());
         }
         
         return result ? 0 : 1;

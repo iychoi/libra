@@ -182,7 +182,7 @@ public class PreprocessorConfig {
     }
     
     @JsonProperty("sample_path")
-    public void addSamplePath(Collection<String> samplePaths) {
+    public void addSamplePaths(Collection<String> samplePaths) {
         this.samplePaths.addAll(samplePaths);
     }
     
@@ -192,7 +192,7 @@ public class PreprocessorConfig {
     }
     
     @JsonIgnore
-    public void clearSamplePath() {
+    public void clearSamplePaths() {
         this.samplePaths.clear();
     }
 
@@ -210,9 +210,19 @@ public class PreprocessorConfig {
         return this.fileTablePath;
     }
     
+    @JsonProperty("file_table_path")
+    public void setFileTablePath(String fileTablePath) {
+        this.fileTablePath = fileTablePath;
+    }
+    
     @JsonProperty("kmer_filter_path")
     public String getKmerFilterPath() {
         return this.kmerFilterPath;
+    }
+    
+    @JsonProperty("kmer_filter_path")
+    public void setKmerFilterPath(String kmerFilterPath) {
+        this.kmerFilterPath = kmerFilterPath;
     }
     
     @JsonProperty("kmer_histogram_path")
@@ -220,14 +230,29 @@ public class PreprocessorConfig {
         return this.kmerHistogramPath;
     }
     
+    @JsonProperty("kmer_histogram_path")
+    public void setKmerHistogramPath(String kmerHistogramPath) {
+        this.kmerHistogramPath = kmerHistogramPath;
+    }
+    
     @JsonProperty("kmer_index_path")
     public String getKmerIndexPath() {
         return this.kmerIndexPath;
     }
     
+    @JsonProperty("kmer_index_path")
+    public void setKmerIndexPath(String kmerIndexPath) {
+        this.kmerIndexPath = kmerIndexPath;
+    }
+    
     @JsonProperty("kmer_statistics_path")
     public String getKmerStatisticsPath() {
         return this.kmerStatisticsPath;
+    }
+    
+    @JsonProperty("kmer_statistics_path")
+    public void setKmerStatisticsPath(String kmerStatisticsPath) {
+        this.kmerStatisticsPath = kmerStatisticsPath;
     }
     
     @JsonProperty("report_path")

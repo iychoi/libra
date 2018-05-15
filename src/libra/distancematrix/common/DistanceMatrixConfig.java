@@ -25,6 +25,10 @@ import libra.common.json.JsonSerializer;
 import libra.preprocess.common.PreprocessorConfig;
 import libra.preprocess.common.PreprocessorConstants;
 import libra.preprocess.common.filetable.FileTable;
+import libra.preprocess.common.helpers.FileTableHelper;
+import libra.preprocess.common.helpers.KmerHistogramHelper;
+import libra.preprocess.common.helpers.KmerIndexHelper;
+import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
@@ -87,10 +91,10 @@ public class DistanceMatrixConfig {
 
     @JsonIgnore
     public void setPreprocessRootPath(String preprocessRootPath) {
-        this.fileTablePath = PathHelper.concatPath(preprocessRootPath, PreprocessorConstants.FILE_TABLE_DIRNAME);
-        this.kmerHistogramPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConstants.KMER_HISTOGRAM_DIRNAME);
-        this.kmerIndexPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConstants.KMER_INDEX_DIRNAME);
-        this.kmerStatisticsPath = PathHelper.concatPath(preprocessRootPath, PreprocessorConstants.KMER_STATISITCS_DIRNAME);
+        this.fileTablePath = FileTableHelper.makeFileTableDirPath(preprocessRootPath);
+        this.kmerHistogramPath = KmerHistogramHelper.makeKmerHistogramDirPath(preprocessRootPath);
+        this.kmerIndexPath = KmerIndexHelper.makeKmerIndexDirPath(preprocessRootPath);
+        this.kmerStatisticsPath = KmerStatisticsHelper.makeKmerStatisticsDirPath(preprocessRootPath);
     }
     
     @JsonProperty("task_num")
@@ -204,12 +208,12 @@ public class DistanceMatrixConfig {
     }
     
     @JsonProperty("file_table")
-    public Collection<FileTable> getFileTable() {
+    public Collection<FileTable> getFileTables() {
         return this.fileTables;
     }
     
     @JsonProperty("file_table")
-    public void addFileTable(Collection<FileTable> fileTable) {
+    public void addFileTables(Collection<FileTable> fileTable) {
         this.fileTables.addAll(fileTable);
     }
     

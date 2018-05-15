@@ -69,7 +69,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         Configuration conf = context.getConfiguration();
         
         this.dmConfig = DistanceMatrixConfig.createInstance(conf);
-        this.fileTables = this.dmConfig.getFileTable().toArray(new FileTable[0]);
+        this.fileTables = this.dmConfig.getFileTables().toArray(new FileTable[0]);
         this.samplesInFileTable = new String[this.fileTables.length][];
         for(int i=0;i<this.fileTables.length;i++) {
             this.samplesInFileTable[i] = this.fileTables[i].getSamples().toArray(new String[0]);
@@ -98,7 +98,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Kme
         
         int idx = 0;
         KmerStatistics[] statisticsArray = new KmerStatistics[valuesLen];
-        for(FileTable fileTable : this.dmConfig.getFileTable()) {
+        for(FileTable fileTable : this.dmConfig.getFileTables()) {
             String statisticsTableFilename = KmerStatisticsHelper.makeKmerStatisticsTableFileName(fileTable.getName());
             Path statisticsTablePath = new Path(this.dmConfig.getKmerStatisticsPath(), statisticsTableFilename);
             FileSystem fs = statisticsTablePath.getFileSystem(conf);

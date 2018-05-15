@@ -50,7 +50,7 @@ public class KmerSimilarityMapper extends Mapper<CompressedSequenceWritable, Int
         this.dmConfig = DistanceMatrixConfig.createInstance(conf);
         FileSplit inputSplit = (FileSplit)context.getInputSplit();
         String fileTableName = KmerIndexHelper.getFileTableName(inputSplit.getPath().getParent().getName());
-        for(FileTable table : this.dmConfig.getFileTable()) {
+        for(FileTable table : this.dmConfig.getFileTables()) {
             if(table.getName().equals(fileTableName)) {
                 this.fileTable = table;
                 break;

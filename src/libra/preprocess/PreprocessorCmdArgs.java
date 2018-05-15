@@ -157,7 +157,7 @@ public class PreprocessorCmdArgs extends CommandArgumentsBase {
         config.setSkipHistogram(this.skipHistogram());
         config.setFilterAlgorithm(this.getFilterAlgorithm());
         config.setMaxGroupNum(this.maxGroupNum);
-        config.addSamplePath(this.inputPaths);
+        config.addSamplePaths(this.inputPaths);
         config.setOutputPath(this.outputPath);
         return config;
     }
