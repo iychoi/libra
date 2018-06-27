@@ -23,7 +23,7 @@ import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
-import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
+import libra.common.hadoop.io.format.sequence.SequenceFileInputFormat;
 import libra.common.helpers.MapReduceHelper;
 import libra.preprocess.common.FilterAlgorithm;
 import libra.preprocess.common.PreprocessorConfigException;
@@ -104,10 +104,12 @@ public class KmerIndexBuilder {
         
         // Mapper
         job.setMapperClass(KmerIndexBuilderMapper.class);
-        SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
-        job.setInputFormatClass(SequenceKmerInputFormat.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
         job.setMapOutputKeyClass(CompressedSequenceWritable.class);
         job.setMapOutputValueClass(IntArrayWritable.class);
+        
+        //TEST
+        //SequenceFileInputFormat.setMaxInputSplitSize(job, 1024*1024);
         
         // Combiner
         job.setCombinerClass(KmerIndexBuilderCombiner.class);
@@ -242,6 +244,12 @@ public class KmerIndexBuilder {
         }
         
         indexTable.saveTo(kmerIndexTableFilePath.getFileSystem(conf), kmerIndexTableFilePath);
+        
+        if(indexTable.getSize() == 0) {
+            // Empty index
+            LOG.error("Index is empty - no k-mer data");
+            throw new IOException("Index is empty - no k-mer data");
+        }
     }
 
     private void createStatistics(Path statisticsPath, FileTable fileTable, Configuration conf) throws IOException {

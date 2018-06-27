@@ -22,7 +22,6 @@ import java.util.Collection;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.List;
-import libra.common.algorithms.CanonicalKmer;
 import libra.common.helpers.SequenceHelper;
 import libra.common.json.JsonSerializer;
 import org.apache.commons.logging.Log;
@@ -43,7 +42,7 @@ public class KmerHistogram {
     
     private static final String HADOOP_CONFIG_KEY = "libra.preprocess.common.kmerhistogram.kmerhistogram";
     
-    private static final int SAMPLING_CHARS = 6;
+    private static final int SAMPLING_PREFIX_LEN = 6;
     
     private String name;
     private int kmerSize;
@@ -52,7 +51,6 @@ public class KmerHistogram {
     private List<KmerHistogramRecord> recordList = new ArrayList<KmerHistogramRecord>();
     
     private long totalKmerCount = 0;
-    private CanonicalKmer keySelectionAlg = new CanonicalKmer();
     
     public static KmerHistogram createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -126,10 +124,10 @@ public class KmerHistogram {
                 }
             }
             
-            String selectedKey = this.keySelectionAlg.canonicalize(kmer);
+            String canonicalKmer = SequenceHelper.canonicalize(kmer);
             
             // take first N chars
-            String selectedKeySample = selectedKey.substring(0, SAMPLING_CHARS);
+            String selectedKeySample = canonicalKmer.substring(0, SAMPLING_PREFIX_LEN);
             
             add(selectedKeySample);
         }
@@ -155,8 +153,8 @@ public class KmerHistogram {
     }
     
     @JsonIgnore
-    public int getSamplingCharLen() {
-        return SAMPLING_CHARS;
+    public int getSamplingPrefixLen() {
+        return SAMPLING_PREFIX_LEN;
     }
     
     @JsonIgnore

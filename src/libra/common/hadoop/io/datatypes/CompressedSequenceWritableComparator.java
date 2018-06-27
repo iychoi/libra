@@ -13,26 +13,22 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.common.sequence;
+package libra.common.hadoop.io.datatypes;
+
+import java.util.Comparator;
+import libra.common.helpers.SequenceHelper;
 
 /**
  *
  * @author iychoi
  */
-public class FastaRawReadLine {
-    private long lineOffset;
-    private String line;
+public class CompressedSequenceWritableComparator implements Comparator<CompressedSequenceWritable> {
 
-    public FastaRawReadLine(long lineOffset, String line) {
-        this.lineOffset = lineOffset;
-        this.line = line;
-    }
-
-    public long getLineOffset() {
-        return this.lineOffset;
-    }
-
-    public String getLine() {
-        return this.line;
+    @Override
+    public int compare(CompressedSequenceWritable t1, CompressedSequenceWritable t2) {
+        byte[] cs_t1 = t1.getCompressedSequence();
+        byte[] cs_t2 = t2.getCompressedSequence();
+        
+        return SequenceHelper.compareSequences(cs_t1, cs_t2);
     }
 }

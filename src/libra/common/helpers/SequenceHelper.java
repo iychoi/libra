@@ -305,4 +305,40 @@ public class SequenceHelper {
         }
         return true;
     }
+    
+    public static String canonicalize(String sequence) {
+        boolean determined = false;
+        boolean use_rc = false;
+        StringBuilder sb_rc = new StringBuilder();
+        for(int i=0;i<sequence.length();i++) {
+            char f_ch = sequence.charAt(i);
+            char r_ch = sequence.charAt(sequence.length() - i - 1);
+            char rc_ch = SequenceHelper.getComplement(r_ch);
+            sb_rc.append(rc_ch);
+            
+            if(!determined) {
+                if(rc_ch < f_ch) {
+                    // determined
+                    determined = true;
+                    use_rc = true;
+                } else if(rc_ch > f_ch) {
+                    // determined
+                    determined = true;
+                    use_rc = false;
+                    // short circuit
+                    return sequence;
+                }
+            }
+        }
+        
+        if(determined) {
+            if(use_rc) {
+                return sb_rc.toString();
+            } else {
+                return sequence;
+            }
+        } else {
+            return sequence;
+        }
+    }
 }

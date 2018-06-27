@@ -17,9 +17,10 @@ package libra.preprocess.stage2;
 
 
 import java.io.IOException;
+import java.util.Arrays;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
-import libra.common.helpers.SequenceHelper;
+import libra.common.hadoop.io.datatypes.CompressedSequenceWritableComparator;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.kmerhistogram.KmerHistogram;
 import libra.preprocess.common.kmerhistogram.KmerRangePartition;
@@ -137,12 +138,12 @@ public class KmerFilterBuilderPartitioner extends Partitioner<CompressedSequence
     }
 
     private int getPartitionIndex(CompressedSequenceWritable key) {
-        for(int i=0;i<this.partitionEndKeys.length;i++) {
-            int comp = SequenceHelper.compareSequences(key.getCompressedSequence(), this.partitionEndKeys[i].getCompressedSequence());
-            if(comp <= 0) {
-                return i;
-            }
+        int idx = Arrays.binarySearch(this.partitionEndKeys, 0, this.partitionEndKeys.length, key, new CompressedSequenceWritableComparator());
+        if(idx >= 0) {
+            //exact match
+            return idx;      
+        } else {
+            return -(idx + 1);
         }
-        return -1;
     }
 }

@@ -22,7 +22,7 @@ import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
-import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
+import libra.common.hadoop.io.format.sequence.SequenceFileInputFormat;
 import libra.preprocess.common.PreprocessorConfigException;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.filetable.FileTable;
@@ -94,8 +94,7 @@ public class KmerFilterBuilder {
         
         // Mapper
         job.setMapperClass(KmerFilterBuilderMapper.class);
-        SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
-        job.setInputFormatClass(SequenceKmerInputFormat.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
         job.setMapOutputKeyClass(CompressedSequenceWritable.class);
         job.setMapOutputValueClass(IntArrayWritable.class);
         

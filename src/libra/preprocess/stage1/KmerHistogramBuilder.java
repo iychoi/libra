@@ -15,8 +15,8 @@
  */
 package libra.preprocess.stage1;
 
-import libra.common.hadoop.io.datatypes.LongArrayWritable;
-import libra.common.hadoop.io.format.sequence.SequenceKmerInputFormat;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
+import libra.common.hadoop.io.format.sequence.SequenceFileInputFormat;
 import libra.common.helpers.FileSystemHelper;
 import libra.common.report.Report;
 import libra.preprocess.common.PreprocessorConfigException;
@@ -76,10 +76,9 @@ public class KmerHistogramBuilder {
 
         // Mapper
         job.setMapperClass(KmerHistogramBuilderMapper.class);
-        SequenceKmerInputFormat.setKmerSize(conf, ppConfig.getKmerSize());
-        job.setInputFormatClass(SequenceKmerInputFormat.class);
+        job.setInputFormatClass(SequenceFileInputFormat.class);
         job.setMapOutputKeyClass(IntWritable.class);
-        job.setMapOutputValueClass(LongArrayWritable.class);
+        job.setMapOutputValueClass(IntArrayWritable.class);
         
         // Combiner
         job.setCombinerClass(KmerHistogramBuilderCombiner.class);

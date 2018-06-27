@@ -16,16 +16,16 @@
 package libra.common.hadoop.io.format.sequence;
 
 import java.io.IOException;
-import libra.common.sequence.FastaRead;
-import libra.common.hadoop.io.reader.sequence.FastaReadReader;
+import libra.common.hadoop.io.reader.sequence.ReadRecordReader;
+import libra.common.sequence.ReadInfo;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.LongWritable;
 
 import org.apache.hadoop.io.compress.CompressionCodec;
 import org.apache.hadoop.io.compress.CompressionCodecFactory;
+import org.apache.hadoop.io.compress.SplittableCompressionCodec;
 import org.apache.hadoop.mapreduce.InputSplit;
 import org.apache.hadoop.mapreduce.JobContext;
 import org.apache.hadoop.mapreduce.RecordReader;
@@ -36,40 +36,22 @@ import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
  *
  * @author iychoi
  */
-public class FastaReadInputFormat extends FileInputFormat<LongWritable, FastaRead> {
+public class SequenceFileInputFormat extends FileInputFormat<LongWritable, ReadInfo> {
 
-    private static final Log LOG = LogFactory.getLog(FastaReadInputFormat.class);
-    
-    private final static String CONF_SPLITABLE = "libra.comm.hadoop.io.format.sequence.splitable";
+    private static final Log LOG = LogFactory.getLog(SequenceFileInputFormat.class);
     
     @Override
-    public RecordReader<LongWritable, FastaRead> createRecordReader(InputSplit split,
-            TaskAttemptContext context) throws IOException,
-            InterruptedException {
-        return new FastaReadReader();
+    public RecordReader<LongWritable, ReadInfo> createRecordReader(InputSplit split, TaskAttemptContext context) throws IOException, InterruptedException {
+        return new ReadRecordReader();
     }
     
     @Override
     protected boolean isSplitable(JobContext context, Path filename) {
-        boolean splitable = FastaReadInputFormat.isSplitable(context.getConfiguration());
-        LOG.info("splitable = " + splitable);
-        if(!splitable) {
-            return false;
+        final CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(filename);
+        if(codec == null) {
+            return true;
         }
         
-        CompressionCodec codec = new CompressionCodecFactory(context.getConfiguration()).getCodec(filename);
-        if(codec != null) {
-            return false;
-        }
-        
-        return true;
-    }
-    
-    public static void setSplitable(Configuration conf, boolean splitable) {
-        conf.setBoolean(CONF_SPLITABLE, splitable);
-    }
-    
-    public static boolean isSplitable(Configuration conf) {
-        return conf.getBoolean(CONF_SPLITABLE, true);
+        return codec instanceof SplittableCompressionCodec;
     }
 }

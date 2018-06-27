@@ -92,7 +92,7 @@ public class KmerStatistics {
     }
     
     @JsonIgnore
-    public void incrementLogTFCosineNormBase(double tfCosnormBase) {
+    public void increaseLogTFCosineNormBase(double tfCosnormBase) {
         this.logTFCosnormBase += tfCosnormBase;
     }
     
@@ -107,7 +107,7 @@ public class KmerStatistics {
     }
     
     @JsonIgnore
-    public void incrementNaturalTFCosineNormBase(double tfCosnormBase) {
+    public void increaseNaturalTFCosineNormBase(double tfCosnormBase) {
         this.naturalTFCosnormBase += tfCosnormBase;
     }
     
@@ -122,7 +122,7 @@ public class KmerStatistics {
     }
     
     @JsonIgnore
-    public void incrementBooleanTFCosineNormBase(double tfCosnormBase) {
+    public void increaseBooleanTFCosineNormBase(double tfCosnormBase) {
         this.booleanTFCosnormBase += tfCosnormBase;
     }
     
@@ -137,7 +137,7 @@ public class KmerStatistics {
     }
     
     @JsonIgnore
-    public void incrementBooleanTFSum(double weight) {
+    public void increaseBooleanTFSum(double weight) {
         this.booleanTFSum += weight;
     }
     
@@ -152,7 +152,7 @@ public class KmerStatistics {
     }
     
     @JsonIgnore
-    public void incrementNaturalTFSum(double weight) {
+    public void increaseNaturalTFSum(double weight) {
         this.naturalTFSum += weight;
     }
     
@@ -167,7 +167,7 @@ public class KmerStatistics {
     }
     
     @JsonIgnore
-    public void incrementLogTFSum(double weight) {
+    public void increaseLogTFSum(double weight) {
         this.logTFSum += weight;
     }
     

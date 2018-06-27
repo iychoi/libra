@@ -16,7 +16,7 @@
 package libra.preprocess.stage1;
 
 import java.io.IOException;
-import libra.common.hadoop.io.datatypes.LongArrayWritable;
+import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.helpers.SequenceHelper;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.helpers.KmerHistogramHelper;
@@ -35,7 +35,7 @@ import org.apache.hadoop.mapreduce.Reducer;
  *
  * @author iychoi
  */
-public class KmerHistogramBuilderReducer extends Reducer<IntWritable, LongArrayWritable, NullWritable, NullWritable> {
+public class KmerHistogramBuilderReducer extends Reducer<IntWritable, IntArrayWritable, NullWritable, NullWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerHistogramBuilderReducer.class);
     
@@ -51,24 +51,25 @@ public class KmerHistogramBuilderReducer extends Reducer<IntWritable, LongArrayW
     }
     
     @Override
-    protected void reduce(IntWritable key, Iterable<LongArrayWritable> values, Context context) throws IOException, InterruptedException {
-        long[] freqArrSum = null;
+    protected void reduce(IntWritable key, Iterable<IntArrayWritable> values, Context context) throws IOException, InterruptedException {
+        int[] freqArrSum = null;
         
-        for(LongArrayWritable value : values) {
-            long[] freqArr = value.get();
+        for(IntArrayWritable value : values) {
+            int[] freqArr = value.get();
             
             if(freqArrSum == null) {
                 freqArrSum = freqArr;
             } else {
                 for(int i=0;i<freqArrSum.length;i++) {
-                    freqArrSum[i] += freqArr[i];
+                    long eval = (long)freqArrSum[i] + (long)freqArr[i];
+                    freqArrSum[i] = (int)Math.min(Integer.MAX_VALUE, eval);
                 }
             }
         }
         
         for(int i=0;i<freqArrSum.length;i++) {
             if(freqArrSum[i] > 0) {
-                String kmer = SequenceHelper.convertToString(i, this.histogram.getSamplingCharLen());
+                String kmer = SequenceHelper.convertToString(i, this.histogram.getSamplingPrefixLen());
                 this.histogram.addRecord(new KmerHistogramRecord(kmer, freqArrSum[i]));
             }
         }

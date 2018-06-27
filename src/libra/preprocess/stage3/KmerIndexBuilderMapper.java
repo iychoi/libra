@@ -16,11 +16,10 @@
 package libra.preprocess.stage3;
 
 import java.io.IOException;
-import libra.common.algorithms.CanonicalKmer.KmerRecord;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
-import libra.common.sequence.KmerLines;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
+import libra.common.sequence.ReadInfo;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.filetable.FileTable;
 import org.apache.commons.logging.Log;
@@ -35,11 +34,12 @@ import org.apache.hadoop.mapreduce.lib.input.FileSplit;
  *
  * @author iychoi
  */
-public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, CompressedSequenceWritable, IntArrayWritable> {
+public class KmerIndexBuilderMapper extends Mapper<LongWritable, ReadInfo, CompressedSequenceWritable, IntArrayWritable> {
     
     private static final Log LOG = LogFactory.getLog(KmerIndexBuilderMapper.class);
     
     private PreprocessorRoundConfig ppConfig;
+    private int kmerSize;
     private FileTable fileTable;
     
     @Override
@@ -47,7 +47,7 @@ public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, Comp
         Configuration conf = context.getConfiguration();
         
         this.ppConfig = PreprocessorRoundConfig.createInstance(conf);
-        
+        this.kmerSize = ppConfig.getKmerSize();
         this.fileTable = this.ppConfig.getFileTable();
     }
     
@@ -60,43 +60,41 @@ public class KmerIndexBuilderMapper extends Mapper<LongWritable, KmerLines, Comp
     }
     
     @Override
-    protected void map(LongWritable key, KmerLines value, Context context) throws IOException, InterruptedException {
+    protected void map(LongWritable key, ReadInfo value, Context context) throws IOException, InterruptedException {
         FileSplit fis = (FileSplit)context.getInputSplit();
         int fileID = getFileID(fis.getPath());
         
-        for(String line : value.get()) {
-            if(line != null) {
-                String sequence = line.toUpperCase();
-
-                boolean pvalid = false;
-                for (int i = 0; i < (sequence.length() - this.ppConfig.getKmerSize() + 1); i++) {
-                    String kmer = sequence.substring(i, i + this.ppConfig.getKmerSize());
-                    if(pvalid) {
-                        if(!SequenceHelper.isValidSequence(kmer.charAt(this.ppConfig.getKmerSize() - 1))) {
-                            //LOG.info("discard invalid kmer sequence : " + kmer);
-                            pvalid = false;
-                            continue;
-                        } else {
-                            pvalid = true;
-                        }
+        String sequence = value.getSequence();
+        if(sequence.length() >= this.kmerSize) {
+            sequence = sequence.toUpperCase();
+            
+            boolean pvalid = false;
+            for (int i = 0; i < (sequence.length() - this.kmerSize + 1); i++) {
+                String kmer = sequence.substring(i, i + this.kmerSize);
+                if (pvalid) {
+                    if (!SequenceHelper.isValidSequence(kmer.charAt(this.kmerSize - 1))) {
+                        //LOG.info("discard invalid kmer sequence : " + kmer);
+                        pvalid = false;
+                        continue;
                     } else {
-                        if(!SequenceHelper.isValidSequence(kmer)) {
-                            //LOG.info("discard invalid kmer sequence : " + kmer);
-                            pvalid = false;
-                            continue;
-                        } else {
-                            pvalid = true;
-                        }
+                        pvalid = true;
                     }
-                    
-                    KmerRecord kmerRecord = new KmerRecord(kmer);
-                    KmerRecord keyRecord = kmerRecord.getCanonicalKmer();
-
-                    int[] arr = new int[2];
-                    arr[0] = fileID;
-                    arr[1] = 1;
-                    context.write(new CompressedSequenceWritable(keyRecord.getSequence()), new IntArrayWritable(arr));
+                } else {
+                    if (!SequenceHelper.isValidSequence(kmer)) {
+                        //LOG.info("discard invalid kmer sequence : " + kmer);
+                        pvalid = false;
+                        continue;
+                    } else {
+                        pvalid = true;
+                    }
                 }
+
+                String canonicalKmer = SequenceHelper.canonicalize(kmer);
+                
+                int[] arr = new int[2];
+                arr[0] = fileID;
+                arr[1] = 1;
+                context.write(new CompressedSequenceWritable(canonicalKmer), new IntArrayWritable(arr));
             }
         }
     }

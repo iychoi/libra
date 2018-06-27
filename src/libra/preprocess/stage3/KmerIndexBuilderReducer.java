@@ -183,11 +183,12 @@ public class KmerIndexBuilderReducer extends Reducer<CompressedSequenceWritable,
                 this.statisticsParts[i].incrementLogTFWeightSquare(Math.pow(logTFWeight, 2));
                 this.statisticsParts[i].incrementLogTFWeight(logTFWeight);
                 this.statisticsParts[i].incrementNaturalTFWeightSquare(Math.pow(naturalTFWeight, 2));
-                this.statisticsParts[i].incrementNaturalTFWeightSquare(naturalTFWeight);
+                this.statisticsParts[i].incrementNaturalTFWeight(naturalTFWeight);
                 this.statisticsParts[i].incrementBooleanTFWeight(booleanTFWeight);
             }
         }
         
+        //LOG.info("Non-zero files : " + nonZeroFiles);
         if(nonZeroFiles > 0) {
             context.write(key, new IntArrayWritable(outputFreqArr));
         }
