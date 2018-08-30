@@ -116,8 +116,13 @@ public class Read {
     public void parseFastq(List<String> lines) throws IOException {
         clear();
         
+        if(lines.size() == 0) {
+            return;
+        }
+        
         if(lines.size() != 4) {
-            throw new IOException(String.format("invalid fastq read format - line num is %d", lines.size()));
+            String header = lines.get(0);
+            throw new IOException(String.format("invalid fastq read format - a read (%s) has %d lines", header, lines.size()));
         }
         
         int lineNo = 0;
