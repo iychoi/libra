@@ -7,7 +7,7 @@ Compute the Similarity between Metagenomic Samples
 DOWNLOAD BINARY
 ---------------
 Download a pre-built binary (compiled with Java 7, including dependencies):
-- [Libra v1.2.3 stable](https://github.com/iychoi/libra/releases/download/v1.2.3/libra-all.jar)
+- [Libra v1.2.5 stable](https://github.com/iychoi/libra/releases/download/v1.2.5/libra-all.jar)
 
 For old releases, check out the release page:
 - [Libra Releases](https://github.com/iychoi/libra/releases)
@@ -51,7 +51,7 @@ Preprocessing Options
 
 Scoring
 ```
-hadoop jar libra-all.jar core -m MAP -w LOGARITHM -t 8 -o /score_dir /index_dir
+hadoop jar libra-all.jar core -w LOGARITHM -t 8 -o /score_dir /index_dir
 ```
 
 Scoring Options
