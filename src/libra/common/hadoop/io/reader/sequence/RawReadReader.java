@@ -35,110 +35,223 @@ public class RawReadReader implements Closeable {
 
     private static final Log LOG = LogFactory.getLog(RawReadReader.class);
     
+    private static final int LINE_BUFFERS = 4;
+    
     private SampleFormat format;
     private LineReader in;
-    private Text buffer = new Text();
-    private int bufferConsumed;
-    private char delimiter;
+    private Text[] buffers = new Text[LINE_BUFFERS];
+    private int[] bufferConsumed = new int[LINE_BUFFERS];
+    private boolean eof = false;
     private boolean finished = false;
 
     public RawReadReader(SampleFormat format, InputStream in) {
         this.format = format;
         this.in = new LineReader(in);
-        this.bufferConsumed = 0;
+        for(int i=0;i<LINE_BUFFERS;i++) {
+            this.buffers[i] = new Text();
+            this.bufferConsumed[i] = 0;
+        }
+        this.eof = false;
         this.finished = false;
-        
-        _setDelimiter();
     }
     
     public RawReadReader(SampleFormat format, InputStream in, int bufferSize) {
         this.format = format;
         this.in = new LineReader(in, bufferSize);
-        this.bufferConsumed = 0;
+        for(int i=0;i<LINE_BUFFERS;i++) {
+            this.buffers[i] = new Text();
+            this.bufferConsumed[i] = 0;
+        }
+        this.eof = false;
         this.finished = false;
-        
-        _setDelimiter();
     }
     
     public RawReadReader(SampleFormat format, InputStream in, Configuration conf) throws IOException {
         this.format = format;
         this.in = new LineReader(in, conf);
-        this.bufferConsumed = 0;
+        for(int i=0;i<LINE_BUFFERS;i++) {
+            this.buffers[i] = new Text();
+            this.bufferConsumed[i] = 0;
+        }
+        this.eof = false;
         this.finished = false;
-        
-        _setDelimiter();
     }
 
     @Override
     public void close() throws IOException {
+        this.eof = true;
         this.finished = true;
         this.in.close();
     }
     
-    private void _setDelimiter() {
-        switch(this.format) {
-            case FASTA:
-                this.delimiter = Read.FASTA_READ_DESCRIPTION_IDENTIFIER;
-                break;
-            case FASTQ:
-                this.delimiter = Read.FASTQ_READ_DESCRIPTION_IDENTIFIER;
-                break;
+    private void _shiftBuffer(int steps) {
+        if(steps <= 0) {
+            return;
+        }
+        
+        if(steps >= LINE_BUFFERS) {
+            for(int i=0;i<LINE_BUFFERS;i++) {
+                this.buffers[i].clear();
+                this.bufferConsumed[i] = 0;
+            }
+        } else {
+            for(int i=0;i<LINE_BUFFERS;i++) {
+                if(i+steps < LINE_BUFFERS) {
+                    Text temp = this.buffers[i];
+                    this.buffers[i] = this.buffers[i+steps];
+                    this.buffers[i+steps] = temp;
+                    this.buffers[i+steps].clear();
+                    this.bufferConsumed[i] = this.bufferConsumed[i+steps];
+                }
+            }
+            
+            for(int i=0;i<steps;i++) {
+                int idx = LINE_BUFFERS-i-1;
+                this.buffers[idx].clear();
+                this.bufferConsumed[idx] = 0;
+            }
         }
     }
     
-    private boolean _fillBuffer(boolean force) throws IOException {
+    private int _countEmptyBuffer() {
+        int count = 0;
+        for(int i=0;i<LINE_BUFFERS;i++) {
+            int idx = LINE_BUFFERS-i-1;
+            if(this.bufferConsumed[idx] == 0) {
+                count++;
+            } else {
+                break;
+            }
+        }
+        return count;
+    }
+    
+    private boolean _fillBuffer() throws IOException {
         // returns hasData
-        if(this.bufferConsumed == 0 || force) {
-            // fill buffer
-            this.bufferConsumed = this.in.readLine(this.buffer, Integer.MAX_VALUE, Integer.MAX_VALUE);
-            if(this.bufferConsumed <= 0) {
-                this.bufferConsumed = 0;
+        int emptyBuffers = _countEmptyBuffer();
+        if(this.eof) {
+            if(emptyBuffers == LINE_BUFFERS) {
                 return false;
             } else {
                 return true;
+            }
+        }
+        
+        if(emptyBuffers > 0) {
+            // fill buffer
+            int filled = 0;
+            for(int i=0;i<emptyBuffers;i++) {
+                int idx = LINE_BUFFERS-emptyBuffers+i;
+                this.bufferConsumed[idx] = this.in.readLine(this.buffers[idx], Integer.MAX_VALUE, Integer.MAX_VALUE);
+                if(this.bufferConsumed[idx] <= 0) {
+                    this.buffers[idx].clear();
+                    this.bufferConsumed[idx] = 0;
+                    this.eof = true;
+                    break;
+                } else {
+                    filled++;
+                }
+            }
+            
+            if(LINE_BUFFERS - emptyBuffers + filled > 0) {
+                return true;
+            } else {
+                return false;
             }
         } else {
             return true;
         }
     }
-
-    public long skipIncompleteRead() throws IOException {
+    
+    private long _skipIncompleteFASTARead() throws IOException {
         if(this.finished) {
             return 0;
         }
         
-        long bytesConsumed = 0;
-        
-        boolean hasBufferData = _fillBuffer(false);
+        boolean hasBufferData = _fillBuffer();
         if(!hasBufferData) {
             //EOF
             this.finished = true;
-            return bytesConsumed;
+            return 0;
         }
         
+        long bytesConsumed = 0;
         boolean headerFound = false;
         while(hasBufferData) {
-            if(this.buffer.getLength() > 0 && this.buffer.charAt(0) == this.delimiter) {
+            if(this.buffers[0].getLength() > 0 && this.buffers[0].charAt(0) == Read.FASTA_READ_DESCRIPTION_IDENTIFIER) {
                 headerFound = true;
                 break;
             } else {
-                bytesConsumed += this.bufferConsumed;
+                bytesConsumed += this.bufferConsumed[0];
                 // refill buffer
-                hasBufferData = _fillBuffer(true);
+                _shiftBuffer(1);
+                hasBufferData = _fillBuffer();
             }
         }
         
         if(!headerFound) {
             //EOF
-            bytesConsumed += this.bufferConsumed;
             this.finished = true;
-            this.bufferConsumed = 0;
+        }
+        
+        return bytesConsumed;
+    }
+
+    private long _skipIncompleteFASTQRead() throws IOException {
+        if(this.finished) {
+            return 0;
+        }
+        
+        boolean hasBufferData = _fillBuffer();
+        if(!hasBufferData) {
+            //EOF
+            this.finished = true;
+            return 0;
+        }
+        
+        long bytesConsumed = 0;
+        boolean headerFound = false;
+        while(hasBufferData) {
+            int emptyBufferCount = _countEmptyBuffer();
+            if(this.buffers[0].getLength() > 0 && this.buffers[0].charAt(0) == Read.FASTQ_READ_DESCRIPTION_IDENTIFIER &&
+                    this.buffers[2].getLength() > 0 && this.buffers[2].charAt(0) == Read.FASTQ_READ_DESCRIPTION2_IDENTIFIER && 
+                    emptyBufferCount == 0) {
+                headerFound = true;
+                break;
+            } else {
+                bytesConsumed += this.bufferConsumed[0];
+                // refill buffer
+                _shiftBuffer(1);
+                hasBufferData = _fillBuffer();
+            }
+        }
+        
+        if(!headerFound) {
+            //EOF
+            this.finished = true;
         }
         
         return bytesConsumed;
     }
     
-    public long readRead(Read read) throws IOException {
+    public long skipIncompleteRead() throws IOException {
+        switch(this.format) {
+            case FASTA:
+                return _skipIncompleteFASTARead();
+            case FASTQ:
+                return _skipIncompleteFASTQRead();
+            default:
+                throw new IOException("Unknown format");
+        }
+    }
+    
+    private void _printBuffer() {
+        for(int i=0;i<LINE_BUFFERS;i++) {
+            LOG.info(String.format("BUFFER[%d] = %s (%d)", i, this.buffers[i].toString(), this.bufferConsumed[i]));
+        }
+    }
+    
+    private long _readFASTARead(Read read) throws IOException {
         read.clear();
         
         long bytesConsumed = 0;
@@ -149,40 +262,42 @@ public class RawReadReader implements Closeable {
         }
         
         // check buffer has a header
-        boolean hasBufferData = _fillBuffer(false);
+        boolean hasBufferData = _fillBuffer();
         if(!hasBufferData) {
             //EOF
             this.finished = true;
             return bytesConsumed;
         }
         
-        if(this.buffer.getLength() > 0 && this.buffer.charAt(0) == this.delimiter) {
+        if(this.buffers[0].getLength() > 0 && this.buffers[0].charAt(0) == Read.FASTA_READ_DESCRIPTION_IDENTIFIER) {
             // GO!
             // add header
             List<String> lines = new ArrayList<String>();
         
-            String lineStr = this.buffer.toString();
+            String lineStr = this.buffers[0].toString();
             if(lineStr.trim().length() > 0) {
                 lines.add(lineStr);
             }
             
-            bytesConsumed += this.bufferConsumed;
-            hasBufferData = _fillBuffer(true);
+            bytesConsumed += this.bufferConsumed[0];
+            _shiftBuffer(1);
+            hasBufferData = _fillBuffer();
             
             boolean nextHeaderFound = false;
             while(hasBufferData) {
-                if(this.buffer.getLength() > 0 && this.buffer.charAt(0) == this.delimiter) {
+                if(this.buffers[0].getLength() > 0 && this.buffers[0].charAt(0) == Read.FASTA_READ_DESCRIPTION_IDENTIFIER) {
                     nextHeaderFound = true;
                     break;
                 } else {
-                    lineStr = this.buffer.toString();
+                    lineStr = this.buffers[0].toString();
                     if(lineStr.trim().length() > 0) {
                         lines.add(lineStr);
                     }
 
-                    bytesConsumed += this.bufferConsumed;
+                    bytesConsumed += this.bufferConsumed[0];
                     // refill buffer
-                    hasBufferData = _fillBuffer(true);
+                    _shiftBuffer(1);
+                    hasBufferData = _fillBuffer();
                 }
             }
             
@@ -193,9 +308,91 @@ public class RawReadReader implements Closeable {
             
             read.parse(lines);
         } else {
-            throw new IOException(String.format("Unknown data - %s", this.buffer.toString()));
+            throw new IOException(String.format("Unknown data for FASTA read - %s", this.buffers[0].toString()));
         }
         
         return bytesConsumed;
+    }
+    
+    private long _readFASTQRead(Read read) throws IOException {
+        read.clear();
+        
+        long bytesConsumed = 0;
+        bytesConsumed += skipIncompleteRead();
+        
+        if(this.finished) {
+            return bytesConsumed;
+        }
+        
+        // check buffer has a header
+        boolean hasBufferData = _fillBuffer();
+        if(!hasBufferData) {
+            //EOF
+            this.finished = true;
+            return bytesConsumed;
+        }
+        
+        int emptyBufferCount = _countEmptyBuffer();
+        if(this.buffers[0].getLength() > 0 && this.buffers[0].charAt(0) == Read.FASTQ_READ_DESCRIPTION_IDENTIFIER &&
+                this.buffers[2].getLength() > 0 && this.buffers[2].charAt(0) == Read.FASTQ_READ_DESCRIPTION2_IDENTIFIER &&
+                emptyBufferCount == 0) {
+            // GO!
+            // add header
+            List<String> lines = new ArrayList<String>();
+        
+            String lineStr = this.buffers[0].toString();
+            if(lineStr.trim().length() > 0) {
+                lines.add(lineStr);
+            }
+            
+            bytesConsumed += this.bufferConsumed[0];
+            _shiftBuffer(1);
+            hasBufferData = _fillBuffer();
+            
+            boolean nextHeaderFound = false;
+            while(hasBufferData) {
+                emptyBufferCount = _countEmptyBuffer();
+                //_printBuffer();
+                
+                if(this.buffers[0].getLength() > 0 && this.buffers[0].charAt(0) == Read.FASTQ_READ_DESCRIPTION_IDENTIFIER &&
+                        this.buffers[2].getLength() > 0 && this.buffers[2].charAt(0) == Read.FASTQ_READ_DESCRIPTION2_IDENTIFIER &&
+                        emptyBufferCount == 0) {
+                    nextHeaderFound = true;
+                    break;
+                } else {
+                    lineStr = this.buffers[0].toString();
+                    if(lineStr.trim().length() > 0) {
+                        lines.add(lineStr);
+                    }
+
+                    bytesConsumed += this.bufferConsumed[0];
+                    // refill buffer
+                    _shiftBuffer(1);
+                    hasBufferData = _fillBuffer();
+                }
+            }
+            
+            if(!nextHeaderFound) {
+                //EOF
+                this.finished = true;
+            }
+            
+            read.parse(lines);
+        } else {
+            throw new IOException(String.format("Unknown data for FASTQ read - %s", this.buffers[0].toString()));
+        }
+        
+        return bytesConsumed;
+    }
+    
+    public long readRead(Read read) throws IOException {
+        switch(this.format) {
+            case FASTA:
+                return _readFASTARead(read);
+            case FASTQ:
+                return _readFASTQRead(read);
+            default:
+                throw new IOException("Unknown format");
+        }
     }
 }
