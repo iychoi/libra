@@ -1,5 +1,6 @@
 language: java
 install: ant allinone
+dist: trusty
 jdk:
   - oraclejdk8
   - openjdk7
