@@ -23,7 +23,6 @@ import java.util.List;
 import libra.common.hadoop.io.datatypes.IntArrayWritable;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.common.helpers.SequenceHelper;
-import libra.preprocess.common.kmerhistogram.KmerRangePartition;
 import libra.preprocess.common.kmerindex.AKmerIndexReader;
 import libra.preprocess.common.kmerindex.KmerIndexReader;
 import org.apache.commons.logging.Log;
@@ -41,51 +40,54 @@ public class KmerJoiner {
     
     private static final Log LOG = LogFactory.getLog(KmerJoiner.class);
     
+    private int kmerSize;
     private Path[] kmerIndexTableFilePaths;
-    private KmerRangePartition partition;
+    private int partitionNo;
     private Configuration conf;
     
     private AKmerIndexReader[] readers;
-    private BigInteger partitionSize;
     private CompressedSequenceWritable progressKey;
     private boolean eof;
     private BigInteger beginKey;
+    private BigInteger endKey;
     
     private CompressedSequenceWritable[] stepKeys;
     private IntArrayWritable[] stepVals;
     private List<Integer> stepMinKeys;
     private boolean stepStarted;
     
-    public KmerJoiner(Path[] kmerIndexTableFilePaths, KmerRangePartition partition, TaskAttemptContext context) throws IOException {
-        initialize(kmerIndexTableFilePaths, partition, context.getConfiguration());
+    public KmerJoiner(int kmerSize, Path[] kmerIndexTableFilePaths, int partitionNo, TaskAttemptContext context) throws IOException {
+        initialize(kmerSize, kmerIndexTableFilePaths, partitionNo, context.getConfiguration());
     }
     
-    public KmerJoiner(Path[] kmerIndexTableFilePaths, KmerRangePartition partition, Configuration conf) throws IOException {
-        initialize(kmerIndexTableFilePaths, partition, conf);
+    public KmerJoiner(int kmerSize, Path[] kmerIndexTableFilePaths, int partitionNo, Configuration conf) throws IOException {
+        initialize(kmerSize, kmerIndexTableFilePaths, partitionNo, conf);
     }
     
-    private void initialize(Path[] kmerIndexTableFilePaths, KmerRangePartition partition, Configuration conf) throws IOException {
+    private void initialize(int kmerSize, Path[] kmerIndexTableFilePaths, int partitionNo, Configuration conf) throws IOException {
+        this.kmerSize = kmerSize;
         this.kmerIndexTableFilePaths = kmerIndexTableFilePaths;
-        this.partition = partition;
+        this.partitionNo = partitionNo;
         this.conf = conf;
         
         this.readers = new AKmerIndexReader[this.kmerIndexTableFilePaths.length];
         for(int i=0;i<this.readers.length;i++) {
             FileSystem fs = this.kmerIndexTableFilePaths[i].getFileSystem(this.conf);
-            this.readers[i] = new KmerIndexReader(fs, this.kmerIndexTableFilePaths[i], this.partition.getPartitionBeginKmer(), this.partition.getPartitionEndKmer(), this.conf);
+            this.readers[i] = new KmerIndexReader(fs, this.kmerSize, this.kmerIndexTableFilePaths[i], this.partitionNo, this.conf);
         }
         
-        this.partitionSize = partition.getPartitionSize();
         this.progressKey = null;
         this.eof = false;
-        this.beginKey = this.partition.getPartitionBegin();
+        
+        this.beginKey = SequenceHelper.getFirstSequenceBigInteger(this.kmerSize);
+        this.endKey = SequenceHelper.getLastSequenceBigInteger(this.kmerSize);
+        
         this.stepKeys = new CompressedSequenceWritable[this.readers.length];
         this.stepVals = new IntArrayWritable[this.readers.length];
         this.stepStarted = false;
         
         LOG.info("Matcher is initialized");
-        LOG.info("> Range " + this.partition.getPartitionBeginKmer() + " ~ " + this.partition.getPartitionEndKmer());
-        LOG.info("> Num of Slice Entries : " + this.partition.getPartitionSize().longValue());
+        LOG.info("Processing partition " + this.partitionNo);
     }
     
     public KmerMatchResult stepNext() throws IOException {
@@ -192,14 +194,17 @@ public class KmerJoiner {
                 return 0.0f;
             }
         } else {
-            BigInteger seq = SequenceHelper.convertToBigInteger(this.progressKey.getSequence());
-            BigInteger prog = seq.subtract(this.beginKey);
-            int comp = this.partitionSize.compareTo(prog);
+            BigInteger progress = SequenceHelper.convertToBigInteger(this.progressKey.getSequence());
+            
+            
+            int comp = this.endKey.compareTo(progress);
             if (comp <= 0) {
                 return 1.0f;
             } else {
-                BigDecimal progDecimal = new BigDecimal(prog);
-                BigDecimal rate = progDecimal.divide(new BigDecimal(this.partitionSize), 3, BigDecimal.ROUND_HALF_UP);
+                BigDecimal progressDecimal = new BigDecimal(progress);
+                BigDecimal endDecimal = new BigDecimal(this.endKey);
+                
+                BigDecimal rate = progressDecimal.divide(endDecimal, 3, BigDecimal.ROUND_HALF_UP);
                 
                 float f = rate.floatValue();
                 return Math.min(1.0f, f);

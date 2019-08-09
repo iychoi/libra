@@ -98,6 +98,16 @@ public class KmerIndexTable {
     }
     
     @JsonIgnore
+    public KmerIndexTableRecord getRecord(int partitionNo) {
+        for(KmerIndexTableRecord record : this.records) {
+            if(record.getPartitionID() == partitionNo) {
+                return record;
+            }
+        }
+        return null;
+    }
+    
+    @JsonIgnore
     public int getSize() {
         return this.records.size();
     }

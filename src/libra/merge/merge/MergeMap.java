@@ -72,12 +72,6 @@ public class MergeMap {
             throw new MergeConfigException("cannot find input path");
         }
         
-        if(mConfig.getUseHistogram()) {
-            if(mConfig.getKmerHistogramPath() == null) {
-                throw new MergeConfigException("cannot find kmer histogram path");
-            }
-        }
-        
         if(mConfig.getKmerStatisticsPath() == null) {
             throw new MergeConfigException("cannot find kmer statistics path");
         }
@@ -148,15 +142,8 @@ public class MergeMap {
         
         KmerMatchInputFormatConfig matchInputFormatConfig = new KmerMatchInputFormatConfig();
         matchInputFormatConfig.setKmerSize(kmerSize);
-        matchInputFormatConfig.setPartitionNum(tasks);
         matchInputFormatConfig.setFileTablePath(mConfig.getFileTablePath());
         matchInputFormatConfig.setKmerIndexPath(mConfig.getKmerIndexPath());
-        if(mConfig.getUseHistogram()) {
-            matchInputFormatConfig.setUseHistogram(true);
-            matchInputFormatConfig.setKmerHistogramPath(mConfig.getKmerHistogramPath());
-        } else {
-            matchInputFormatConfig.setUseHistogram(false);
-        }
         
         KmerMatchInputFormat.setInputFormatConfig(job, matchInputFormatConfig);
         

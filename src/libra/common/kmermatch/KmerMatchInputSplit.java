@@ -18,7 +18,6 @@ package libra.common.kmermatch;
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
-import libra.preprocess.common.kmerhistogram.KmerRangePartition;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.Writable;
@@ -30,23 +29,29 @@ import org.apache.hadoop.mapreduce.InputSplit;
  */
 public class KmerMatchInputSplit extends InputSplit implements Writable {
 
+    private int kmerSize;
     private Path[] kmerIndexTableFilePaths;
-    private KmerRangePartition partition;
+    private int partitionNo;
 
     public KmerMatchInputSplit() {    
     }
     
-    public KmerMatchInputSplit(Path[] kmerIndexTableFilePaths, KmerRangePartition partition) {
+    public KmerMatchInputSplit(int kmerSize, Path[] kmerIndexTableFilePaths, int partitionNo) {
+        this.kmerSize = kmerSize;
         this.kmerIndexTableFilePaths = kmerIndexTableFilePaths;
-        this.partition = partition;
+        this.partitionNo = partitionNo;
+    }
+    
+    public int getKmerSize() {
+        return this.kmerSize;
     }
     
     public Path[] getIndexTableFilePaths() {
         return this.kmerIndexTableFilePaths;
     }
     
-    public KmerRangePartition getPartition() {
-        return this.partition;
+    public int getPartitionNo() {
+        return this.partitionNo;
     }
     
     @Override
@@ -58,7 +63,7 @@ public class KmerMatchInputSplit extends InputSplit implements Writable {
             }
             sb.append(path.toString());
         }
-        return this.partition.toString() + "\n" + sb.toString();
+        return this.partitionNo + "\n" + sb.toString();
     }
 
     @Override
@@ -68,25 +73,26 @@ public class KmerMatchInputSplit extends InputSplit implements Writable {
 
     @Override
     public void write(DataOutput out) throws IOException {
+        out.writeInt(this.kmerSize);
+        out.writeInt(this.partitionNo);
         out.writeInt(this.kmerIndexTableFilePaths.length);
         for (Path indexPath : this.kmerIndexTableFilePaths) {
             Text.writeString(out, indexPath.toString());
         }
-        this.partition.write(out);
     }
 
     @Override
     public void readFields(DataInput in) throws IOException {
+        this.kmerSize = in.readInt();
+        this.partitionNo = in.readInt();
         this.kmerIndexTableFilePaths = new Path[in.readInt()];
         for(int i=0;i<this.kmerIndexTableFilePaths.length;i++) {
             this.kmerIndexTableFilePaths[i] = new Path(Text.readString(in));
         }
-        this.partition = new KmerRangePartition();
-        this.partition.read(in);
     }
 
     @Override
     public long getLength() throws IOException, InterruptedException {
-        return this.partition.getPartitionSize().longValue();
+        return Long.MAX_VALUE;
     }
 }

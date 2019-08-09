@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.stage3;
+package libra.preprocess.stage2;
 
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import java.io.IOException;
@@ -30,7 +30,6 @@ import libra.preprocess.common.PreprocessorConfigException;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerFilterHelper;
-import libra.preprocess.common.helpers.KmerHistogramHelper;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import libra.preprocess.common.kmerfilter.KmerFilterTable;
 import libra.preprocess.common.kmerindex.KmerIndexTable;
@@ -45,8 +44,6 @@ import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.FileStatus;
 import org.apache.hadoop.fs.FileSystem;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.MapFile;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.mapreduce.Job;
 import org.apache.hadoop.mapreduce.lib.input.FileInputFormat;
 import org.apache.hadoop.mapreduce.lib.output.FileOutputFormat;
@@ -71,12 +68,6 @@ public class KmerIndexBuilder {
         
         if(ppConfig.getFileTable() == null || ppConfig.getFileTable().samples() <= 0) {
             throw new PreprocessorConfigException("cannot find input sample path");
-        }
-        
-        if(ppConfig.getUseHistogram()) {
-            if(ppConfig.getKmerHistogramPath() == null) {
-                throw new PreprocessorConfigException("cannot find kmer histogram path");
-            }
         }
         
         if(ppConfig.getKmerSize() <= 0) {
@@ -146,14 +137,6 @@ public class KmerIndexBuilder {
             filterTable.saveTo(conf);
         }
         
-        // histogram
-        if(ppConfig.getUseHistogram()) {
-            String histogramFileName = KmerHistogramHelper.makeKmerHistogramFileName(ppConfig.getFileTable().getName());
-            Path histogramPath = new Path(ppConfig.getKmerHistogramPath(), histogramFileName);
-
-            KmerIndexBuilderPartitioner.setHistogramPath(conf, histogramPath);
-        }
-
         // output
         String tempKmerIndexPath = ppConfig.getKmerIndexPath() + "_temp";
         FileOutputFormat.setOutputPath(job, new Path(tempKmerIndexPath));
@@ -233,13 +216,8 @@ public class KmerIndexBuilder {
         KmerIndexTable indexTable = new KmerIndexTable(fileTable.getName());
         for(Path indexDataFile : indexDataFiles) {
             if(KmerIndexHelper.isSameKmerIndex(kmerIndexTableFilePath, indexDataFile)) {
-                MapFile.Reader reader = new MapFile.Reader(indexDataFile, conf, new SequenceFile.Reader.Option[0]);
-                CompressedSequenceWritable finalKey = new CompressedSequenceWritable();
-                reader.finalKey(finalKey);
-                if(!finalKey.isEmpty()) {
-                    indexTable.addRecord(new KmerIndexTableRecord(indexDataFile.getName(), finalKey.getSequence()));
-                    reader.close();
-                }
+                int partition_id = KmerIndexHelper.getIndexDataID(indexDataFile);
+                indexTable.addRecord(new KmerIndexTableRecord(indexDataFile.getName(), partition_id));
             }
         }
         

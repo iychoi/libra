@@ -17,6 +17,7 @@ package libra.common.helpers;
 
 import java.io.IOException;
 import java.math.BigInteger;
+import java.util.Arrays;
 
 /**
  *
@@ -165,6 +166,10 @@ public class SequenceHelper {
         }
         
         return new String(byteArr);
+    }
+    
+    public static int hashCode(byte[] compressed) {
+        return Arrays.hashCode(compressed);
     }
     
     public static int convertToInteger(String sequence) {
@@ -340,5 +345,30 @@ public class SequenceHelper {
         } else {
             return sequence;
         }
+    }
+
+    public static String getFirstSequence(int kmerSize) {
+        StringBuilder sb = new StringBuilder();
+        for(int i=0;i<kmerSize;i++) {
+            sb.append("A");
+        }
+        return sb.toString();
+    }
+    
+    public static String getLastSequence(int kmerSize) {
+        StringBuilder sb = new StringBuilder();
+        for(int i=0;i<kmerSize;i++) {
+            sb.append("T");
+        }
+        return sb.toString();
+    }
+    
+    public static BigInteger getFirstSequenceBigInteger(int kmerSize) {
+        return BigInteger.ZERO;
+    }
+    
+    public static BigInteger getLastSequenceBigInteger(int kmerSize) {
+        String lastSequence = getLastSequence(kmerSize);
+        return convertToBigInteger(lastSequence);
     }
 }

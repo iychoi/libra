@@ -37,11 +37,8 @@ public class KmerMatchInputFormatConfig {
     private static final String HADOOP_CONFIG_KEY = "libra.common.kmermatch.kmermatchinputformatconfig";
     
     private int kmerSize;
-    private int partitions;
-    private boolean useHistogram = true;
     private String fileTablePath;
     private String kmerIndexPath;
-    private String kmerHistogramPath;
     
     public static KmerMatchInputFormatConfig createInstance(File file) throws IOException {
         JsonSerializer serializer = new JsonSerializer();
@@ -76,16 +73,6 @@ public class KmerMatchInputFormatConfig {
         return this.kmerSize;
     }
     
-    @JsonProperty("use_histogram")
-    public void setUseHistogram(boolean useHistogram) {
-        this.useHistogram = useHistogram;
-    }
-    
-    @JsonProperty("use_histogram")
-    public boolean getUseHistogram() {
-        return this.useHistogram;
-    }
-    
     @JsonProperty("file_table_path")
     public String getFileTablePath() {
         return this.fileTablePath;
@@ -96,16 +83,6 @@ public class KmerMatchInputFormatConfig {
         this.fileTablePath = fileTablePath;
     }
     
-    @JsonProperty("histogram_path")
-    public void setKmerHistogramPath(String path) {
-        this.kmerHistogramPath = path;
-    }
-    
-    @JsonProperty("histogram_path")
-    public String getKmerHistogramPath() {
-        return kmerHistogramPath;
-    }
-    
     @JsonProperty("kmer_index_path")
     public String getKmerIndexPath() {
         return this.kmerIndexPath;
@@ -114,16 +91,6 @@ public class KmerMatchInputFormatConfig {
     @JsonProperty("kmer_index_path")
     public void setKmerIndexPath(String kmerIndexPath) {
         this.kmerIndexPath = kmerIndexPath;
-    }
-    
-    @JsonProperty("partitions")
-    public void setPartitionNum(int partitions) {
-        this.partitions = partitions;
-    }
-    
-    @JsonProperty("partitions")
-    public int getPartitionNum() {
-        return this.partitions;
     }
     
     @JsonIgnore

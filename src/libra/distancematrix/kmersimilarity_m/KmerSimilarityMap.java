@@ -56,8 +56,6 @@ import org.apache.hadoop.mapreduce.lib.output.TextOutputFormat;
 public class KmerSimilarityMap {
     private static final Log LOG = LogFactory.getLog(KmerSimilarityMap.class);
     
-    private static final int DEFAULT_INPUT_SPLITS = 100;
-    
     public KmerSimilarityMap() {
         
     }
@@ -69,12 +67,6 @@ public class KmerSimilarityMap {
         
         if(dmConfig.getFileTables() == null || dmConfig.getFileTables().size() <= 0) {
             throw new DistanceMatrixConfigException("cannot find input path");
-        }
-        
-        if(dmConfig.getUseHistogram()) {
-            if(dmConfig.getKmerHistogramPath() == null) {
-                throw new DistanceMatrixConfigException("cannot find kmer histogram path");
-            }
         }
         
         if(dmConfig.getKmerStatisticsPath() == null) {
@@ -140,22 +132,10 @@ public class KmerSimilarityMap {
             kmerSize = tbl.getKmerSize();
         }
         
-        int tasks = DEFAULT_INPUT_SPLITS;
-        if(dmConfig.getTaskNum() > 0) {
-            tasks = dmConfig.getTaskNum();
-        }
-        
         KmerMatchInputFormatConfig matchInputFormatConfig = new KmerMatchInputFormatConfig();
         matchInputFormatConfig.setKmerSize(kmerSize);
-        matchInputFormatConfig.setPartitionNum(tasks);
         matchInputFormatConfig.setFileTablePath(dmConfig.getFileTablePath());
         matchInputFormatConfig.setKmerIndexPath(dmConfig.getKmerIndexPath());
-        if(dmConfig.getUseHistogram()) {
-            matchInputFormatConfig.setUseHistogram(true);
-            matchInputFormatConfig.setKmerHistogramPath(dmConfig.getKmerHistogramPath());
-        } else {
-            matchInputFormatConfig.setUseHistogram(false);
-        }
         
         KmerMatchInputFormat.setInputFormatConfig(job, matchInputFormatConfig);
         

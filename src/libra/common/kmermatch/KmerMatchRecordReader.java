@@ -17,7 +17,6 @@ package libra.common.kmermatch;
 
 import java.io.IOException;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
-import libra.preprocess.common.kmerhistogram.KmerRangePartition;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.hadoop.conf.Configuration;
@@ -34,7 +33,9 @@ public class KmerMatchRecordReader extends RecordReader<CompressedSequenceWritab
     
     private static final Log LOG = LogFactory.getLog(KmerMatchRecordReader.class);
     
+    private int kmerSize;
     private Path[] indexTableFilePaths;
+    private int partitionNo;
     private KmerJoiner joiner;
     private Configuration conf;
     private KmerMatchResult curResult;
@@ -47,11 +48,11 @@ public class KmerMatchRecordReader extends RecordReader<CompressedSequenceWritab
         
         KmerMatchInputSplit kmerIndexSplit = (KmerMatchInputSplit) split;
         this.conf = context.getConfiguration();
+        this.kmerSize = kmerIndexSplit.getKmerSize();
         this.indexTableFilePaths = kmerIndexSplit.getIndexTableFilePaths();
+        this.partitionNo = kmerIndexSplit.getPartitionNo();
         
-        KmerRangePartition partition = kmerIndexSplit.getPartition();
-        
-        this.joiner = new KmerJoiner(this.indexTableFilePaths, partition, context);
+        this.joiner = new KmerJoiner(this.kmerSize, this.indexTableFilePaths, this.partitionNo, context);
     }
 
     @Override

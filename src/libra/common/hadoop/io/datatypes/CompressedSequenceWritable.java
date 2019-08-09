@@ -116,7 +116,7 @@ public class CompressedSequenceWritable extends BinaryComparable implements Writ
 
     @Override
     public int hashCode() {
-        return super.hashCode();
+        return SequenceHelper.hashCode(this.compressedSequence);
     }
 
     @Override

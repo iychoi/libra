@@ -17,18 +17,11 @@ package libra.common.kmermatch;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Hashtable;
 import java.util.List;
 import libra.common.hadoop.io.datatypes.CompressedSequenceWritable;
 import libra.preprocess.common.filetable.FileTable;
-import libra.preprocess.common.helpers.KmerHistogramHelper;
 import libra.preprocess.common.helpers.KmerIndexHelper;
-import libra.preprocess.common.kmerhistogram.KmerHistogram;
-import libra.preprocess.common.kmerhistogram.KmerHistogramRecord;
-import libra.preprocess.common.kmerhistogram.KmerHistogramRecordComparator;
-import libra.preprocess.common.kmerhistogram.KmerRangePartition;
-import libra.preprocess.common.kmerhistogram.KmerRangePartitioner;
+import libra.preprocess.common.kmerindex.KmerIndexTable;
 import libra.preprocess.common.kmerindex.KmerIndexTablePathFilter;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -81,54 +74,25 @@ public class KmerMatchInputFormat extends SequenceFileInputFormat<CompressedSequ
             LOG.info("> " + kmerIndexTableFiles.get(i).toString());
         }
         
-        KmerRangePartition[] partitions = null;
-        
-        // histogram
-        if(inputFormatConfig.getUseHistogram()) {
-            List<KmerHistogram> histograms = new ArrayList<KmerHistogram>();
-            for(int i=0;i<kmerIndexTableFiles.size();i++) {
-                String fileTableName = KmerIndexHelper.getFileTableName(kmerIndexTableFiles.get(i));
-                Path histogramPath = new Path(inputFormatConfig.getKmerHistogramPath(), KmerHistogramHelper.makeKmerHistogramFileName(fileTableName));
-                FileSystem fs = histogramPath.getFileSystem(conf);
-                if (fs.exists(histogramPath)) {
-                    KmerHistogram histogram = KmerHistogram.createInstance(fs, histogramPath);
-                    histograms.add(histogram);
-                } else {
-                    throw new IOException("k-mer histogram is not found in given paths - " + histogramPath.toString());
+        int partitions = 0;
+        for(Path kmerIndexTableFile : kmerIndexTableFiles) {
+            FileSystem fs = kmerIndexTableFile.getFileSystem(conf);
+            KmerIndexTable indexTable = KmerIndexTable.createInstance(fs, kmerIndexTableFile);
+            if(partitions == 0) {
+                partitions = indexTable.getSize();
+            } else {
+                if(partitions != indexTable.getSize()) {
+                    throw new IOException(String.format("# of partitions are different between input files - %d expected, but %d got", partitions, indexTable.getSize()));
                 }
             }
-            
-            // merge histogram
-            Hashtable<String, KmerHistogramRecord> histogramRecords = new Hashtable<String, KmerHistogramRecord>();
-            long kmerCounts = 0;
-            for(KmerHistogram histogram : histograms) {
-                kmerCounts += histogram.getTotalKmerCount();
-
-                for(KmerHistogramRecord rec : histogram.getSortedRecord()) {
-                    KmerHistogramRecord ext_rec = histogramRecords.get(rec.getKmer());
-                    if(ext_rec == null) {
-                        histogramRecords.put(rec.getKmer(), rec);
-                    } else {
-                        ext_rec.increaseFrequency(rec.getFrequency());
-                    }
-                }
-            }
-            
-            List<KmerHistogramRecord> histogramRecordsArr = new ArrayList<KmerHistogramRecord>();
-            histogramRecordsArr.addAll(histogramRecords.values());
-            Collections.sort(histogramRecordsArr, new KmerHistogramRecordComparator());
-
-            LOG.info("Use variable range partitioning by histogram");
-            KmerRangePartitioner partitioner = new KmerRangePartitioner(inputFormatConfig.getKmerSize(), inputFormatConfig.getPartitionNum());
-            partitions = partitioner.getHistogramPartitions(histogramRecordsArr.toArray(new KmerHistogramRecord[0]), kmerCounts);
-        } else {
-            LOG.info("Use equal range partitioning");
-            KmerRangePartitioner partitioner = new KmerRangePartitioner(inputFormatConfig.getKmerSize(), inputFormatConfig.getPartitionNum());
-            partitions = partitioner.getEqualRangePartitions();
         }
         
-        for(KmerRangePartition partition : partitions) {
-            splits.add(new KmerMatchInputSplit(kmerIndexTableFiles.toArray(new Path[0]), partition));
+        if(partitions == 0) {
+            throw new IOException("There is no partition");
+        }
+        
+        for(int i=0;i<partitions;i++) {
+            splits.add(new KmerMatchInputSplit(inputFormatConfig.getKmerSize(), kmerIndexTableFiles.toArray(new Path[0]), i));
         }
         
         // Save the number of input files in the job-conf
@@ -176,8 +140,6 @@ public class KmerMatchInputFormat extends SequenceFileInputFormat<CompressedSequ
         }
         filters.add(new KmerIndexTablePathFilter());
         PathFilter inputFilter = new MultiPathFilter(filters);
-        
-        
         
         for (int i = 0; i < inputKmerIndexTableFiles.size(); ++i) {
             Path inputKmerIndexTableFile = inputKmerIndexTableFiles.get(i);

@@ -71,12 +71,6 @@ public class KmerSimilarityReduce {
             throw new DistanceMatrixConfigException("cannot find input path");
         }
         
-        if(dmConfig.getUseHistogram()) {
-            if(dmConfig.getKmerHistogramPath() == null) {
-                throw new DistanceMatrixConfigException("cannot find kmer histogram path");
-            }
-        }
-        
         if(dmConfig.getKmerStatisticsPath() == null) {
             throw new DistanceMatrixConfigException("cannot find kmer statistics path");
         }
@@ -158,9 +152,6 @@ public class KmerSimilarityReduce {
         // Reducer
         // Use many reducers
         int reducers = conf.getInt("mapred.reduce.tasks", 1);
-        if(cConfig.getTaskNum() > 0) {
-            reducers = cConfig.getTaskNum();
-        }
         job.setNumReduceTasks(reducers);
         LOG.info("# of Reducers : " + reducers);
         

@@ -20,13 +20,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
-import libra.common.helpers.PathHelper;
 import libra.common.json.JsonSerializer;
-import libra.preprocess.common.PreprocessorConfig;
-import libra.preprocess.common.PreprocessorConstants;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.FileTableHelper;
-import libra.preprocess.common.helpers.KmerHistogramHelper;
 import libra.preprocess.common.helpers.KmerIndexHelper;
 import libra.preprocess.common.helpers.KmerStatisticsHelper;
 import org.apache.hadoop.conf.Configuration;
@@ -45,17 +41,12 @@ public class DistanceMatrixConfig {
     public static WeightAlgorithm DEFAULT_WEIGHT_ALGORITHM = WeightAlgorithm.LOGARITHM;
     public static ScoreAlgorithm DEFAULT_SCORE_ALGORITHM = ScoreAlgorithm.COSINESIMILARITY;
     public static RunMode DEFAULT_RUN_MODE = RunMode.MAP;
-    public static final int DEFAULT_TASKNUM = PreprocessorConfig.DEFAULT_TASKNUM; // use system default
-    public static final boolean DEFAULT_USE_HISTOGRAM = PreprocessorConfig.DEFAULT_USE_HISTOGRAM;
     
     private static final String HADOOP_CONFIG_KEY = "libra.distancematrix.common.distancematrixconfig";
     
     private String reportFilePath;
     
-    private int taskNum = DEFAULT_TASKNUM;
-    private boolean useHistogram = DEFAULT_USE_HISTOGRAM;
     private String fileTablePath;
-    private String kmerHistogramPath;
     private String kmerIndexPath;
     private String kmerStatisticsPath;
     private WeightAlgorithm weightAlgorithm = WeightAlgorithm.LOGARITHM;
@@ -92,29 +83,8 @@ public class DistanceMatrixConfig {
     @JsonIgnore
     public void setPreprocessRootPath(String preprocessRootPath) {
         this.fileTablePath = FileTableHelper.makeFileTableDirPath(preprocessRootPath);
-        this.kmerHistogramPath = KmerHistogramHelper.makeKmerHistogramDirPath(preprocessRootPath);
         this.kmerIndexPath = KmerIndexHelper.makeKmerIndexDirPath(preprocessRootPath);
         this.kmerStatisticsPath = KmerStatisticsHelper.makeKmerStatisticsDirPath(preprocessRootPath);
-    }
-    
-    @JsonProperty("task_num")
-    public int getTaskNum() {
-        return this.taskNum;
-    }
-    
-    @JsonProperty("task_num")
-    public void setTaskNum(int taskNum) {
-        this.taskNum = taskNum;
-    }
-    
-    @JsonProperty("use_histogram")
-    public boolean getUseHistogram() {
-        return this.useHistogram;
-    }
-    
-    @JsonProperty("use_histogram")
-    public void setUseHistogram(boolean useHistogram) {
-        this.useHistogram = useHistogram;
     }
     
     @JsonProperty("file_table_path")
@@ -125,16 +95,6 @@ public class DistanceMatrixConfig {
     @JsonProperty("file_table_path")
     public void setFileTablePath(String fileTablePath) {
         this.fileTablePath = fileTablePath;
-    }
-    
-    @JsonProperty("histogram_path")
-    public String getKmerHistogramPath() {
-        return this.kmerHistogramPath;
-    }
-    
-    @JsonProperty("histogram_path")
-    public void setKmerHistogramPath(String histogramPath) {
-        this.kmerHistogramPath = histogramPath;
     }
     
     @JsonProperty("kmer_index_path")

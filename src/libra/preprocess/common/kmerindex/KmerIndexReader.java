@@ -39,128 +39,54 @@ public class KmerIndexReader extends AKmerIndexReader {
     
     private Configuration conf;
     private FileSystem fs;
+    private int kmerSize;
     private Path kmerIndexTablePath;
+    private int partitionNo;
     private KmerIndexTable indexTable;
-    private KmerIndexTableRecord[] tableRecords;
+    private KmerIndexTableRecord tableRecord;
     
-    private IndexCloseableMapFileReader[] indexDataReaders;
-    private CompressedSequenceWritable beginKey;
-    private CompressedSequenceWritable endKey;
+    private IndexCloseableMapFileReader indexDataReader;
     private BlockingQueue<KmerIndexRecordBufferEntry> buffer = new LinkedBlockingQueue<KmerIndexRecordBufferEntry>();
     private boolean eof;
     
-    private int currentIndexDataID;
-    
-    public KmerIndexReader(FileSystem fs, Path kmerIndexTablePath, Configuration conf) throws IOException {
-        initialize(fs, kmerIndexTablePath, null, null, conf);
+    public KmerIndexReader(FileSystem fs, int kmerSize, Path kmerIndexTablePath, int partitionNo, Configuration conf) throws IOException {
+        initialize(fs, kmerSize, kmerIndexTablePath, partitionNo, conf);
     }
     
-    public KmerIndexReader(FileSystem fs, Path kmerIndexTablePath, CompressedSequenceWritable beginKey, CompressedSequenceWritable endKey, Configuration conf) throws IOException {
-        initialize(fs, kmerIndexTablePath, beginKey, endKey, conf);
-    }
-    
-    public KmerIndexReader(FileSystem fs, Path kmerIndexTablePath, String beginKey, String endKey, Configuration conf) throws IOException {
-        initialize(fs, kmerIndexTablePath, new CompressedSequenceWritable(beginKey), new CompressedSequenceWritable(endKey), conf);
-    }
-    
-    private void initialize(FileSystem fs, Path kmerIndexTablePath, CompressedSequenceWritable beginKey, CompressedSequenceWritable endKey, Configuration conf) throws IOException {
+    private void initialize(FileSystem fs, int kmerSize, Path kmerIndexTablePath, int partitionNo, Configuration conf) throws IOException {
         this.conf = conf;
         this.fs = fs;
-        this.beginKey = beginKey;
-        this.endKey = endKey;
+        this.kmerSize = kmerSize;
         this.kmerIndexTablePath = kmerIndexTablePath;
+        this.partitionNo = partitionNo;
         this.indexTable = KmerIndexTable.createInstance(fs, this.kmerIndexTablePath);
-        this.tableRecords = this.indexTable.getRecord().toArray(new KmerIndexTableRecord[0]);
-        this.indexDataReaders = new IndexCloseableMapFileReader[this.tableRecords.length];
         
-        boolean bFound = false;
-        this.currentIndexDataID = -1;
-        if(beginKey != null) {
-            for(int i=0;i<this.tableRecords.length;i++) {
-                if(this.tableRecords[i].getLastKmer().compareToIgnoreCase(beginKey.getSequence()) >= 0) {
-                    //found
-                    this.currentIndexDataID = i;
-                    bFound = true;
-                    break;
-                }
-            }
-            
-            //if(!bFound) {
-            //    throw new IOException(String.format("Could not find start point from kmer index - %s in %s", beginKey.getSequence(), kmerIndexTablePath.toString()));
-            //}
-        } else {
-            if(this.tableRecords.length > 0) {
-                this.currentIndexDataID = 0;
-            }
-            bFound = true;
-        }
+        this.tableRecord = this.indexTable.getRecord(this.partitionNo);
         
-        if(bFound) {
-            Path indexDataFile = new Path(this.kmerIndexTablePath.getParent(), this.tableRecords[this.currentIndexDataID].getIndexDataFile());
-            this.indexDataReaders[this.currentIndexDataID] = new IndexCloseableMapFileReader(fs, indexDataFile.toString(), conf);
-            
-            this.eof = false;
-            if(beginKey != null) {
-                seek(beginKey);
-            } else {
-                fillBuffer();
-            }
-        } else{
-            this.eof = true;
-        }
+        Path indexDataFile = new Path(this.kmerIndexTablePath.getParent(), this.tableRecord.getIndexDataFile());
+        this.indexDataReader = new IndexCloseableMapFileReader(fs, indexDataFile.toString(), conf);
+        
+        this.eof = false;
+        fillBuffer();
     }
     
     private void fillBuffer() throws IOException {
         if(!this.eof) {
-            CompressedSequenceWritable lastBufferedKey = null;
             int added = 0;
             while(added < BUFFER_SIZE) {
                 CompressedSequenceWritable key = new CompressedSequenceWritable();
                 IntArrayWritable val = new IntArrayWritable();
-                if(this.indexDataReaders[this.currentIndexDataID].next(key, val)) {
+                if(this.indexDataReader.next(key, val)) {
                     KmerIndexRecordBufferEntry entry = new KmerIndexRecordBufferEntry(key, val);
                     if(!this.buffer.offer(entry)) {
                         throw new IOException("buffer is full");
                     }
                     
-                    lastBufferedKey = key;
                     added++;
                 } else {
                     // EOF of this part
-                    this.indexDataReaders[this.currentIndexDataID].close();
-                    this.indexDataReaders[this.currentIndexDataID] = null;
-                    this.currentIndexDataID++;
-                    
-                    if(this.currentIndexDataID == this.indexDataReaders.length) {
-                        // last
-                        this.eof = true;
-                        break;
-                    } else {
-                        Path indexDataFile = new Path(this.kmerIndexTablePath.getParent(), this.tableRecords[this.currentIndexDataID].getIndexDataFile());
-                        this.indexDataReaders[this.currentIndexDataID] = new IndexCloseableMapFileReader(this.fs, indexDataFile.toString(), this.conf);
-                        this.indexDataReaders[this.currentIndexDataID].closeIndex();
-                    }
-                }
-            }
-            
-            if(this.endKey != null && lastBufferedKey != null) {
-                if(lastBufferedKey.compareTo(this.endKey) > 0) {
-                    // recheck buffer
-                    BlockingQueue<KmerIndexRecordBufferEntry> new_buffer = new LinkedBlockingQueue<KmerIndexRecordBufferEntry>();
-
-                    KmerIndexRecordBufferEntry entry = this.buffer.poll();
-                    while(entry != null) {
-                        if(entry.getKey().compareTo(this.endKey) <= 0) {
-                            if(!new_buffer.offer(entry)) {
-                                throw new IOException("buffer is full");
-                            }
-                        }
-
-                        entry = this.buffer.poll();
-                    }
-
-                    this.buffer = new_buffer;
                     this.eof = true;
+                    break;
                 }
             }
         }
@@ -168,52 +94,15 @@ public class KmerIndexReader extends AKmerIndexReader {
     
     @Override
     public void close() throws IOException {
-        if(this.indexDataReaders != null) {
-            for(int i=0;i<this.indexDataReaders.length;i++) {
-                if(this.indexDataReaders[i] != null) {
-                    this.indexDataReaders[i].close();
-                    this.indexDataReaders[i] = null;
-                }
-            }
-            this.indexDataReaders = null;
+        if(this.indexDataReader != null) {
+            this.indexDataReader.close();
+            this.indexDataReader = null;
         }
     }
     
     @Override
     public Path getKmerIndexTablePath() {
         return this.kmerIndexTablePath;
-    }
-    
-    private void seek(CompressedSequenceWritable key) throws IOException {
-        this.buffer.clear();
-        
-        IntArrayWritable val = new IntArrayWritable();
-        CompressedSequenceWritable nextKey = (CompressedSequenceWritable)this.indexDataReaders[this.currentIndexDataID].getClosest(key, val);
-        if(nextKey == null) {
-            this.eof = true;
-        } else {
-            this.eof = false;
-            
-            if(this.endKey != null) {
-                if(nextKey.compareTo(this.endKey) <= 0) {
-                    KmerIndexRecordBufferEntry entry = new KmerIndexRecordBufferEntry(nextKey, val);
-                    if(!this.buffer.offer(entry)) {
-                        throw new IOException("buffer is full");
-                    }
-
-                    fillBuffer();
-                } else {
-                    this.eof = true;
-                }
-            } else {
-                KmerIndexRecordBufferEntry entry = new KmerIndexRecordBufferEntry(nextKey, val);
-                if(!this.buffer.offer(entry)) {
-                    throw new IOException("buffer is full");
-                }
-
-                fillBuffer();
-            }
-        }
     }
     
     @Override

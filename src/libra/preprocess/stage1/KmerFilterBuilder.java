@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-package libra.preprocess.stage2;
+package libra.preprocess.stage1;
 
 import java.io.IOException;
 import java.util.Collection;
@@ -27,7 +27,6 @@ import libra.preprocess.common.PreprocessorConfigException;
 import libra.preprocess.common.PreprocessorRoundConfig;
 import libra.preprocess.common.filetable.FileTable;
 import libra.preprocess.common.helpers.KmerFilterHelper;
-import libra.preprocess.common.helpers.KmerHistogramHelper;
 import libra.preprocess.common.kmerfilter.KmerFilter;
 import libra.preprocess.common.kmerfilter.KmerFilterPart;
 import libra.preprocess.common.kmerfilter.KmerFilterPartTable;
@@ -61,12 +60,6 @@ public class KmerFilterBuilder {
         
         if(ppConfig.getFileTable() == null || ppConfig.getFileTable().samples() <= 0) {
             throw new PreprocessorConfigException("cannot find input sample path");
-        }
-        
-        if(ppConfig.getUseHistogram()) {
-            if(ppConfig.getKmerHistogramPath() == null) {
-                throw new PreprocessorConfigException("cannot find kmer histogram path");
-            }
         }
         
         if(ppConfig.getKmerSize() <= 0) {
@@ -118,14 +111,6 @@ public class KmerFilterBuilder {
         LOG.info("Input sample files : " + inputFiles.length);
         for(Path inputFile : inputFiles) {
             LOG.info("> " + inputFile.toString());
-        }
-        
-        // histogram
-        if(ppConfig.getUseHistogram()) {
-            String histogramFileName = KmerHistogramHelper.makeKmerHistogramFileName(ppConfig.getFileTable().getName());
-            Path histogramPath = new Path(ppConfig.getKmerHistogramPath(), histogramFileName);
-
-            KmerFilterBuilderPartitioner.setHistogramPath(conf, histogramPath);
         }
         
         job.setOutputFormatClass(NullOutputFormat.class);

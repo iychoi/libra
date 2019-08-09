@@ -24,25 +24,25 @@ import org.codehaus.jackson.annotate.JsonProperty;
  */
 public class KmerIndexTableRecord implements Comparable<KmerIndexTableRecord> {
     private String indexDataFile;
-    private String lastKmer;
+    private int partitionID;
     
     public KmerIndexTableRecord() {
         
     }
     
-    public KmerIndexTableRecord(String indexDataFile, String lastKmer) {
+    public KmerIndexTableRecord(String indexDataFile, int partitionID) {
         this.indexDataFile = indexDataFile;
-        this.lastKmer = lastKmer;
+        this.partitionID = partitionID;
     }
     
-    @JsonProperty("last_kmer")
-    public String getLastKmer() {
-        return this.lastKmer;
+    @JsonProperty("partition_id")
+    public int getPartitionID() {
+        return this.partitionID;
     }
     
-    @JsonProperty("last_kmer")
-    public void setLastKmer(String lastKmer) {
-        this.lastKmer = lastKmer;
+    @JsonProperty("partition_id")
+    public void setPartitionId(int partitionNo) {
+        this.partitionID = partitionNo;
     }
     
     @JsonProperty("data_file")
@@ -58,6 +58,9 @@ public class KmerIndexTableRecord implements Comparable<KmerIndexTableRecord> {
     @JsonIgnore
     @Override
     public int compareTo(KmerIndexTableRecord right) {
-        return this.lastKmer.compareToIgnoreCase(right.lastKmer);
+        Integer l = new Integer(this.partitionID);
+        Integer r = new Integer(right.partitionID);
+        
+        return l.compareTo(r);
     }
 }

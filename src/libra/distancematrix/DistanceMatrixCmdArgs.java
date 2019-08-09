@@ -54,20 +54,6 @@ public class DistanceMatrixCmdArgs extends CommandArgumentsBase {
         return RunMode.fromString(this.runMode);
     }
     
-    @Option(name = "-t", aliases = "--tasks", usage = "specify number of tasks")
-    protected int taskNum = DistanceMatrixConfig.DEFAULT_TASKNUM;
-    
-    public int getTaskNum() {
-        return this.taskNum;
-    }
-    
-    @Option(name = "--no-histogram", usage = "do not use histogram, fixed-range partitioning will be used")
-    protected boolean noHistogram = false;
-    
-    public boolean useHistogram() {
-        return !this.noHistogram;
-    }
-    
     @Option(name = "-o", usage = "specify output path")
     private String outputPath = DistanceMatrixConfig.DEFAULT_OUTPUT_PATH;
         
@@ -93,9 +79,7 @@ public class DistanceMatrixCmdArgs extends CommandArgumentsBase {
            return false;
         }
         
-        if(this.taskNum < 0 ||
-                this.preprocessOutputPath == null ||
-                this.outputPath == null) {
+        if(this.preprocessOutputPath == null || this.outputPath == null) {
             return false;
         }
         
@@ -109,8 +93,6 @@ public class DistanceMatrixCmdArgs extends CommandArgumentsBase {
         config.setWeightAlgorithm(getWeightAlgorithm());
         config.setScoreAlgorithm(getScoreAlgorithm());
         config.setRunMode(getRunMode());
-        config.setTaskNum(this.taskNum);
-        config.setUseHistogram(this.useHistogram());
         config.setPreprocessRootPath(this.preprocessOutputPath);
         config.setOutputPath(this.outputPath);
         return config;
